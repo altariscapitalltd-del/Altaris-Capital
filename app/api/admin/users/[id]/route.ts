@@ -3,6 +3,7 @@ import { getAdminUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { notifyUser } from '@/lib/push'
+import { trigger, userChannel, adminChannel } from '@/lib/pusher'
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const admin = await getAdminUser(req)
@@ -46,8 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           status: 'SUCCESS', note: `Admin adjustment: ${data.note || ''}`,
         },
       })
-      const io = (global as any).io
-      if (io) io.to(`user:${params.id}`).emit('balance:update', { currency: data.currency || 'USD', amount: newAmount })
+      await trigger(userChannel(params.id), 'balance:update', { currency: data.currency || 'USD', amount: newAmount })
       break
     }
     case 'freeze':
@@ -66,8 +66,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       await prisma.notification.create({
         data: { userId: params.id, title: 'Admin Message', body: data.message, type: 'info' }
       })
-      const io2 = (global as any).io
-      if (io2) io2.to(`user:${params.id}`).emit('notification', { title: 'Admin Message', body: data.message })
+      await trigger(userChannel(params.id), 'notification:new', { title: 'Admin Message', body: data.message })
       break
     }
     case 'reset_password': {

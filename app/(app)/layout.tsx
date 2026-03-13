@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { io as ioClient } from 'socket.io-client'
+import Pusher from 'pusher-js'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 const TRENDING = ['🔥 BTC +2.34%', '⚡ ETH +1.78%', '🚀 SOL +5.12%', '📈 Smart Save 40%/yr', '🎁 Claim $100 bonus']
@@ -119,12 +119,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (!user) return
-    const s = ioClient({ path: '/socket.io' })
-    s.emit('join', user.id)
-    s.on('notification:new', () => setUnread(n => n + 1))
-    s.on('balance:update', () => window.dispatchEvent(new Event('balance:refresh')))
-    return () => s.disconnect()
+    if (!user?.id) return
+
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
+      authEndpoint: '/api/pusher/auth',
+    })
+
+    const channel = pusher.subscribe(`private-user-${user.id}`)
+
+    channel.bind('notification:new', () => setUnread(n => n + 1))
+    channel.bind('balance:update', () => window.dispatchEvent(new Event('balance:refresh')))
+
+    return () => {
+      channel.unbind_all()
+      pusher.unsubscribe(`private-user-${user.id}`)
+      pusher.disconnect()
+    }
   }, [user?.id])
 
   useEffect(() => {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { createAndSendOTP } from '@/lib/otp'
+import { trigger, adminChannel } from '@/lib/pusher'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -36,9 +37,8 @@ export async function POST(req: NextRequest) {
 
     await createAndSendOTP(user.id, email, name, 'SIGNUP')
 
-    // Notify admin via WS
-    const io = (global as any).io
-    if (io) io.to('admin').emit('admin:new_user', { id: user.id, name, email, createdAt: user.createdAt })
+    // Notify admin via Pusher
+    await trigger(adminChannel, 'admin:new_user', { id: user.id, name, email, createdAt: user.createdAt })
 
     return NextResponse.json({ success: true, userId: user.id })
   } catch (e: any) {

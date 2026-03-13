@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { trigger, adminChannel } from '@/lib/pusher'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -22,8 +23,7 @@ export async function POST(req: NextRequest) {
   })
 
   // Notify admin
-  const io = (global as any).io
-  if (io) io.to('admin').emit('admin:new_deposit', { userId: user.id, amount, currency, txId: tx.id })
+  await trigger(adminChannel, 'admin:new_deposit', { userId: user.id, amount, currency, txId: tx.id })
 
   return NextResponse.json({ success: true, txId: tx.id })
 }

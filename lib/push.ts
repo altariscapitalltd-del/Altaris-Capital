@@ -1,4 +1,5 @@
 import webpush from 'web-push'
+import { trigger, userChannel } from './pusher'
 
 webpush.setVapidDetails(
   process.env.VAPID_EMAIL || 'mailto:altariscapital.ltd@gmail.com',
@@ -42,7 +43,6 @@ export async function notifyUser(prisma: any, userId: string, title: string, bod
     }
   }
 
-  // Emit via WebSocket
-  const io = (global as any).io
-  if (io) io.to(`user:${userId}`).emit('notification:new', { title, body, url })
+  // Emit via Pusher
+  await trigger(userChannel(userId), 'notification:new', { title, body, url })
 }

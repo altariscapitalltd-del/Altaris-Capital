@@ -1,11 +1,19 @@
 const { createServer } = require('http')
 const { parse } = require('url')
 const next = require('next')
-const { Server } = require('socket.io')
+const Pusher = require('pusher')
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
 const port = parseInt(process.env.PORT || '3000', 10)
+
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID || '',
+  key: process.env.PUSHER_KEY || '',
+  secret: process.env.PUSHER_SECRET || '',
+  cluster: process.env.PUSHER_CLUSTER || '',
+  useTLS: true,
+})
 
 const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
@@ -16,42 +24,10 @@ app.prepare().then(() => {
     await handle(req, res, parsedUrl)
   })
 
-  const io = new Server(httpServer, {
-    cors: {
-      origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-      methods: ['GET', 'POST'],
-    },
-  })
-
-  // Attach io to global so API routes can access it
-  global.io = io
-
-  io.on('connection', (socket) => {
-    if (dev) console.log('[WS] Client connected:', socket.id)
-
-    socket.on('join', (userId) => {
-      socket.join(`user:${userId}`)
-      if (dev) console.log(`[WS] User ${userId} joined room`)
-    })
-
-    socket.on('join:admin', () => {
-      socket.join('admin')
-      if (dev) console.log('[WS] Admin joined room')
-    })
-
-    socket.on('chat:message', async (data) => {
-      io.to(`user:${data.userId}`).emit('chat:message', data)
-      io.to('admin').emit('chat:message', data)
-    })
-
-    socket.on('disconnect', () => {
-      if (dev) console.log('[WS] Client disconnected:', socket.id)
-    })
-  })
-
   // Broadcast market data every ~5–8 seconds, with staggered per-asset emits
   let priceCache = {}
   const PRICE_INTERVAL_MS = 6000
+  const MARKET_CHANNEL = 'public-market'
 
   setInterval(async () => {
     try {
@@ -79,12 +55,12 @@ app.prepare().then(() => {
         const delay = baseDelay + index * 400 + jitter
         setTimeout(() => {
           if (!priceCache[sym]) return
-          io.emit('price:update:asset', { symbol: sym, data: priceCache[sym], updatedAt: priceCache.updatedAt })
+          pusher.trigger(MARKET_CHANNEL, 'price:update:asset', { symbol: sym, data: priceCache[sym], updatedAt: priceCache.updatedAt })
         }, delay)
       })
 
       // Also emit full snapshot occasionally for clients that prefer batch updates
-      io.emit('price:update', priceCache)
+      pusher.trigger(MARKET_CHANNEL, 'price:update', priceCache)
     } catch (e) {
       if (dev) console.error('[WS] price update failed', e)
     }

@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
+import { trigger, adminChannel } from '@/lib/pusher'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -54,8 +55,7 @@ export async function POST(req: NextRequest) {
   await prisma.user.update({ where: { id: user.id }, data: { kycStatus: 'PENDING_REVIEW' } })
 
   // Notify admin
-  const io = (global as any).io
-  if (io) io.to('admin').emit('admin:kyc_submitted', { userId: user.id })
+  await trigger(adminChannel, 'admin:kyc_submitted', { userId: user.id })
 
   return NextResponse.json({ success: true })
 }

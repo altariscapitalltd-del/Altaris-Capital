@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { io as ioClient } from 'socket.io-client'
+import Pusher from 'pusher-js'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 const NAV_ITEMS = [
@@ -69,19 +69,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (pathname === '/admin/login') return
-    const s = ioClient({ path:'/socket.io' })
-    s.emit('join:admin')
+
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
+      authEndpoint: '/api/pusher/auth',
+    })
+
+    const channel = pusher.subscribe('private-admin')
+
     let counter = 0
     function push(msg: string, type: string) {
       const id = ++counter
       setAlerts(prev => [{ id, msg, type, time: new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) }, ...prev.slice(0,4)])
       setTimeout(() => setAlerts(prev => prev.filter(a => a.id !== id)), 6000)
     }
-    s.on('admin:new_deposit',    d => { push(`New deposit: $${d.amount} ${d.currency}`, 'deposit'); setPendingCounts(c=>({...c,deposits:c.deposits+1})) })
-    s.on('admin:new_withdrawal', d => push(`Withdrawal: $${d.amount}`, 'withdrawal'))
-    s.on('admin:kyc_submitted',  () => { push('New KYC submission', 'kyc'); setPendingCounts(c=>({...c,kyc:c.kyc+1})) })
-    s.on('admin:new_user',       d => push(`New user: ${d.name}`, 'user'))
-    return () => s.disconnect()
+
+    channel.bind('admin:new_deposit',    (d:any) => { push(`New deposit: $${d.amount} ${d.currency}`, 'deposit'); setPendingCounts(c=>({...c,deposits:c.deposits+1})) })
+    channel.bind('admin:new_withdrawal', (d:any) => push(`Withdrawal: $${d.amount}`, 'withdrawal'))
+    channel.bind('admin:kyc_submitted',  () => { push('New KYC submission', 'kyc'); setPendingCounts(c=>({...c,kyc:c.kyc+1})) })
+    channel.bind('admin:new_user',       (d:any) => push(`New user: ${d.name}`, 'user'))
+
+    return () => {
+      channel.unbind_all()
+      pusher.unsubscribe('private-admin')
+      pusher.disconnect()
+    }
   }, [pathname])
 
   if (pathname === '/admin/login') return <>{children}</>

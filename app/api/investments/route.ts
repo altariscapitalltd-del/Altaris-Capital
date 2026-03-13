@@ -6,11 +6,11 @@ import { cookies } from 'next/headers'
 export async function GET() {
   const token = (await cookies()).get('token')?.value
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const payload = verifyToken(token)
+  const payload = (await verifyToken(token)) as any
   if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const investments = await prisma.investment.findMany({
     where: { userId: payload.userId },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { startDate: 'desc' }
   })
   return NextResponse.json({ investments })
 }
@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const token = (await cookies()).get('token')?.value
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const payload = verifyToken(token)
+  const payload = (await verifyToken(token)) as any
   if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { planId, planName, amount, dailyRoi } = await req.json()
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         type: 'INVESTMENT',
         currency: 'USD',
         amount,
-        status: 'COMPLETED',
+        status: 'SUCCESS',
         description: `Invested in ${planName}`,
       }
     }),

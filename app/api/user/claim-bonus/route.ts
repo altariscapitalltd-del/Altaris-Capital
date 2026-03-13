@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
-import { db } from '@/lib/db'
+import { prisma } from '@/lib/db'
 import { notifyUser } from '@/lib/push'
 
 export async function POST(req: NextRequest) {
@@ -18,12 +18,12 @@ export async function POST(req: NextRequest) {
   const BONUS_AMOUNT = 100
 
   // Credit balance + mark claimed in a transaction
-  await db.$transaction([
-    db.balance.update({
+  await prisma.$transaction([
+    prisma.balance.update({
       where: { userId_currency: { userId: user.id, currency: 'USD' } },
       data: { amount: { increment: BONUS_AMOUNT } },
     }),
-    db.transaction.create({
+    prisma.transaction.create({
       data: {
         userId: user.id,
         type: 'BONUS',
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         note: 'Welcome bonus — KYC verification reward',
       },
     }),
-    db.user.update({
+    prisma.user.update({
       where: { id: user.id },
       data: { bonusClaimed: true },
     }),

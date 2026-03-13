@@ -1,8 +1,8 @@
-// server.js — Custom Next.js server with Socket.IO WebSocket support
+// server.js — Custom Next.js server with Pusher for realtime updates
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
-const { Server } = require('socket.io');
+const Pusher = require('pusher');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -40,71 +40,27 @@ app.prepare().then(() => {
     handle(req, res, parsedUrl);
   });
 
-  // Initialize Socket.IO
-  const io = new Server(httpServer, {
-    path: '/api/socket',
-    addTrailingSlash: false,
-    cors: {
-      origin: process.env.NEXT_PUBLIC_APP_URL || '*',
-      methods: ['GET', 'POST'],
-    },
+  const pusher = new Pusher({
+    appId: process.env.PUSHER_APP_ID || '',
+    key: process.env.PUSHER_KEY || '',
+    secret: process.env.PUSHER_SECRET || '',
+    cluster: process.env.PUSHER_CLUSTER || '',
+    useTLS: true,
   });
 
-  // Make io globally accessible to API routes
-  global._io = io;
+  // Make latest prices accessible to other parts of the app
   global._latestPrices = latestPrices;
 
-  io.on('connection', (socket) => {
-    console.log('[Socket] Client connected:', socket.id);
-
-    // Authenticate user
-    const userId = socket.handshake.auth?.userId;
-    if (userId) {
-      socket.join(`user:${userId}`);
-      console.log(`[Socket] User ${userId} joined their room`);
-    }
-
-    // Admins join admin room
-    const isAdmin = socket.handshake.auth?.isAdmin;
-    if (isAdmin) {
-      socket.join('admin');
-      console.log('[Socket] Admin joined admin room');
-    }
-
-    // Send current prices immediately on connect
-    if (Object.keys(latestPrices).length > 0) {
-      socket.emit('price:update', latestPrices);
-    }
-
-    // Chat events
-    socket.on('chat:message', async (data) => {
-      const { conversationId, content, sender } = data;
-      // Broadcast to relevant parties
-      if (sender === 'user') {
-        io.to('admin').emit('chat:new_message', { conversationId, content, sender, userId });
-      } else if (sender === 'admin') {
-        io.to(`user:${data.userId}`).emit('chat:new_message', { conversationId, content, sender });
-      }
-    });
-
-    socket.on('chat:typing', (data) => {
-      const { conversationId, sender } = data;
-      if (sender === 'admin') {
-        io.to(`user:${data.userId}`).emit('chat:typing', { conversationId });
-      }
-    });
-
-    socket.on('disconnect', () => {
-      console.log('[Socket] Client disconnected:', socket.id);
-    });
-  });
+  // Note: chat messages are handled via API routes; clients communicate through Pusher.
 
   // Broadcast price updates every 30 seconds
+  const MARKET_CHANNEL = 'public-market'
+
   async function broadcastPrices() {
     const prices = await fetchMarketPrices();
     if (prices) {
       global._latestPrices = prices;
-      io.emit('price:update', prices);
+      pusher.trigger(MARKET_CHANNEL, 'price:update', prices);
     }
   }
 
