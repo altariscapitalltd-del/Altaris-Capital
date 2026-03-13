@@ -69,11 +69,11 @@ export async function POST(req: Request) {
         currency: 'USD',
         amount,
         status: 'SUCCESS',
-        description: `Invested in ${planName}`,
+        note: `Invested in ${planName}`,
       }
     }),
     prisma.balanceSnapshot.create({
-      data: { userId: payload.userId, totalUsd: balance.amount - amount }
+      data: { balanceId: balance.id, amount: balance.amount - amount }
     }),
   ])
 

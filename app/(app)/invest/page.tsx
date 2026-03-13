@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 function Sparkline({ data, color, width=80, height=32 }: { data:number[], color:string, width?:number, height?:number }) {
@@ -90,6 +90,14 @@ const CATEGORY_COLORS: Record<string,string> = {
 }
 
 export default function InvestPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>}>
+      <InvestPageContent />
+    </Suspense>
+  )
+}
+
+function InvestPageContent() {
   const searchParams = useSearchParams()
   const [tab, setTab] = useState<'marketplace'|'my'>(searchParams?.get('tab')==='my' ? 'my' : 'marketplace')
   const [category, setCategory] = useState('All')
