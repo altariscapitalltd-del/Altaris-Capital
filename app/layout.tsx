@@ -33,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -45,14 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body style={{ background: 'var(--bg-primary)' }}>
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function() {
-            var t = localStorage.getItem('altaris-theme') || 'dark';
-            var resolved = t === 'system'
-              ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : t;
-            document.documentElement.setAttribute('data-theme', resolved);
-          })();
-        `}} />
+        <script dangerouslySetInnerHTML={{ __html: `document.documentElement.setAttribute('data-theme','dark');` }} />
         <ThemeProvider>
           {children}
         </ThemeProvider>

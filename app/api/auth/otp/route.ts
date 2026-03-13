@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       // Create a session token
       const token = await signToken({ userId: user.id, role: user.role })
       const res = NextResponse.json({ success: true, user: { id: user.id, name: user.name, role: user.role } })
-      res.cookies.set('token', token, { httpOnly: true, sameSite: 'strict', maxAge: 60 * 60 * 24 * 7 })
+      res.cookies.set('token', token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 7 })
       return res
     }
 

@@ -1,11 +1,11 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
-const TRENDING = ['🔥 BTC +2.34%', '⚡ ETH +1.78%', '🚀 SOL +5.12%', '📈 Smart Save 40%/yr', '🎁 Claim $100 bonus']
+const TRENDING = ['BTC +2.34%', 'ETH +1.78%', 'SOL +5.12%', 'Smart Save 40%/yr', 'Claim $100 bonus']
 
 // ── Bybit-exact icons: white when active, #4A4A4A when inactive ──
 const NAV = [
@@ -101,7 +101,7 @@ const NAV = [
   },
 ]
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
   const [user, setUser]               = useState<any>(null)
@@ -147,15 +147,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     pathname === n.href || (n.href !== '/home' && pathname.startsWith(n.href))
   )?.href || '/home'
 
-  return (
-    <div style={{ background: 'var(--bg-page)', minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+  const isMarkets = pathname?.startsWith('/markets')
+  const searchParams = useSearchParams()
+  const urlQ = searchParams?.get('q') ?? ''
+  const [marketSearch, setMarketSearch] = useState(urlQ)
+  useEffect(() => { setMarketSearch(urlQ) }, [urlQ])
+  const handleMarketSearch = useCallback((value: string) => {
+    setMarketSearch(value)
+    const base = pathname?.startsWith('/markets') ? '/markets' : '/markets'
+    const url = value.trim() ? `${base}?q=${encodeURIComponent(value.trim())}` : base
+    router.replace(url)
+  }, [pathname, router])
 
-      {/* ── Top Bar — Bybit exact ── */}
+  return (
+    <div style={{
+      background: 'var(--bg-page)',
+      minHeight: '100svh',
+      display: 'flex',
+      flexDirection: 'column',
+      paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)',
+    }}>
+
+      {/* ── Top Bar — safe area aware; on Markets: expanded search, no right icons ── */}
       <header style={{
-        padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10,
-        background: 'var(--bg-page)', position: 'sticky', top: 0, zIndex: 50,
+        padding: '10px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        background: 'var(--bg-page)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
       }}>
-        {/* Avatar with gold ring */}
         <Link href="/profile" style={{ flexShrink: 0, textDecoration: 'none' }}>
           <div style={{
             width: 36, height: 36, borderRadius: '50%',
@@ -170,60 +193,84 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </Link>
 
-        {/* Search pill — live trending ticker */}
-        <Link href="/markets" style={{ flex: 1, textDecoration: 'none' }}>
+        {isMarkets ? (
           <div style={{
-            background: '#1A1A1A', borderRadius: 99, padding: '9px 14px',
-            display: 'flex', alignItems: 'center', gap: 8,
+            flex: 1,
+            background: '#1A1A1A',
+            borderRadius: 99,
+            padding: '9px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
             border: '1px solid rgba(255,255,255,0.07)',
           }}>
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#4A4A4A" strokeWidth="2.5" style={{ flexShrink: 0 }}>
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/>
             </svg>
-            <span key={tickerIdx} style={{ color: '#6A6A6A', fontSize: 12, fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', animation: 'fadeIn .3s ease' }}>
-              {TRENDING[tickerIdx]}
-            </span>
+            <input
+              type="search"
+              placeholder="Search coins..."
+              value={marketSearch}
+              onChange={e => handleMarketSearch(e.target.value)}
+              style={{
+                flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none',
+                color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit',
+              }}
+            />
           </div>
-        </Link>
+        ) : (
+          <Link href="/markets" style={{ flex: 1, textDecoration: 'none' }}>
+            <div style={{
+              background: '#1A1A1A', borderRadius: 99, padding: '9px 14px',
+              display: 'flex', alignItems: 'center', gap: 8,
+              border: '1px solid rgba(255,255,255,0.07)',
+            }}>
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#4A4A4A" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/>
+              </svg>
+              <span key={tickerIdx} style={{ color: '#6A6A6A', fontSize: 12, fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', animation: 'fadeIn .3s ease' }}>
+                {TRENDING[tickerIdx]}
+              </span>
+            </div>
+          </Link>
+        )}
 
-        {/* Right icon cluster */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          {/* Scan / QR */}
-          <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: '#1A1A1A' }}>
-            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round">
-              <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
-              <rect x="7" y="7" width="4" height="4" rx="0.5"/><rect x="13" y="7" width="4" height="4" rx="0.5"/>
-              <rect x="7" y="13" width="4" height="4" rx="0.5"/><path d="M13 13h4v4"/>
-            </svg>
+        {!isMarkets && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: '#1A1A1A' }}>
+              <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round">
+                <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+                <rect x="7" y="7" width="4" height="4" rx="0.5"/><rect x="13" y="7" width="4" height="4" rx="0.5"/>
+                <rect x="7" y="13" width="4" height="4" rx="0.5"/><path d="M13 13h4v4"/>
+              </svg>
+            </div>
+            <Link href="/home" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
+              <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round">
+                <rect x="3" y="8" width="18" height="13" rx="2"/>
+                <path d="M12 8V21M3 13h18M7.5 8A2.5 2.5 0 0112 5.5M16.5 8A2.5 2.5 0 0012 5.5"/>
+              </svg>
+              {bonusUnclaimed && (
+                <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#F6465D', border: '1.5px solid #000' }} />
+              )}
+            </Link>
+            <Link href="/settings" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
+              <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+              </svg>
+              {unread > 0 && (
+                <div style={{
+                  position: 'absolute', top: 5, right: 5,
+                  minWidth: 16, height: 16, borderRadius: 99,
+                  background: '#F6465D', border: '1.5px solid #000',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 8, fontWeight: 800, color: '#fff', padding: '0 3px',
+                }}>
+                  {unread > 9 ? '9+' : unread}
+                </div>
+              )}
+            </Link>
           </div>
-          {/* Gift / Bonus */}
-          <Link href="/home" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
-            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round">
-              <rect x="3" y="8" width="18" height="13" rx="2"/>
-              <path d="M12 8V21M3 13h18M7.5 8A2.5 2.5 0 0112 5.5M16.5 8A2.5 2.5 0 0012 5.5"/>
-            </svg>
-            {bonusUnclaimed && (
-              <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#F6465D', border: '1.5px solid #000' }} />
-            )}
-          </Link>
-          {/* Notification bell */}
-          <Link href="/settings" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
-            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
-            </svg>
-            {unread > 0 && (
-              <div style={{
-                position: 'absolute', top: 5, right: 5,
-                minWidth: 16, height: 16, borderRadius: 99,
-                background: '#F6465D', border: '1.5px solid #000',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 8, fontWeight: 800, color: '#fff', padding: '0 3px',
-              }}>
-                {unread > 9 ? '9+' : unread}
-              </div>
-            )}
-          </Link>
-        </div>
+        )}
       </header>
 
       {/* Page content */}
@@ -231,16 +278,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      {/* ── Bottom Navigation — curved top, Bybit exact ── */}
+      {/* ── Bottom Navigation — safe area bottom ── */}
       <nav style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
         background: 'var(--nav-bg)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        /* Curved top corners — the key to the Bybit feel */
         borderRadius: '20px 20px 0 0',
         borderTop: '1px solid rgba(255,255,255,0.07)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
         boxShadow: '0 -4px 30px rgba(0,0,0,0.5)',
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 62 }}>
@@ -283,5 +329,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
     </div>
+  )
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </Suspense>
   )
 }

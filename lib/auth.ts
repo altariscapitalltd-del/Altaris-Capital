@@ -3,11 +3,12 @@ import { cookies } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { prisma } from './db'
 
+const isProd = process.env.NODE_ENV === 'production'
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'altaris-secret-change-this'
+  process.env.JWT_SECRET || (isProd ? (() => { throw new Error('JWT_SECRET is required in production') })() : 'altaris-secret-change-this')
 )
 const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'altaris-admin-secret-change-this'
+  process.env.ADMIN_JWT_SECRET || (isProd ? (() => { throw new Error('ADMIN_JWT_SECRET is required in production') })() : 'altaris-admin-secret-change-this')
 )
 
 export async function signToken(payload: Record<string, unknown>, admin = false) {

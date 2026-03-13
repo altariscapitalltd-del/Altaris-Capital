@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Download, Upload, TrendingUp, History, Gift, Check, UserCheck, Clock } from 'lucide-react'
 
 // Mini sparkline component
 function Sparkline({ data, color, width=64, height=28 }: { data:number[], color:string, width?:number, height?:number }) {
@@ -57,6 +58,162 @@ const SPARK_BTC  = [42,41,44,43,46,45,48,47,50,49,51,53,52,55,58,57,60,62,61,65]
 const SPARK_ETH  = [30,32,31,33,35,34,36,38,37,39,38,40,42,41,40,43,42,44,43,42]
 const SPARK_BNB  = [50,52,51,50,53,52,54,53,55,54,56,55,57,56,55,54,56,55,57,56]
 const SPARK_SOL  = [20,22,24,23,26,28,27,30,32,31,34,36,35,38,40,42,41,45,47,48]
+
+const BYBIT_COINS = [
+  { sym: 'BTC', name: 'Bitcoin', spark: SPARK_BTC },
+  { sym: 'ETH', name: 'Ethereum', spark: SPARK_ETH },
+  { sym: 'BNB', name: 'BNB', spark: SPARK_BNB },
+  { sym: 'SOL', name: 'Solana', spark: SPARK_SOL },
+]
+
+const LATEST_EVENTS = [
+  { title: 'Refer Friends — Get $30', date: '2025-03-10', icon: 'event' },
+  { title: 'Seasonal Yield Boost +5%', date: '2025-03-08', icon: 'event' },
+  { title: 'VIP Tier 1 Benefits Update', date: '2025-03-05', icon: 'event' },
+]
+const LATEST_NEWS = [
+  { title: 'Altaris Capital Q1 2025 Report', date: '2025-03-11', icon: 'news' },
+  { title: 'New DeFi Plans Launched', date: '2025-03-09', icon: 'news' },
+  { title: 'KYC Verification Guide', date: '2025-03-04', icon: 'news' },
+]
+
+function BybitSection({ prices }: { prices: Record<string, { price?: number; change24h?: number }> }) {
+  const [chartDays, setChartDays] = useState(7)
+  const [chartData, setChartData] = useState<{ times: number[]; values: number[] } | null>(null)
+  const [eventsTab, setEventsTab] = useState<'events' | 'news'>('events')
+
+  useEffect(() => {
+    fetch(`/api/market/chart?symbol=btc&days=${chartDays}`)
+      .then((r) => r.json())
+      .then((d) => (d.times && d.values ? setChartData({ times: d.times, values: d.values }) : setChartData(null)))
+      .catch(() => setChartData(null))
+  }, [chartDays])
+
+  const coins = BYBIT_COINS.map((c) => ({
+    ...c,
+    price: prices[c.sym]?.price ?? (c.sym === 'BTC' ? 65420 : c.sym === 'ETH' ? 3421 : c.sym === 'BNB' ? 562 : 148),
+    change: prices[c.sym]?.change24h ?? (c.sym === 'SOL' ? 3.21 : 2.34),
+  }))
+
+  return (
+    <div style={{ marginTop: 18, padding: '0 16px' }}>
+      {/* Chart block */}
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>BTC/USD</span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[7, 30, 90, 180].map((d) => (
+              <button
+                key={d}
+                onClick={() => setChartDays(d)}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: chartDays === d ? 'var(--brand-primary)' : 'var(--bg-elevated)',
+                  color: chartDays === d ? '#000' : 'var(--text-muted)',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {d}D
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ height: 140, position: 'relative' }}>
+          {chartData?.values?.length ? (
+            <Sparkline data={chartData.values} color="#F2BA0E" width={280} height={140} />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: 12 }}>Loading chart...</div>
+          )}
+        </div>
+        <div style={{ color: 'var(--text-muted)', fontSize: 10, marginTop: 8 }}>
+          Last updated from market data
+        </div>
+      </div>
+
+      {/* Events card */}
+      <Link href="/home" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
+        <div style={{ background: 'linear-gradient(135deg,rgba(242,186,14,0.12),rgba(59,130,246,0.08))', border: '1px solid rgba(242,186,14,0.25)', borderRadius: 16, padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Gift size={24} strokeWidth={2} color="#F2BA0E" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>Refer friends. Get $30. Win 1 oz Gold.</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>Explore Now</div>
+          </div>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </Link>
+
+      {/* Crypto list */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: 'var(--text-secondary)' }}>Crypto</div>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+          {coins.map((coin) => (
+            <Link key={coin.sym} href={`/markets/${coin.sym.toLowerCase()}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--border)', gap: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{coin.sym}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{coin.name}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>24h</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>${coin.price >= 1 ? coin.price.toLocaleString('en-US', { maximumFractionDigits: 2 }) : coin.price.toFixed(4)}</div>
+                <span style={{ fontSize: 11, fontWeight: 600, color: coin.change >= 0 ? 'var(--success)' : 'var(--danger)' }}>{coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%</span>
+              </div>
+              <div style={{ width: 56, height: 28, flexShrink: 0 }}>
+                <Sparkline data={coin.spark} color={coin.change >= 0 ? '#0ECB81' : '#F6465D'} width={56} height={28} />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Crypto grid 2x2 */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: 'var(--text-secondary)' }}>Top movers</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {coins.slice(0, 4).map((coin) => (
+            <Link key={coin.sym} href={`/markets/${coin.sym.toLowerCase()}`} style={{ textDecoration: 'none' }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }} className="pressable">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                  <span style={{ fontWeight: 700, fontSize: 12 }}>{coin.sym}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: coin.change >= 0 ? 'var(--success)' : 'var(--danger)' }}>{coin.change >= 0 ? '+' : ''}{coin.change.toFixed(2)}%</span>
+                </div>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>${coin.price >= 1 ? coin.price.toLocaleString('en-US', { maximumFractionDigits: 0 }) : coin.price.toFixed(2)}</div>
+                <Sparkline data={coin.spark} color={coin.change >= 0 ? '#0ECB81' : '#F6465D'} width={100} height={28} />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Latest Events / News */}
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
+          <button onClick={() => setEventsTab('events')} style={{ flex: 1, padding: '12px', border: 'none', background: eventsTab === 'events' ? 'var(--bg-elevated)' : 'transparent', color: eventsTab === 'events' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Latest Events</button>
+          <button onClick={() => setEventsTab('news')} style={{ flex: 1, padding: '12px', border: 'none', background: eventsTab === 'news' ? 'var(--bg-elevated)' : 'transparent', color: eventsTab === 'news' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>News</button>
+        </div>
+        <div style={{ padding: 12 }}>
+          {(eventsTab === 'events' ? LATEST_EVENTS : LATEST_NEWS).map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <TrendingUp size={14} strokeWidth={2} color="var(--brand-primary)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 12 }}>{item.title}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>{item.date}</div>
+              </div>
+            </div>
+          ))}
+          <Link href="/support" style={{ display: 'block', textAlign: 'center', marginTop: 8, color: 'var(--brand-primary)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>More</Link>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function HomePage() {
   const [user, setUser] = useState<any>(null)
@@ -179,16 +336,24 @@ export default function HomePage() {
 
         {/* Quick actions */}
         <div style={{ display:'flex', gap:10, marginTop:20 }}>
-          {[{l:'Deposit', icon:'⬇', href:'/wallet'}, {l:'Withdraw', icon:'⬆', href:'/wallet'}, {l:'Invest', icon:'📈', href:'/invest'}, {l:'History', icon:'🕐', href:'/transactions'}].map(({l,icon,href})=>(
+          {[
+            { l:'Deposit', Icon: Download, href:'/wallet' },
+            { l:'Withdraw', Icon: Upload, href:'/wallet' },
+            { l:'Invest', Icon: TrendingUp, href:'/invest' },
+            { l:'History', Icon: History, href:'/transactions' },
+          ].map(({ l, Icon, href })=>(
             <Link key={l} href={href} style={{ flex:1, textDecoration:'none' }}>
-              <div style={{ background:'var(--bg-card)', borderRadius:12, padding:'12px 8px', textAlign:'center', border:'1px solid var(--border)', transition:'all .15s' }} className="pressable">
-                <div style={{ fontSize:18, marginBottom:4 }}>{icon}</div>
+              <div style={{ background:'var(--bg-card)', borderRadius:12, padding:'12px 8px', textAlign:'center', border:'1px solid var(--border)', transition:'all .15s', color:'var(--text-secondary)' }} className="pressable">
+                <div style={{ display:'flex', justifyContent:'center', marginBottom:4 }}><Icon size={20} strokeWidth={2} /></div>
                 <div style={{ color:'var(--text-secondary)', fontSize:11, fontWeight:600 }}>{l}</div>
               </div>
             </Link>
           ))}
         </div>
       </div>
+
+      {/* ── Bybit-style: Chart, Events, Crypto list/grid, Latest Events/News ── */}
+      <BybitSection prices={prices} />
 
       {/* ── Bonus Banner Carousel ─ */}
       {canClaimBonus && (
@@ -229,7 +394,7 @@ export default function HomePage() {
                     justifyContent: 'center',
                     fontSize: 18,
                   }}>
-                    🎁
+                    <Gift size={18} strokeWidth={2} color="#000" />
                   </div>
                 </div>
 
@@ -275,7 +440,7 @@ export default function HomePage() {
                     {[{l:'Sign Up',done:true},{l:'Verify KYC',done:user?.kycStatus==='APPROVED'},{l:'Claim Bonus',done:false}].map((s,i,arr)=>(
                       <div key={s.l} style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
                         <div style={{ width:16, height:16, borderRadius:'50%', background:s.done?'#F2BA0E':'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8, fontWeight:800, color:s.done?'#000':'var(--text-muted)', flexShrink:0 }}>
-                          {s.done?'✓':i+1}
+                          {s.done ? <Check size={10} strokeWidth={3} /> : i+1}
                         </div>
                         <span style={{ fontSize:10, color:s.done?'var(--text-primary)':'var(--text-muted)', fontWeight:s.done?600:400, whiteSpace:'nowrap' }}>{s.l}</span>
                         {i<arr.length-1 && <div style={{ width:14, height:1, background:'rgba(242,186,14,0.25)' }}/>}
@@ -309,8 +474,8 @@ export default function HomePage() {
                       {!bonusClaiming && <span>→</span>}
                     </button>
                   ) : user?.kycStatus === 'PENDING_REVIEW' ? (
-                    <div style={{ textAlign:'left', color:'var(--text-muted)', fontSize:12 }}>
-                      ⏳ KYC under review — bonus unlocks upon approval
+                    <div style={{ textAlign:'left', color:'var(--text-muted)', fontSize:12, display:'flex', alignItems:'center', gap:6 }}>
+                      <Clock size={14} /> KYC under review — bonus unlocks upon approval
                     </div>
                   ) : (
                     <Link
@@ -377,7 +542,7 @@ export default function HomePage() {
               <div style={{ color:'var(--text-muted)', fontSize:10, marginBottom:5 }}>Ends in</div>
               <Countdown endsAt={FEATURED_PLAN.endsAt} />
               <div style={{ background:'rgba(246,70,93,0.1)', color:'#F6465D', borderRadius:6, padding:'3px 10px', fontSize:11, fontWeight:700, marginTop:6 }}>
-                🔴 {FEATURED_PLAN.spots} spots left
+                {FEATURED_PLAN.spots} spots left
               </div>
             </div>
           </div>
@@ -445,7 +610,7 @@ export default function HomePage() {
       {user?.kycStatus !== 'APPROVED' && user?.kycStatus !== 'PENDING_REVIEW' && (
         <Link href="/kyc" style={{ display:'block', margin:'18px 16px 0', background:'var(--bg-card)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:14, padding:16, textDecoration:'none' }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:42, height:42, borderRadius:11, background:'rgba(242,186,14,0.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>🪪</div>
+            <div style={{ width:42, height:42, borderRadius:11, background:'rgba(242,186,14,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'var(--brand-primary)' }}><UserCheck size={22} strokeWidth={2} /></div>
             <div style={{ flex:1 }}>
               <div style={{ fontWeight:700, fontSize:14, marginBottom:2 }}>Complete KYC to Withdraw</div>
               <div style={{ color:'var(--text-muted)', fontSize:12 }}>Quick identity check — takes under 5 minutes</div>

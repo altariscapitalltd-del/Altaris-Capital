@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['@prisma/client', 'bcryptjs', 'nodemailer', 'web-push'],
+  experimental: { serverComponentsExternalPackages: ['@prisma/client', 'bcryptjs', 'nodemailer', 'web-push'] },
   images: {
     remotePatterns: [{ protocol: 'http', hostname: 'localhost' }],
     dangerouslyAllowSVG: true,
