@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  name             String
+  phone            String?
+  passwordHash     String
+  role             Role      @default(USER)
+  kycStatus        KycStatus @default(NOT_SUBMITTED)
+  isActive         Boolean   @default(true)
+  withdrawEnabled  Boolean   @default(true)
+  bonusClaimed     Boolean   @default(false)
+  profilePicture   String?
+  pushSubscription Json?
+  lastKnownLat     Float?
+  lastKnownLng     Float?
+  lastKnownCity    String?
+  lastKnownCountry String?
+  locationUpdatedAt DateTime?
+  createdAt        DateTime  @default(now())
+  lastLoginAt           DateTime?
+  passwordResetToken    String?
+  passwordResetExpires  DateTime?
+  balances         Balance[]
+  transactions     Transaction[]
+  investments      Investment[]
+  otps             OTP[]
+  kyc              KycSubmission?
+  notifications    Notification[]
+  conversation     Conversation?
+  auditTargets     AdminAuditLog[] @relation("TargetUser")
+  @@map("users")
+}
+
+model Balance {
+  id        String            @id @default(cuid())
+  userId    String
+  currency  String
+  amount    Float             @default(0)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshots BalanceSnapshot[]
+  @@unique([userId, currency])
+  @@map("balances")
+}
+
+model BalanceSnapshot {
+  id        String   @id @default(cuid())
+  balanceId String
+  amount    Float
+  createdAt DateTime @default(now())
+  balance   Balance  @relation(fields: [balanceId], references: [id], onDelete: Cascade)
+  @@map("balance_snapshots")
+}
+
+model Transaction {
+  id        String            @id @default(cuid())
+  userId    String
+  type      TransactionType
+  amount    Float
+  currency  String
+  status    TransactionStatus @default(PENDING)
+  txHash    String?
+  note      String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("transactions")
+}
+
+model Investment {
+  id          String           @id @default(cuid())
+  userId      String
+  planId      String
+  planName    String
+  amount      Float
+  dailyRoi    Float
+  startDate   DateTime         @default(now())
+  endDate     DateTime
+  status      InvestmentStatus @default(ACTIVE)
+  totalEarned Float            @default(0)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("investments")
+}
+
+model OTP {
+  id        String     @id @default(cuid())
+  userId    String
+  code      String
+  purpose   OTPPurpose
+  expiresAt DateTime
+  used      Boolean    @default(false)
+  attempts  Int        @default(0)
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("otps")
+}
+
+model KycSubmission {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  fullName        String
+  dateOfBirth     String
+  address         String
+  documentPath    String
+  status          KycStatus @default(PENDING_REVIEW)
+  rejectionReason String?
+  submittedAt     DateTime  @default(now())
+  reviewedAt      DateTime?
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("kyc_submissions")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  type      String   @default("info")
+  read      Boolean  @default(false)
+  url       String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("notifications")
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  status    String    @default("active")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  sender         String
+  content        String
+  attachmentPath String?
+  readStatus     String       @default("sent")
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@map("messages")
+}
+
+model WalletAddress {
+  id        String   @id @default(cuid())
+  currency  String   @unique
+  address   String
+  updatedAt DateTime @updatedAt
+  updatedBy String   @default("system")
+  @@map("wallet_addresses")
+}
+
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  adminId      String
+  action       String
+  targetUserId String?
+  details      Json?
+  createdAt    DateTime @default(now())
+  targetUser   User?    @relation("TargetUser", fields: [targetUserId], references: [id])
+  @@map("admin_audit_logs")
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum KycStatus {
+  NOT_SUBMITTED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INVESTMENT
+  PROFIT
+  BONUS
+  ADJUSTMENT
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  REJECTED
+  CANCELLED
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum OTPPurpose {
+  SIGNUP
+  LOGIN
+  WITHDRAWAL
+  KYC
+}
+

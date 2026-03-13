@@ -1,0 +1,31 @@
+import { NextRequest, NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
+import { prisma } from '@/lib/db'
+import { signToken } from '@/lib/auth'
+import { z } from 'zod'
+
+const schema = z.object({
+  email:    z.string().email(),
+  password: z.string(),
+})
+
+export async function POST(req: NextRequest) {
+  try {
+    const { email, password } = schema.parse(await req.json())
+    const user = await prisma.user.findUnique({ where: { email } })
+    if (!user) return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+    if (!user.isActive) return NextResponse.json({ error: 'Account is suspended. Contact support.' }, { status: 403 })
+
+    const valid = await bcrypt.compare(password, user.passwordHash)
+    if (!valid) return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+
+    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } })
+
+    const token = await signToken({ userId: user.id, role: user.role })
+    const res = NextResponse.json({ success: true, user: { id: user.id, name: user.name, role: user.role } })
+    res.cookies.set('token', token, { httpOnly: true, sameSite: 'strict', maxAge: 60 * 60 * 24 * 7 })
+    return res
+  } catch (e: any) {
+    return NextResponse.json({ error: 'Login failed' }, { status: 500 })
+  }
+}
