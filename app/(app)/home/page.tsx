@@ -83,10 +83,17 @@ function BybitSection({ prices }: { prices: Record<string, { price?: number; cha
   const [eventsTab, setEventsTab] = useState<'events' | 'news'>('events')
 
   useEffect(() => {
-    fetch(`/api/market/chart?symbol=btc&days=${chartDays}`)
-      .then((r) => r.json())
-      .then((d) => (d.times && d.values ? setChartData({ times: d.times, values: d.values }) : setChartData(null)))
-      .catch(() => setChartData(null))
+    let cancelled = false
+    async function fetchChart() {
+      const res = await fetch(`/api/market/chart?symbol=btc&days=${chartDays}`)
+      const d = await res.json().catch(() => ({}))
+      if (cancelled) return
+      if (d.times && d.values) setChartData({ times: d.times, values: d.values })
+      else setChartData(null)
+    }
+    fetchChart()
+    const interval = setInterval(fetchChart, 30_000)
+    return () => { cancelled = true; clearInterval(interval) }
   }, [chartDays])
 
   const coins = BYBIT_COINS.map((c) => ({

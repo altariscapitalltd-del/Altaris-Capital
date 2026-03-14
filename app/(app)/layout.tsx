@@ -110,11 +110,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [tickerIdx, setTickerIdx]     = useState(0)
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r => {
+    fetch('/api/user/profile').then(r => {
       if (!r.ok) { router.push('/login'); return null }
       return r.json()
     }).then(d => {
-      if (d) { setUser(d.user); setBonusUnclaimed(!d.user?.bonusClaimed) }
+      if (d) {
+        setUser(d.user)
+        setBonusUnclaimed(!d.user?.bonusClaimed)
+        setUnread(d.user?.notifications?.length || 0)
+      }
     }).catch(() => router.push('/login'))
   }, [])
 
@@ -141,6 +145,16 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const t = setInterval(() => setTickerIdx(i => (i + 1) % TRENDING.length), 3000)
     return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    const handler = async () => {
+      const res = await fetch('/api/user/notifications')
+      const data = await res.json().catch(() => ({}))
+      setUnread(data.unreadCount || 0)
+    }
+    window.addEventListener('notifications:updated', handler)
+    return () => window.removeEventListener('notifications:updated', handler)
   }, [])
 
   const activeTab = NAV.find(n =>
@@ -237,25 +251,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
         {!isMarkets && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, background: '#1A1A1A' }}>
-              <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round">
-                <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
-                <rect x="7" y="7" width="4" height="4" rx="0.5"/><rect x="13" y="7" width="4" height="4" rx="0.5"/>
-                <rect x="7" y="13" width="4" height="4" rx="0.5"/><path d="M13 13h4v4"/>
-              </svg>
-            </div>
-            <Link href="/home" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
-              <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round">
-                <rect x="3" y="8" width="18" height="13" rx="2"/>
-                <path d="M12 8V21M3 13h18M7.5 8A2.5 2.5 0 0112 5.5M16.5 8A2.5 2.5 0 0012 5.5"/>
-              </svg>
-              {bonusUnclaimed && (
-                <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#F6465D', border: '1.5px solid #000' }} />
-              )}
-            </Link>
-            <Link href="/settings" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
+            <Link href="/notifications" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
               <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+                <path d="M18 8c0-3.31-2.69-6-6-6S6 4.69 6 8c0 5-3 6-3 6h18s-3-1-3-6"/>
+                <path d="M13.73 21a2 2 0 01-3.46 0"/>
               </svg>
               {unread > 0 && (
                 <div style={{

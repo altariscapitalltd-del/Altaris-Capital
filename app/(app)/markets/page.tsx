@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import CoinIcon from '@/components/ui/CoinIcon'
 
 function Sparkline({ data, color, width=60, height=28 }: { data:number[], color:string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -144,7 +145,7 @@ export default function MarketsPage() {
                   {coin.image ? (
                     <img src={coin.image} alt="" style={{ width: 38, height: 38, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
-                    <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, color: '#F2BA0E', flexShrink: 0 }}>{coin.symbol.slice(0, 3)}</div>
+                    <CoinIcon symbol={coin.symbol} size={38} />
                   )}
                   <div>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>{coin.symbol}</div>

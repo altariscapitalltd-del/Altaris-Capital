@@ -1,11 +1,12 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 
+import CoinIcon from '@/components/ui/CoinIcon'
+
 const COINS = [
-  { sym:'BTC', name:'Bitcoin',  icon:'₿',  color:'#F7931A', minDeposit:0.001  },
-  { sym:'ETH', name:'Ethereum', icon:'Ξ',  color:'#627EEA', minDeposit:0.01   },
-  { sym:'USDT',name:'Tether',   icon:'₮',  color:'#26A17B', minDeposit:10     },
-  { sym:'USD', name:'USD',      icon:'$',  color:'#3B82F6', minDeposit:10     },
+  { sym:'BTC', name:'Bitcoin',  color:'#F7931A', minDeposit:0.001  },
+  { sym:'ETH', name:'Ethereum', color:'#627EEA', minDeposit:0.01   },
+  { sym:'USDT',name:'Tether',   color:'#26A17B', minDeposit:10     },
 ]
 
 export default function WalletPage() {
@@ -94,8 +95,8 @@ export default function WalletPage() {
           {COINS.map(c => (
             <div key={c.sym} style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:'12px 16px', flexShrink:0, minWidth:120 }}>
               <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:8 }}>
-                <div style={{ width:28, height:28, borderRadius:8, background:c.color+'22', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:13, color:c.color }}>
-                  {c.icon}
+                <div style={{ width:28, height:28, borderRadius:8, background:c.color+'22', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <CoinIcon symbol={c.sym} bg={c.color} size={20} />
                 </div>
                 <span style={{ fontWeight:700, fontSize:13 }}>{c.sym}</span>
               </div>
@@ -121,8 +122,9 @@ export default function WalletPage() {
         <div style={{ display:'flex', gap:8 }}>
           {COINS.map(c=>(
             <button key={c.sym} onClick={()=>{setCoin(c.sym);setMsg(null)}}
-              style={{ flex:1, padding:'10px 4px', borderRadius:11, border:`2px solid ${coin===c.sym?c.color:'var(--border)'}`, background:coin===c.sym?c.color+'15':'var(--bg-card)', cursor:'pointer', fontFamily:'inherit', transition:'all .15s' }}>
-              <div style={{ fontSize:14, fontWeight:800, color:coin===c.sym?c.color:'var(--text-secondary)' }}>{c.sym}</div>
+              style={{ flex:1, padding:'10px 8px', borderRadius:11, border:`2px solid ${coin===c.sym?c.color:'var(--border)'}`, background:coin===c.sym?c.color+'15':'var(--bg-card)', cursor:'pointer', fontFamily:'inherit', transition:'all .15s', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+              <CoinIcon symbol={c.sym} bg={c.color} size={18} />
+              <span style={{ fontSize:14, fontWeight:800, color:coin===c.sym?c.color:'var(--text-secondary)' }}>{c.sym}</span>
             </button>
           ))}
         </div>

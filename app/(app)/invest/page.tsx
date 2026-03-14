@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import CoinIcon from '@/components/ui/CoinIcon'
 
 function Sparkline({ data, color, width=80, height=32 }: { data:number[], color:string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -34,53 +35,53 @@ function RiskBar({ level }: { level: number }) {
 // 30 investment plans across all asset classes
 const PLANS = [
   // ── Crypto ──
-  { id:'btc-yield',    name:'BTC Yield Vault',        class:'Crypto',       icon:'₿',   iconBg:'#F7931A', daily:2.50, roi:'912%',  dur:14,  min:1000,  risk:4, investors:1892, spots:null,  badge:'🔥 Hot',    spark:[30,34,38,36,42,45,48,46,52,55,58,56,62,65,68,66,72,75,78,80] },
-  { id:'eth-stake',    name:'ETH Staking Pool',        class:'Crypto',       icon:'Ξ',   iconBg:'#627EEA', daily:1.20, roi:'438%',  dur:90,  min:500,   risk:3, investors:3241, spots:null,  badge:'Popular',   spark:[20,22,21,24,23,26,25,28,27,30,29,32,31,34,33,36,35,38,37,40] },
-  { id:'defi-accel',   name:'DeFi Accelerator',        class:'DeFi',         icon:'⚡',  iconBg:'#7C3AED', daily:3.50, roi:'1277%', dur:7,   min:2000,  risk:5, investors:891,  spots:5,     badge:'🔥 Limited', spark:[10,15,14,20,18,25,22,30,28,35,32,40,38,45,42,50,48,55,52,60] },
-  { id:'altcoin',      name:'Altcoin Growth Fund',     class:'Crypto',       icon:'🪙',  iconBg:'#06B6D4', daily:1.80, roi:'657%',  dur:30,  min:300,   risk:4, investors:2156, spots:null,  badge:null,        spark:[25,27,26,29,28,31,30,33,32,35,34,37,36,39,38,41,40,43,42,45] },
-  { id:'btc-micro',    name:'Micro BTC Accumulator',   class:'Crypto',       icon:'₿',  iconBg:'#F7931A', daily:0.80, roi:'292%',  dur:60,  min:100,   risk:2, investors:8910, spots:null,  badge:'Beginner',  spark:[30,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41,40,42,43] },
-  { id:'web3-venture', name:'Web3 Venture Capital',    class:'Crypto',       icon:'🌐',  iconBg:'#10B981', daily:2.20, roi:'803%',  dur:20,  min:3000,  risk:4, investors:412,  spots:10,    badge:'VIP',       spark:[20,23,22,26,25,29,28,32,31,35,34,38,37,41,40,44,43,47,46,50] },
+  { id:'btc-yield',    name:'BTC Yield Vault',        class:'Crypto',       icon:'BTC',   iconBg:'#F7931A', daily:2.50, roi:'912%',  dur:14,  min:1000,  risk:4, investors:1892, spots:null,  badge:'🔥 Hot',    spark:[30,34,38,36,42,45,48,46,52,55,58,56,62,65,68,66,72,75,78,80] },
+  { id:'eth-stake',    name:'ETH Staking Pool',        class:'Crypto',       icon:'ETH',  iconBg:'#627EEA', daily:1.20, roi:'438%',  dur:90,  min:500,   risk:3, investors:3241, spots:null,  badge:'Popular',   spark:[20,22,21,24,23,26,25,28,27,30,29,32,31,34,33,36,35,38,37,40] },
+  { id:'defi-accel',   name:'DeFi Accelerator',        class:'DeFi',         icon:'DEF',  iconBg:'#7C3AED', daily:3.50, roi:'1277%', dur:7,   min:2000,  risk:5, investors:891,  spots:5,     badge:'🔥 Limited', spark:[10,15,14,20,18,25,22,30,28,35,32,40,38,45,42,50,48,55,52,60] },
+  { id:'altcoin',      name:'Altcoin Growth Fund',     class:'Crypto',       icon:'ALT',  iconBg:'#06B6D4', daily:1.80, roi:'657%',  dur:30,  min:300,   risk:4, investors:2156, spots:null,  badge:null,        spark:[25,27,26,29,28,31,30,33,32,35,34,37,36,39,38,41,40,43,42,45] },
+  { id:'btc-micro',    name:'Micro BTC Accumulator',   class:'Crypto',       icon:'BTC',  iconBg:'#F7931A', daily:0.80, roi:'292%',  dur:60,  min:100,   risk:2, investors:8910, spots:null,  badge:'Beginner',  spark:[30,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41,40,42,43] },
+  { id:'web3-venture', name:'Web3 Venture Capital',    class:'Crypto',       icon:'WEB3', iconBg:'#10B981', daily:2.20, roi:'803%',  dur:20,  min:3000,  risk:4, investors:412,  spots:10,    badge:'VIP',       spark:[20,23,22,26,25,29,28,32,31,35,34,38,37,41,40,44,43,47,46,50] },
 
   // ── Stocks ──
-  { id:'us-tech',      name:'US Tech Growth',          class:'Stocks',       icon:'📊',  iconBg:'#3B82F6', daily:0.55, roi:'201%',  dur:90,  min:500,   risk:2, investors:5621, spots:null,  badge:'Stable',    spark:[40,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48,47,49,48,50] },
-  { id:'dividend',     name:'Dividend Income Fund',    class:'Stocks',       icon:'💰',  iconBg:'#059669', daily:0.30, roi:'109%',  dur:180, min:1000,  risk:1, investors:7234, spots:null,  badge:'Low Risk',   spark:[30,31,30,32,31,33,32,34,33,35,34,36,35,37,36,38,37,39,38,40] },
-  { id:'sp500',        name:'S&P 500 Index',            class:'Stocks',       icon:'🏛️', iconBg:'#6366F1', daily:0.40, roi:'146%',  dur:120, min:200,   risk:2, investors:9823, spots:null,  badge:'Most Stable',spark:[35,36,35,37,36,38,37,39,38,40,39,41,40,42,41,43,42,44,43,45] },
-  { id:'blue-chip',    name:'Blue Chip Portfolio',      class:'Stocks',       icon:'💎',  iconBg:'#8B5CF6', daily:0.60, roi:'219%',  dur:90,  min:2000,  risk:2, investors:3456, spots:null,  badge:null,        spark:[38,39,38,40,39,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48] },
-  { id:'ai-stocks',    name:'AI & Robotics ETF',        class:'Stocks',       icon:'🤖',  iconBg:'#0EA5E9', daily:0.75, roi:'274%',  dur:60,  min:500,   risk:3, investors:2187, spots:null,  badge:'Trending',  spark:[20,23,22,26,25,29,28,32,31,35,34,38,37,41,40,44,43,47,46,50] },
+  { id:'us-tech',      name:'US Tech Growth',          class:'Stocks',       icon:'STK',  iconBg:'#3B82F6', daily:0.55, roi:'201%',  dur:90,  min:500,   risk:2, investors:5621, spots:null,  badge:'Stable',    spark:[40,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48,47,49,48,50] },
+  { id:'dividend',     name:'Dividend Income Fund',    class:'Stocks',       icon:'DIV',  iconBg:'#059669', daily:0.30, roi:'109%',  dur:180, min:1000,  risk:1, investors:7234, spots:null,  badge:'Low Risk',   spark:[30,31,30,32,31,33,32,34,33,35,34,36,35,37,36,38,37,39,38,40] },
+  { id:'sp500',        name:'S&P 500 Index',            class:'Stocks',       icon:'SPX',  iconBg:'#6366F1', daily:0.40, roi:'146%',  dur:120, min:200,   risk:2, investors:9823, spots:null,  badge:'Most Stable',spark:[35,36,35,37,36,38,37,39,38,40,39,41,40,42,41,43,42,44,43,45] },
+  { id:'blue-chip',    name:'Blue Chip Portfolio',      class:'Stocks',       icon:'CHP',  iconBg:'#8B5CF6', daily:0.60, roi:'219%',  dur:90,  min:2000,  risk:2, investors:3456, spots:null,  badge:null,        spark:[38,39,38,40,39,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48] },
+  { id:'ai-stocks',    name:'AI & Robotics ETF',        class:'Stocks',       icon:'AI',   iconBg:'#0EA5E9', daily:0.75, roi:'274%',  dur:60,  min:500,   risk:3, investors:2187, spots:null,  badge:'Trending',  spark:[20,23,22,26,25,29,28,32,31,35,34,38,37,41,40,44,43,47,46,50] },
 
   // ── Real Estate ──
-  { id:'reit-us',      name:'US REIT Income',           class:'Real Estate',  icon:'🏢',  iconBg:'#D97706', daily:0.45, roi:'164%',  dur:120, min:1000,  risk:2, investors:4231, spots:null,  badge:'Stable',    spark:[40,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48,47,49,48,50] },
-  { id:'reit-asia',    name:'Asia Property Fund',       class:'Real Estate',  icon:'🏙️', iconBg:'#B45309', daily:0.60, roi:'219%',  dur:90,  min:2000,  risk:3, investors:1820, spots:null,  badge:null,        spark:[30,32,31,34,33,36,35,38,37,40,39,42,41,44,43,46,45,48,47,50] },
-  { id:'dev-fund',     name:'Property Dev Fund',        class:'Real Estate',  icon:'🏗️', iconBg:'#92400E', daily:1.10, roi:'401%',  dur:45,  min:5000,  risk:3, investors:623,  spots:15,    badge:'High Yield', spark:[20,22,24,23,26,28,27,30,32,31,34,36,35,38,40,42,41,44,46,48] },
-  { id:'reit-global',  name:'Global Property Index',   class:'Real Estate',  icon:'🌍',  iconBg:'#7C3AED', daily:0.38, roi:'138%',  dur:180, min:500,   risk:1, investors:6341, spots:null,  badge:'Long Term',  spark:[38,39,38,40,39,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48] },
+  { id:'reit-us',      name:'US REIT Income',           class:'Real Estate',  icon:'REIT', iconBg:'#D97706', daily:0.45, roi:'164%',  dur:120, min:1000,  risk:2, investors:4231, spots:null,  badge:'Stable',    spark:[40,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48,47,49,48,50] },
+  { id:'reit-asia',    name:'Asia Property Fund',       class:'Real Estate',  icon:'REIT', iconBg:'#B45309', daily:0.60, roi:'219%',  dur:90,  min:2000,  risk:3, investors:1820, spots:null,  badge:null,        spark:[30,32,31,34,33,36,35,38,37,40,39,42,41,44,43,46,45,48,47,50] },
+  { id:'dev-fund',     name:'Property Dev Fund',        class:'Real Estate',  icon:'DEV',  iconBg:'#92400E', daily:1.10, roi:'401%',  dur:45,  min:5000,  risk:3, investors:623,  spots:15,    badge:'High Yield', spark:[20,22,24,23,26,28,27,30,32,31,34,36,35,38,40,42,41,44,46,48] },
+  { id:'reit-global',  name:'Global Property Index',   class:'Real Estate',  icon:'GPI',  iconBg:'#7C3AED', daily:0.38, roi:'138%',  dur:180, min:500,   risk:1, investors:6341, spots:null,  badge:'Long Term',  spark:[38,39,38,40,39,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48] },
 
   // ── Bonds ──
-  { id:'us-treasury',  name:'US Treasury Bonds',       class:'Bonds',        icon:'🏦',  iconBg:'#1D4ED8', daily:0.14, roi:'51%',   dur:365, min:100,   risk:1, investors:12847,spots:null,  badge:'Safest',    spark:[30,31,30,31,32,31,32,33,32,33,34,33,34,35,34,35,36,35,36,37] },
-  { id:'corp-bond',    name:'Corporate Bond Fund',     class:'Bonds',        icon:'📋',  iconBg:'#2563EB', daily:0.20, roi:'73%',   dur:180, min:200,   risk:1, investors:8234, spots:null,  badge:'Safe',      spark:[32,33,32,33,34,33,34,35,34,35,36,35,36,37,36,37,38,37,38,39] },
-  { id:'hi-yield-bond',name:'High Yield Bond',         class:'Bonds',        icon:'💵',  iconBg:'#1E40AF', daily:0.35, roi:'128%',  dur:120, min:500,   risk:2, investors:3421, spots:null,  badge:null,        spark:[30,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41,40,42,43] },
-  { id:'em-bond',      name:'Emerging Markets Bond',   class:'Bonds',        icon:'🌏',  iconBg:'#1E3A8A', daily:0.28, roi:'102%',  dur:150, min:300,   risk:2, investors:2156, spots:null,  badge:null,        spark:[28,29,30,29,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41] },
+  { id:'us-treasury',  name:'US Treasury Bonds',       class:'Bonds',        icon:'BND',  iconBg:'#1D4ED8', daily:0.14, roi:'51%',   dur:365, min:100,   risk:1, investors:12847,spots:null,  badge:'Safest',    spark:[30,31,30,31,32,31,32,33,32,33,34,33,34,35,34,35,36,35,36,37] },
+  { id:'corp-bond',    name:'Corporate Bond Fund',     class:'Bonds',        icon:'BND',  iconBg:'#2563EB', daily:0.20, roi:'73%',   dur:180, min:200,   risk:1, investors:8234, spots:null,  badge:'Safe',      spark:[32,33,32,33,34,33,34,35,34,35,36,35,36,37,36,37,38,37,38,39] },
+  { id:'hi-yield-bond',name:'High Yield Bond',         class:'Bonds',        icon:'HYB',  iconBg:'#1E40AF', daily:0.35, roi:'128%',  dur:120, min:500,   risk:2, investors:3421, spots:null,  badge:null,        spark:[30,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41,40,42,43] },
+  { id:'em-bond',      name:'Emerging Markets Bond',   class:'Bonds',        icon:'EMB',  iconBg:'#1E3A8A', daily:0.28, roi:'102%',  dur:150, min:300,   risk:2, investors:2156, spots:null,  badge:null,        spark:[28,29,30,29,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41] },
 
   // ── Fixed Income ──
-  { id:'smart-save',   name:'Altaris Smart Save',      class:'Fixed Income', icon:'🛡️', iconBg:'#059669', daily:0.11, roi:'40%',   dur:365, min:500,   risk:1, investors:8241, spots:null,  badge:'⭐ Flagship', spark:[30,31,30,32,31,33,32,34,33,35,34,36,35,37,36,38,37,39,38,40] },
-  { id:'stablecoin',   name:'Stablecoin Reserve',      class:'Fixed Income', icon:'💲',  iconBg:'#047857', daily:0.60, roi:'219%',  dur:60,  min:100,   risk:1, investors:15234,spots:null,  badge:'Beginner',  spark:[38,39,38,39,40,39,40,41,40,41,42,41,42,43,42,43,44,43,44,45] },
+  { id:'smart-save',   name:'Altaris Smart Save',      class:'Fixed Income', icon:'SAV',  iconBg:'#059669', daily:0.11, roi:'40%',   dur:365, min:500,   risk:1, investors:8241, spots:null,  badge:'⭐ Flagship', spark:[30,31,30,32,31,33,32,34,33,35,34,36,35,37,36,38,37,39,38,40] },
+  { id:'stablecoin',   name:'Stablecoin Reserve',      class:'Fixed Income', icon:'USDT', iconBg:'#047857', daily:0.60, roi:'219%',  dur:60,  min:100,   risk:1, investors:15234,spots:null,  badge:'Beginner',  spark:[38,39,38,39,40,39,40,41,40,41,42,41,42,43,42,43,44,43,44,45] },
 
   // ── Commodities ──
-  { id:'gold',         name:'Gold Reserve Fund',       class:'Commodities',  icon:'🥇',  iconBg:'#D97706', daily:0.32, roi:'117%',  dur:120, min:300,   risk:2, investors:5620, spots:null,  badge:'Safe Haven', spark:[35,36,35,37,36,38,37,39,38,40,39,41,40,42,41,43,42,44,43,45] },
-  { id:'silver',       name:'Silver & Metals',         class:'Commodities',  icon:'🥈',  iconBg:'#9CA3AF', daily:0.28, roi:'102%',  dur:150, min:200,   risk:2, investors:2341, spots:null,  badge:null,        spark:[30,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41,40,42,43] },
-  { id:'energy',       name:'Oil & Energy Fund',       class:'Commodities',  icon:'⛽',  iconBg:'#92400E', daily:0.50, roi:'182%',  dur:90,  min:500,   risk:3, investors:1823, spots:null,  badge:null,        spark:[28,30,29,32,31,34,33,36,35,38,37,40,39,42,41,44,43,46,45,48] },
+  { id:'gold',         name:'Gold Reserve Fund',       class:'Commodities',  icon:'GLD',  iconBg:'#D97706', daily:0.32, roi:'117%',  dur:120, min:300,   risk:2, investors:5620, spots:null,  badge:'Safe Haven', spark:[35,36,35,37,36,38,37,39,38,40,39,41,40,42,41,43,42,44,43,45] },
+  { id:'silver',       name:'Silver & Metals',         class:'Commodities',  icon:'SLV',  iconBg:'#9CA3AF', daily:0.28, roi:'102%',  dur:150, min:200,   risk:2, investors:2341, spots:null,  badge:null,        spark:[30,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41,40,42,43] },
+  { id:'energy',       name:'Oil & Energy Fund',       class:'Commodities',  icon:'OIL',  iconBg:'#92400E', daily:0.50, roi:'182%',  dur:90,  min:500,   risk:3, investors:1823, spots:null,  badge:null,        spark:[28,30,29,32,31,34,33,36,35,38,37,40,39,42,41,44,43,46,45,48] },
 
   // ── Forex ──
-  { id:'usd-eur',      name:'USD/EUR Carry Trade',     class:'Forex',        icon:'💱',  iconBg:'#2563EB', daily:0.45, roi:'164%',  dur:90,  min:500,   risk:2, investors:3421, spots:null,  badge:null,        spark:[40,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48,47,49,48,50] },
-  { id:'em-fx',        name:'Emerging Markets FX',     class:'Forex',        icon:'🌍',  iconBg:'#7C3AED', daily:0.70, roi:'255%',  dur:45,  min:1000,  risk:3, investors:1234, spots:null,  badge:null,        spark:[25,27,26,29,28,31,30,33,32,35,34,37,36,39,38,41,40,43,42,45] },
-  { id:'asia-fx',      name:'Asian Currency Fund',     class:'Forex',        icon:'🏯',  iconBg:'#DC2626', daily:0.55, roi:'201%',  dur:60,  min:500,   risk:3, investors:981,  spots:null,  badge:null,        spark:[30,32,31,34,33,36,35,38,37,40,39,42,41,44,43,46,45,48,47,50] },
+  { id:'usd-eur',      name:'USD/EUR Carry Trade',     class:'Forex',        icon:'FX',   iconBg:'#2563EB', daily:0.45, roi:'164%',  dur:90,  min:500,   risk:2, investors:3421, spots:null,  badge:null,        spark:[40,41,40,42,41,43,42,44,43,45,44,46,45,47,46,48,47,49,48,50] },
+  { id:'em-fx',        name:'Emerging Markets FX',     class:'Forex',        icon:'FX',   iconBg:'#7C3AED', daily:0.70, roi:'255%',  dur:45,  min:1000,  risk:3, investors:1234, spots:null,  badge:null,        spark:[25,27,26,29,28,31,30,33,32,35,34,37,36,39,38,41,40,43,42,45] },
+  { id:'asia-fx',      name:'Asian Currency Fund',     class:'Forex',        icon:'FX',   iconBg:'#DC2626', daily:0.55, roi:'201%',  dur:60,  min:500,   risk:3, investors:981,  spots:null,  badge:null,        spark:[30,32,31,34,33,36,35,38,37,40,39,42,41,44,43,46,45,48,47,50] },
 
   // ── ETF ──
-  { id:'clean-energy', name:'Clean Energy ETF',        class:'ETF',          icon:'🌱',  iconBg:'#16A34A', daily:0.48, roi:'175%',  dur:90,  min:300,   risk:2, investors:4231, spots:null,  badge:'ESG',       spark:[20,22,24,23,26,28,27,30,32,31,34,36,35,38,40,42,41,44,46,48] },
-  { id:'health-etf',   name:'Healthcare & Biotech',    class:'ETF',          icon:'🏥',  iconBg:'#0891B2', daily:0.42, roi:'153%',  dur:120, min:300,   risk:2, investors:2341, spots:null,  badge:null,        spark:[35,36,35,37,36,38,37,39,38,40,39,41,40,42,41,43,42,44,43,45] },
+  { id:'clean-energy', name:'Clean Energy ETF',        class:'ETF',          icon:'ETF',  iconBg:'#16A34A', daily:0.48, roi:'175%',  dur:90,  min:300,   risk:2, investors:4231, spots:null,  badge:'ESG',       spark:[20,22,24,23,26,28,27,30,32,31,34,36,35,38,40,42,41,44,46,48] },
+  { id:'health-etf',   name:'Healthcare & Biotech',    class:'ETF',          icon:'ETF',  iconBg:'#0891B2', daily:0.42, roi:'153%',  dur:120, min:300,   risk:2, investors:2341, spots:null,  badge:null,        spark:[35,36,35,37,36,38,37,39,38,40,39,41,40,42,41,43,42,44,43,45] },
 
   // ── Hedge ──
-  { id:'global-macro', name:'Global Macro Strategy',  class:'Hedge',        icon:'🌐',  iconBg:'#1D4ED8', daily:1.50, roi:'547%',  dur:30,  min:10000, risk:4, investors:128,  spots:8,     badge:'Platinum',  spark:[20,24,22,28,26,32,30,36,34,40,38,44,42,48,46,52,50,56,54,60] },
-  { id:'longshort',    name:'Long/Short Equity',       class:'Hedge',        icon:'↕️', iconBg:'#7C3AED', daily:1.20, roi:'438%',  dur:30,  min:5000,  risk:4, investors:341,  spots:20,    badge:'Advanced',  spark:[22,26,24,30,28,34,32,38,36,42,40,46,44,50,48,54,52,58,56,62] },
+  { id:'global-macro', name:'Global Macro Strategy',  class:'Hedge',        icon:'HED',  iconBg:'#1D4ED8', daily:1.50, roi:'547%',  dur:30,  min:10000, risk:4, investors:128,  spots:8,     badge:'Platinum',  spark:[20,24,22,28,26,32,30,36,34,40,38,44,42,48,46,52,50,56,54,60] },
+  { id:'longshort',    name:'Long/Short Equity',       class:'Hedge',        icon:'HED',  iconBg:'#7C3AED', daily:1.20, roi:'438%',  dur:30,  min:5000,  risk:4, investors:341,  spots:20,    badge:'Advanced',  spark:[22,26,24,30,28,34,32,38,36,42,40,46,44,50,48,54,52,58,56,62] },
 ]
 
 const CATEGORIES = ['All','Crypto','DeFi','Stocks','Real Estate','Bonds','Fixed Income','Commodities','Forex','ETF','Hedge']
@@ -167,13 +168,6 @@ function InvestPageContent() {
       </div>
 
       {tab==='marketplace' && <>
-        {/* Search */}
-        <div style={{ padding:'0 16px', marginBottom:12 }}>
-          <div style={{ position:'relative' }}>
-            <svg style={{ position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/></svg>
-            <input className="input" style={{ paddingLeft:36, borderRadius:99, fontSize:13 }} placeholder="Search plans..." value={q} onChange={e=>setQ(e.target.value)}/>
-          </div>
-        </div>
 
         {/* Category chips */}
         <div style={{ display:'flex', gap:7, overflowX:'auto', padding:'0 16px', marginBottom:12 }} className="no-scrollbar">
@@ -212,11 +206,14 @@ function InvestPageContent() {
             const catColor = CATEGORY_COLORS[plan.class] || '#F2BA0E'
             return (
               <div key={plan.id} style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, padding:16, cursor:'pointer', transition:'all .15s' }}
-                onClick={()=>{setSelected(plan);setAmount(String(plan.min));setMsg(null)}} className="pressable">
+                role="button" tabIndex={0}
+                onClick={()=>{setSelected(plan);setAmount(String(plan.min));setMsg(null)}}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(plan); setAmount(String(plan.min)); setMsg(null) } }}
+                className="pressable">
                 <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
                   {/* Icon */}
-                  <div style={{ width:46, height:46, borderRadius:13, background:plan.iconBg+'22', border:`1px solid ${plan.iconBg}33`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0 }}>
-                    {plan.icon}
+                  <div style={{ width:46, height:46, borderRadius:13, background:plan.iconBg+'22', border:`1px solid ${plan.iconBg}33`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <CoinIcon symbol={plan.icon} bg={plan.iconBg} size={36} />
                   </div>
 
                   <div style={{ flex:1, minWidth:0 }}>
