@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const kyc = await prisma.kycSubmission.findUnique({ where: { userId: user.id } })
-  return NextResponse.json({ kyc })
+  const status = kyc?.status ?? user.kycStatus ?? 'NOT_SUBMITTED'
+  return NextResponse.json({ kyc, status })
 }
 
 export async function POST(req: NextRequest) {
@@ -25,10 +26,12 @@ export async function POST(req: NextRequest) {
   }
 
   const formData = await req.formData()
-  const fullName    = formData.get('fullName') as string
-  const dateOfBirth = formData.get('dateOfBirth') as string
-  const address     = formData.get('address') as string
-  const document    = formData.get('document') as File
+  const firstName   = (formData.get('firstName') as string) || ''
+  const lastName    = (formData.get('lastName') as string) || ''
+  const fullName    = [firstName, lastName].filter(Boolean).join(' ') || (formData.get('fullName') as string) || ''
+  const dateOfBirth = (formData.get('dob') as string) || (formData.get('dateOfBirth') as string) || ''
+  const address     = (formData.get('country') as string) || (formData.get('address') as string) || ''
+  const document    = (formData.get('documentFile') as File) || (formData.get('document') as File)
 
   if (!document || document.size === 0) {
     return NextResponse.json({ error: 'Document required' }, { status: 400 })

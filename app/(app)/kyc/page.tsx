@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
+import { COUNTRIES } from '@/lib/countries'
 
 const STEPS = [
   { id:'personal', icon:'👤', label:'Personal Info' },
@@ -99,12 +100,13 @@ export default function KYCPage() {
             <div><label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Last Name</label><input className="input" value={form.lastName} onChange={e=>setForm(f=>({...f,lastName:e.target.value}))} placeholder="Doe"/></div>
           </div>
           <div><label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Date of Birth</label><input className="input" type="date" value={form.dob} onChange={e=>setForm(f=>({...f,dob:e.target.value}))}/></div>
-          <div><label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Country</label>
+          <div><label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Country of residence</label>
             <select className="input" value={form.country} onChange={e=>setForm(f=>({...f,country:e.target.value}))}>
               <option value="">Select country</option>
-              {['United States','United Kingdom','Canada','Australia','Germany','France','Japan','Singapore','UAE','Nigeria','Ghana','Kenya','South Africa','India','Brazil'].map(c=><option key={c} value={c}>{c}</option>)}
+              {COUNTRIES.map(c=><option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+          <p style={{color:'var(--text-muted)',fontSize:11,lineHeight:1.5}}>Your data is encrypted and used only for identity verification and regulatory compliance.</p>
           <button onClick={()=>setStep(1)} disabled={!form.firstName||!form.lastName||!form.dob||!form.country} className="btn-primary" style={{marginTop:6}}>Continue →</button>
         </div>
       )}

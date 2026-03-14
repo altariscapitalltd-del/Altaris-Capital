@@ -131,16 +131,13 @@ function BalanceChart({ usdBalance }: { usdBalance: number }) {
         onClick={() => setVisible(true)}
         style={{
           margin: '18px 16px 0',
-          padding: 12,
-          borderRadius: 16,
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
+          padding: '10px 12px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
           color: 'var(--text-muted)',
-          fontSize: 13,
+          fontSize: 12,
         }}
       >
         Tap to show portfolio chart
@@ -150,19 +147,24 @@ function BalanceChart({ usdBalance }: { usdBalance: number }) {
 
   return (
     <div style={{ margin: '18px 16px 0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>Portfolio chart (USD)</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Tap chart to hide</div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          <div style={{ fontSize: 12, color: change >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>Portfolio (USD)</div>
+        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <span style={{ fontSize: 15, fontWeight: 800 }}>${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: change >= 0 ? 'var(--success)' : 'var(--danger)' }}>
             {change >= 0 ? '+' : ''}{change.toFixed(2)}%
-          </div>
+          </span>
         </div>
       </div>
-      <div onClick={() => setVisible(false)} style={{ cursor: 'pointer' }}>
+      <div
+        onClick={() => setVisible(false)}
+        style={{
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden',
+          animation: 'balanceChartShimmer 3s ease-in-out infinite',
+        }}
+      >
         <Sparkline data={history.values} color={change >= 0 ? '#0ECB81' : '#F6465D'} width={320} height={140} />
       </div>
     </div>
@@ -366,13 +368,16 @@ export default function HomePage() {
     },
   ] as const
 
+  const showWelcomeCard = user?.kycStatus !== 'APPROVED' || canClaimBonus
+  const visibleBanners = showWelcomeCard ? BANNERS : []
+
   useEffect(() => {
-    if (!canClaimBonus) return
+    if (!showWelcomeCard || visibleBanners.length === 0) return
     const interval = setInterval(() => {
-      setBannerIndex((i) => (i + 1) % BANNERS.length)
+      setBannerIndex((i) => (i + 1) % visibleBanners.length)
     }, 6000)
     return () => clearInterval(interval)
-  }, [canClaimBonus])
+  }, [showWelcomeCard, visibleBanners.length])
 
   const MARKET_COINS = [
     { sym:'BTC', name:'Bitcoin',  price: prices.BTC?.price||65420, change: prices.BTC?.change||2.34, spark:SPARK_BTC },
@@ -384,9 +389,7 @@ export default function HomePage() {
   const FEATURED_PLAN = { name:'DeFi Accelerator', roi:'3.5%', dur:'7 days', spots:3, endsAt: new Date(Date.now()+2*86400000+14*3600000+33*60000) }
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'70vh' }}>
-      <div style={{ animation: 'spin .8s linear infinite', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <AltarisLogoMark size={56} />
-      </div>
+      <AltarisLogoMark size={40} />
     </div>
   )
 
@@ -434,15 +437,15 @@ export default function HomePage() {
 
       <BalanceChart usdBalance={usdBal} />
 
-      {/* ── Promo banner (rotating offers) ── */}
+      {/* ── Promo banner (rotating offers) — only when unverified or bonus not claimed ── */}
+      {visibleBanners.length > 0 && (
       <div style={{ margin:'18px 16px 0' }}>
         <div style={{ position:'relative', borderRadius:18, overflow:'hidden', border:'1px solid rgba(242,186,14,0.25)', background:'radial-gradient(circle at 0% 0%,rgba(242,186,14,0.18),transparent 55%), radial-gradient(circle at 100% 100%,rgba(59,130,246,0.12),transparent 55%)' }}>
-          {/* Glow orbits */}
           <div style={{ position:'absolute', top:-60, right:-40, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.22),transparent 70%)', opacity:0.85, pointerEvents:'none' }} />
           <div style={{ position:'absolute', bottom:-50, left:-40, width:140, height:140, borderRadius:'50%', background:'radial-gradient(circle,rgba(59,130,246,0.18),transparent 70%)', pointerEvents:'none' }} />
           <AnimatePresence mode="wait">
             <motion.div
-              key={BANNERS[bannerIndex].id}
+              key={visibleBanners[bannerIndex % visibleBanners.length].id}
               initial={{ opacity: 0, x: 32 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -32 }}
@@ -489,7 +492,7 @@ export default function HomePage() {
                     border: '1px solid rgba(242,186,14,0.35)',
                     color: '#F2BA0E',
                   }}>
-                    {BANNERS[bannerIndex].pill}
+                    {visibleBanners[bannerIndex % visibleBanners.length].pill}
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                     Swipe through the latest offers
@@ -503,13 +506,13 @@ export default function HomePage() {
                   marginBottom: 4,
                   color: 'var(--text-primary)',
                 }}>
-                  {BANNERS[bannerIndex].title}
+                  {visibleBanners[bannerIndex % visibleBanners.length].title}
                 </h2>
 
                 <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 10 }}>
                   {user?.kycStatus === 'APPROVED'
-                    ? BANNERS[bannerIndex].subtitleApproved
-                    : BANNERS[bannerIndex].subtitleDefault}
+                    ? visibleBanners[bannerIndex % visibleBanners.length].subtitleApproved
+                    : visibleBanners[bannerIndex % visibleBanners.length].subtitleDefault}
                 </p>
 
                 {/* Steps row stays similar to original bonus card */}
@@ -546,6 +549,7 @@ export default function HomePage() {
           </AnimatePresence>
         </div>
       </div>
+      )}
 
       {/* ── Bybit-style: Events, Crypto list/grid, Latest Events/News ── */}
       <BybitSection prices={prices} />

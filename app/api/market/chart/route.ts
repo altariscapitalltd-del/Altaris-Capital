@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const CACHE: Record<string, { ts: number; data: { times: number[]; values: number[] } }> = {}
+const CACHE: Record<string, { ts: number; data: { times: number[]; values: number[]; open?: number[]; high?: number[]; low?: number[] } }> = {}
 const CACHE_TTL = 30_000
 
 export async function GET(req: NextRequest) {
@@ -26,11 +26,14 @@ export async function GET(req: NextRequest) {
     if (!res.ok) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     const data = await res.json()
     if (!Array.isArray(data) || data.length === 0) {
-      return NextResponse.json({ times: [], values: [] })
+      return NextResponse.json({ times: [], values: [], open: [], high: [], low: [] })
     }
     const times = data.map((d: any) => d[0])
     const values = data.map((d: any) => parseFloat(d[4]))
-    const payload = { times, values }
+    const open = data.map((d: any) => parseFloat(d[1]))
+    const high = data.map((d: any) => parseFloat(d[2]))
+    const low = data.map((d: any) => parseFloat(d[3]))
+    const payload = { times, values, open, high, low }
     CACHE[cacheKey] = { ts: Date.now(), data: payload }
     return NextResponse.json(payload)
   } catch {

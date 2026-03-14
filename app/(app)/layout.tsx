@@ -115,6 +115,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installModalType, setInstallModalType] = useState<'android'|'ios'|null>(null)
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
   const [installShownThisSession, setInstallShownThisSession] = useState(false)
+  const [splashVisible, setSplashVisible] = useState(true)
 
   useEffect(() => {
     fetch('/api/user/profile').then(r => {
@@ -126,7 +127,11 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         setBonusUnclaimed(!d.user?.bonusClaimed)
         setUnread(d.user?.notifications?.length || 0)
       }
-    }).catch(() => router.push('/login'))
+      setSplashVisible(false)
+    }).catch(() => {
+      router.push('/login')
+      setSplashVisible(false)
+    })
   }, [])
 
   useEffect(() => {
@@ -276,6 +281,43 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     router.replace(url)
   }, [router])
 
+  if (splashVisible) {
+    return (
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'var(--bg-page)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+      }}>
+        <motion.div
+          initial={{ scale: 0.85, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}
+        >
+          <motion.div
+            animate={{ opacity: [1, 0.7, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <AltarisLogoMark size={72} />
+          </motion.div>
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--text-muted)' }}
+          >
+            ALTARIS CAPITAL
+          </motion.span>
+        </motion.div>
+      </div>
+    )
+  }
+
   return (
     <div className="app-container" style={{
       background: 'var(--bg-page)',
@@ -319,8 +361,23 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
               fontSize: 12,
             }}
           >
-            <span>Install this app for a better experience.</span>
-            <button onClick={closeInstallBanner} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
+                if (isIos) {
+                  setInstallBannerVisible(false)
+                  setInstallModalType('ios')
+                  setInstallModalVisible(true)
+                }
+              }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e.target as HTMLElement).click() } }}
+              style={{ flex: 1, cursor: 'pointer' }}
+            >
+              Install this app for a better experience.
+            </span>
+            <button onClick={closeInstallBanner} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }} aria-label="Dismiss">×</button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -438,7 +495,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                 <AltarisLogoMark size={40} />
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>Install Altaris Capital</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Get faster access & a native experience.</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Quick access from your home screen, offline support, and push notifications.</div>
                 </div>
               </div>
 
