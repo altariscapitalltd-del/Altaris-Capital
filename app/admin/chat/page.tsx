@@ -12,6 +12,17 @@ export default function AdminChatPage() {
 
   useEffect(()=>{
     fetch('/api/admin/chat').then(r=>r.json()).then(d=>setConversations(d.conversations||[]))
+    // Subscribe to admin channel for real-time updates
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', { cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '' })
+    const channel = pusher.subscribe('private-admin')
+    channel.bind('chat:message', (msg:any) => {
+      // Refresh conversation list and append message if currently selected
+      fetch('/api/admin/chat').then(r=>r.json()).then(d=>setConversations(d.conversations||[]))
+      if (selected && msg.userId === selected.user?.id) {
+        setMessages(m => [...m, msg])
+      }
+    })
+    return () => { try { channel.unbind_all(); pusher.unsubscribe('private-admin'); pusher.disconnect() } catch(e){} }
   },[])
 
   useEffect(()=>{
@@ -20,37 +31,6 @@ export default function AdminChatPage() {
   },[selected])
 
   useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:'smooth'}) },[messages])
-
-  useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
-      authEndpoint: '/api/pusher/auth',
-    })
-    const channel = pusher.subscribe('private-admin')
-
-    const handler = (data: any) => {
-      if (!data?.conversationId) return
-
-      setConversations((prev) => prev.map((c) => {
-        if (c.id !== data.conversationId) return c
-        return { ...c, messages: [data.message, ...(c.messages || [])] }
-      }))
-
-      if (selected?.id === data.conversationId) {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === data.message.id)) return prev
-          return [...prev, data.message]
-        })
-      }
-    }
-
-    channel.bind('chat:message', handler)
-    return () => {
-      channel.unbind('chat:message', handler)
-      pusher.unsubscribe('private-admin')
-      pusher.disconnect()
-    }
-  }, [selected])
 
   async function reply() {
     if(!input.trim()||!selected||sending) return

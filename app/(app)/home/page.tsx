@@ -207,7 +207,7 @@ const BYBIT_COINS = [
 ]
 
 const LATEST_EVENTS = [
-  { title: 'Refer Friends — Get $30', date: '2025-03-10', icon: 'event' },
+  { title: 'Invite Friends — Earn $30', date: '2025-03-10', icon: 'event' },
   { title: 'Seasonal Yield Boost +5%', date: '2025-03-08', icon: 'event' },
   { title: 'VIP Tier 1 Benefits Update', date: '2025-03-05', icon: 'event' },
 ]
@@ -229,6 +229,19 @@ function BybitSection({ prices }: { prices: Record<string, { price?: number; cha
   return (
     <div style={{ marginTop: 18, padding: '0 16px' }}>
 
+      {/* Events card */}
+      <Link href="/home" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
+        <div style={{ background: 'linear-gradient(135deg,rgba(242,186,14,0.12),rgba(59,130,246,0.08))', border: '1px solid rgba(242,186,14,0.25)', borderRadius: 16, padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Gift size={24} strokeWidth={2} color="#F2BA0E" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>Invite friends — Earn $30</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>Share your referral link to earn rewards.</div>
+          </div>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </Link>
 
       {/* Crypto list */}
       <div style={{ marginBottom: 12 }}>
@@ -438,124 +451,178 @@ export default function HomePage() {
 
       <BalanceChart usdBalance={usdBal} />
 
-      {/* ── Promo banner (rotating offers) ── */}
-      <div style={{ margin:'18px 16px 0' }}>
-        <div style={{ position:'relative', borderRadius:18, overflow:'hidden', border:'1px solid rgba(242,186,14,0.25)', background:'radial-gradient(circle at 0% 0%,rgba(242,186,14,0.18),transparent 55%), radial-gradient(circle at 100% 100%,rgba(59,130,246,0.12),transparent 55%)' }}>
-          {/* Glow orbits */}
-          <div style={{ position:'absolute', top:-60, right:-40, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.22),transparent 70%)', opacity:0.85, pointerEvents:'none' }} />
-          <div style={{ position:'absolute', bottom:-50, left:-40, width:140, height:140, borderRadius:'50%', background:'radial-gradient(circle,rgba(59,130,246,0.18),transparent 70%)', pointerEvents:'none' }} />
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={BANNERS[bannerIndex].id}
-              initial={{ opacity: 0, x: 32 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -32 }}
-              transition={{ duration: 0.55, ease: 'easeOut' }}
-              style={{ position: 'relative', padding: 18, display: 'flex', gap: 14, alignItems: 'center' }}
-            >
-              {/* Icon / Illustration */}
-              <div style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
-                background: 'linear-gradient(135deg,rgba(0,0,0,0.2),rgba(0,0,0,0.8))',
-                border: '1px solid rgba(242,186,14,0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
-                  background: 'conic-gradient(from 210deg,#F2BA0E,#FF7A00,#F2BA0E)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 18,
-                }}>
-                  <Gift size={18} strokeWidth={2} color="#000" />
-                </div>
-              </div>
-
-              {/* Text */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    padding: '3px 9px',
-                    borderRadius: 999,
-                    background: 'rgba(0,0,0,0.65)',
-                    border: '1px solid rgba(242,186,14,0.35)',
-                    color: '#F2BA0E',
-                  }}>
-                    {BANNERS[bannerIndex].pill}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    Swipe through the latest offers
-                  </span>
-                </div>
-
-                <h2 style={{
-                  fontSize: 17,
-                  fontWeight: 800,
-                  letterSpacing: '-0.02em',
-                  marginBottom: 4,
-                  color: 'var(--text-primary)',
-                }}>
-                  {BANNERS[bannerIndex].title}
-                </h2>
-
-                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 10 }}>
-                  {user?.kycStatus === 'APPROVED'
-                    ? BANNERS[bannerIndex].subtitleApproved
-                    : BANNERS[bannerIndex].subtitleDefault}
-                </p>
-
-                {/* Steps row stays similar to original bonus card */}
-                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10, overflowX:'auto' }} className="no-scrollbar">
-                  {[{l:'Sign Up',done:true},{l:'Verify KYC',done:user?.kycStatus==='APPROVED'},{l:'Claim Bonus',done:false}].map((s,i,arr)=>(
-                    <div key={s.l} style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-                      <div style={{ width:16, height:16, borderRadius:'50%', background:s.done?'#F2BA0E':'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8, fontWeight:800, color:s.done?'#000':'var(--text-muted)', flexShrink:0 }}>
-                        {s.done ? <Check size={10} strokeWidth={3} /> : i+1}
-                      </div>
-                      <span style={{ fontSize:10, color:s.done?'var(--text-primary)':'var(--text-muted)', fontWeight:s.done?600:400, whiteSpace:'nowrap' }}>{s.l}</span>
-                      {i<arr.length-1 && <div style={{ width:14, height:1, background:'rgba(242,186,14,0.25)' }}/>} 
-                    </div>
-                  ))}
-                </div>
-
-                {/* CTA */}
-                {user?.kycStatus === 'APPROVED' ? (
-                  <button
-                    onClick={claimBonus}
-                    className="btn-primary"
-                    style={{ width: '100%', padding: '12px 0', borderRadius: 12, fontWeight: 700 }}
-                  >
-                    {bonusClaiming ? 'Claiming…' : bonusDone ? 'Claimed' : 'Claim $100 Bonus'}
-                  </button>
-                ) : (
-                  <Link href="/kyc" style={{ display: 'block', textDecoration: 'none' }}>
-                    <button className="btn-secondary" style={{ width: '100%', padding: '12px 0', borderRadius: 12, fontWeight: 700 }}>
-                      Complete KYC
-                    </button>
-                  </Link>
-                )}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-
       {/* ── Bybit-style: Events, Crypto list/grid, Latest Events/News ── */}
       <BybitSection prices={prices} />
 
+      {/* ── Bonus Banner Carousel ─ */}
+      {canClaimBonus && (
+        <div style={{ margin:'18px 16px 0' }}>
+          <div style={{ position:'relative', borderRadius:18, overflow:'hidden', border:'1px solid rgba(242,186,14,0.25)', background:'radial-gradient(circle at 0% 0%,rgba(242,186,14,0.18),transparent 55%), radial-gradient(circle at 100% 100%,rgba(59,130,246,0.12),transparent 55%)' }}>
+            {/* Glow orbits */}
+            <div style={{ position:'absolute', top:-60, right:-40, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.22),transparent 70%)', opacity:0.85, pointerEvents:'none' }} />
+            <div style={{ position:'absolute', bottom:-50, left:-40, width:140, height:140, borderRadius:'50%', background:'radial-gradient(circle,rgba(59,130,246,0.18),transparent 70%)', pointerEvents:'none' }} />
 
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={BANNERS[bannerIndex].id}
+                initial={{ opacity: 0, x: 32 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -32 }}
+                transition={{ duration: 0.55, ease: 'easeOut' }}
+                style={{ position: 'relative', padding: 18, display: 'flex', gap: 14, alignItems: 'center' }}
+              >
+                {/* Icon / Illustration */}
+                <div style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
+                  background: 'linear-gradient(135deg,rgba(0,0,0,0.2),rgba(0,0,0,0.8))',
+                  border: '1px solid rgba(242,186,14,0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: 'conic-gradient(from 210deg,#F2BA0E,#FF7A00,#F2BA0E)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 18,
+                  }}>
+                    <Gift size={18} strokeWidth={2} color="#000" />
+                  </div>
+                </div>
+
+                {/* Text */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      padding: '3px 9px',
+                      borderRadius: 999,
+                      background: 'rgba(0,0,0,0.65)',
+                      border: '1px solid rgba(242,186,14,0.35)',
+                      color: '#F2BA0E',
+                    }}>
+                      {BANNERS[bannerIndex].pill}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      Limited-time rewards · Auto rotates
+                    </span>
+                  </div>
+
+                  <h2 style={{
+                    fontSize: 17,
+                    fontWeight: 800,
+                    letterSpacing: '-0.02em',
+                    marginBottom: 4,
+                    color: 'var(--text-primary)',
+                  }}>
+                    {BANNERS[bannerIndex].title}
+                  </h2>
+
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 10 }}>
+                    {user?.kycStatus === 'APPROVED'
+                      ? BANNERS[bannerIndex].subtitleApproved
+                      : BANNERS[bannerIndex].subtitleDefault}
+                  </p>
+
+                  {/* Steps row stays similar to original bonus card */}
+                  <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10, overflowX:'auto' }} className="no-scrollbar">
+                    {[{l:'Sign Up',done:true},{l:'Verify KYC',done:user?.kycStatus==='APPROVED'},{l:'Claim Bonus',done:false}].map((s,i,arr)=>(
+                      <div key={s.l} style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+                        <div style={{ width:16, height:16, borderRadius:'50%', background:s.done?'#F2BA0E':'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8, fontWeight:800, color:s.done?'#000':'var(--text-muted)', flexShrink:0 }}>
+                          {s.done ? <Check size={10} strokeWidth={3} /> : i+1}
+                        </div>
+                        <span style={{ fontSize:10, color:s.done?'var(--text-primary)':'var(--text-muted)', fontWeight:s.done?600:400, whiteSpace:'nowrap' }}>{s.l}</span>
+                        {i<arr.length-1 && <div style={{ width:14, height:1, background:'rgba(242,186,14,0.25)' }}/>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* CTA */}
+                  {user?.kycStatus === 'APPROVED' ? (
+                    <button
+                      onClick={claimBonus}
+                      disabled={bonusClaiming}
+                      style={{
+                        width:'100%',
+                        padding:'11px 12px',
+                        borderRadius: 999,
+                        border:'none',
+                        background: bonusClaiming ? 'rgba(242,186,14,0.45)' : '#F2BA0E',
+                        color:'#000',
+                        fontWeight:800,
+                        fontSize:14,
+                        cursor: bonusClaiming ? 'not-allowed' : 'pointer',
+                        display:'flex',
+                        alignItems:'center',
+                        justifyContent:'center',
+                        gap:8,
+                      }}
+                      className="pressable"
+                    >
+                      <span>{bonusClaiming ? 'Claiming...' : 'Claim Bonus'}</span>
+                      {!bonusClaiming && <span>→</span>}
+                    </button>
+                  ) : user?.kycStatus === 'PENDING_REVIEW' ? (
+                    <div style={{ textAlign:'left', color:'var(--text-muted)', fontSize:12, display:'flex', alignItems:'center', gap:6 }}>
+                      <Clock size={14} /> KYC under review — bonus unlocks upon approval
+                    </div>
+                  ) : (
+                    <Link
+                      href="/kyc"
+                      style={{
+                        display:'flex',
+                        alignItems:'center',
+                        justifyContent:'center',
+                        padding:'11px 12px',
+                        borderRadius:999,
+                        border:'1px solid rgba(242,186,14,0.55)',
+                        background:'rgba(0,0,0,0.45)',
+                        color:'#F2BA0E',
+                        fontWeight:700,
+                        fontSize:13,
+                        textDecoration:'none',
+                      }}
+                      className="pressable"
+                    >
+                      Verify to Unlock Rewards →
+                    </Link>
+                  )}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Pagination dots */}
+            <div style={{ position:'absolute', bottom:8, right:10, display:'flex', gap:5 }}>
+              {BANNERS.map((b, idx) => (
+                <button
+                  key={b.id}
+                  onClick={() => setBannerIndex(idx)}
+                  style={{
+                    width: idx === bannerIndex ? 14 : 6,
+                    height: 6,
+                    borderRadius: 999,
+                    border: 'none',
+                    padding: 0,
+                    background: idx === bannerIndex ? '#F2BA0E' : 'rgba(0,0,0,0.45)',
+                    cursor: 'pointer',
+                  }}
+                  aria-label={`Go to banner ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Limited Offer with Countdown ── */}
       <div style={{ margin:'18px 16px 0' }}>

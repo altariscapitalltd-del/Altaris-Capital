@@ -54,9 +54,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </ThemeProvider>
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-              navigator.serviceWorker.register('/sw.js').catch(()=>{});
+            window.addEventListener('load', async () => {
+              try {
+                const reg = await navigator.serviceWorker.register('/sw.js')
+                // If there's a waiting worker, ask it to skip waiting immediately
+                if (reg.waiting) {
+                  try { reg.waiting.postMessage({ type: 'SKIP_WAITING' }) } catch (e) {}
+                }
+                reg.addEventListener('updatefound', () => {
+                  const installing = reg.installing
+                  if (!installing) return
+                  installing.addEventListener('statechange', () => {
+                    if (installing.state === 'installed') {
+                      if (navigator.serviceWorker.controller) {
+                        try { installing.postMessage({ type: 'SKIP_WAITING' }) } catch (e) {}
+                      }
+                    }
+                  })
+                })
+              } catch (err) {}
             });
+            // When the active service worker changes, reload to activate the new code
+            if (navigator.serviceWorker) {
+              navigator.serviceWorker.addEventListener('controllerchange', () => {
+                try { window.location.reload() } catch (e) {}
+              })
+            }
           }
           window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
