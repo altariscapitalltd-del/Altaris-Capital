@@ -1,20 +1,52 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
+import Pusher from 'pusher-js'
 
 export default function SupportPage() {
   const [messages, setMessages] = useState<any[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [conversationId, setConversationId] = useState<string|null>(null)
+  const [userId, setUserId] = useState<string|null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    fetch('/api/user/profile').then(r => r.json()).then(d => {
+      if (d?.user?.id) setUserId(d.user.id)
+    }).catch(() => {})
+
     fetch('/api/support').then(r=>r.json()).then(d => {
       if(d.conversation) { setConversationId(d.conversation.id); setMessages(d.conversation.messages||[]) }
     })
   }, [])
 
   useEffect(() => { bottomRef.current?.scrollIntoView({behavior:'smooth'}) }, [messages])
+
+  useEffect(() => {
+    if (!userId) return
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
+      authEndpoint: '/api/pusher/auth',
+    })
+    const channel = pusher.subscribe(`private-user-${userId}`)
+
+    const handler = (data: any) => {
+      if (!data?.conversationId || data.conversationId !== conversationId) return
+      const message = data.message || data
+      setMessages((m) => {
+        if (m.some((x) => x.id === message.id)) return m
+        return [...m, message]
+      })
+    }
+
+    channel.bind('chat:message', handler)
+
+    return () => {
+      channel.unbind('chat:message', handler)
+      pusher.unsubscribe(`private-user-${userId}`)
+      pusher.disconnect()
+    }
+  }, [userId, conversationId])
 
   async function send() {
     if(!input.trim()||sending) return

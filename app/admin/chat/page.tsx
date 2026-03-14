@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
+import Pusher from 'pusher-js'
 
 export default function AdminChatPage() {
   const [conversations, setConversations] = useState<any[]>([])
@@ -19,6 +20,37 @@ export default function AdminChatPage() {
   },[selected])
 
   useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:'smooth'}) },[messages])
+
+  useEffect(() => {
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
+      authEndpoint: '/api/pusher/auth',
+    })
+    const channel = pusher.subscribe('private-admin')
+
+    const handler = (data: any) => {
+      if (!data?.conversationId) return
+
+      setConversations((prev) => prev.map((c) => {
+        if (c.id !== data.conversationId) return c
+        return { ...c, messages: [data.message, ...(c.messages || [])] }
+      }))
+
+      if (selected?.id === data.conversationId) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === data.message.id)) return prev
+          return [...prev, data.message]
+        })
+      }
+    }
+
+    channel.bind('chat:message', handler)
+    return () => {
+      channel.unbind('chat:message', handler)
+      pusher.unsubscribe('private-admin')
+      pusher.disconnect()
+    }
+  }, [selected])
 
   async function reply() {
     if(!input.trim()||!selected||sending) return

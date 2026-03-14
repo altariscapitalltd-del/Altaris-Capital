@@ -115,6 +115,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installModalType, setInstallModalType] = useState<'android'|'ios'|null>(null)
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
   const [installShownThisSession, setInstallShownThisSession] = useState(false)
+  const [updateAvailable, setUpdateAvailable] = useState(false)
+  const [waitingServiceWorker, setWaitingServiceWorker] = useState<ServiceWorker | null>(null)
 
   useEffect(() => {
     fetch('/api/user/profile').then(r => {
@@ -143,6 +145,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    // Only show the install experience once per session
+    const shownThisSession = sessionStorage.getItem('altaris_install_shown') === '1'
+    if (shownThisSession || installShownThisSession) return
+
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true
     if (isStandalone) return
 
@@ -158,7 +164,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       setInstallModalType('ios')
       setInstallModalVisible(true)
       setInstallShownThisSession(true)
-      localStorage.setItem('altaris_install_shown', '1')
+      sessionStorage.setItem('altaris_install_shown', '1')
       return
     }
 
@@ -166,7 +172,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       setInstallModalType('android')
       setInstallModalVisible(true)
       setInstallShownThisSession(true)
-      localStorage.setItem('altaris_install_shown', '1')
+      sessionStorage.setItem('altaris_install_shown', '1')
     }
   }, [deferredInstallPrompt, installModalVisible, installBannerVisible, installShownThisSession])
 
@@ -178,14 +184,14 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         setInstallModalType('ios')
         setInstallModalVisible(true)
         setInstallShownThisSession(true)
-        localStorage.setItem('altaris_install_shown', '1')
+        sessionStorage.setItem('altaris_install_shown', '1')
         return
       }
       if (deferredInstallPrompt) {
         setInstallModalType('android')
         setInstallModalVisible(true)
         setInstallShownThisSession(true)
-        localStorage.setItem('altaris_install_shown', '1')
+        sessionStorage.setItem('altaris_install_shown', '1')
       }
     }
 
@@ -226,6 +232,42 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     }
     window.addEventListener('notifications:updated', handler)
     return () => window.removeEventListener('notifications:updated', handler)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
+
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      if (!reg) return
+
+      const updateHandler = () => {
+        const waiting = reg.waiting
+        if (waiting) {
+          setWaitingServiceWorker(waiting)
+          setUpdateAvailable(true)
+        }
+      }
+
+      updateHandler()
+      reg.addEventListener('updatefound', () => {
+        if (!reg.installing) return
+        reg.installing.addEventListener('statechange', () => {
+          if (reg.waiting) updateHandler()
+        })
+      })
+
+      const onControllerChange = () => {
+        window.location.reload()
+      }
+      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange)
+
+      // Periodically check for updates in background
+      const interval = setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000)
+      return () => {
+        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange)
+        clearInterval(interval)
+      }
+    })
   }, [])
 
   function closeInstallBanner() {
@@ -317,10 +359,42 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
               border: '1px solid rgba(242,186,14,0.25)',
               color: 'var(--text-primary)',
               fontSize: 12,
+              cursor: 'pointer',
             }}
+            onClick={() => window.dispatchEvent(new Event('altaris:show-install'))}
           >
             <span>Install this app for a better experience.</span>
-            <button onClick={closeInstallBanner} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
+            <button onClick={(e) => { e.stopPropagation(); closeInstallBanner() }} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
+          </motion.div>
+        )}
+        {updateAvailable && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+              padding: '8px 12px',
+              borderRadius: 12,
+              background: 'rgba(56,189,248,0.12)',
+              border: '1px solid rgba(56,189,248,0.25)',
+              color: 'var(--text-primary)',
+              fontSize: 12,
+            }}
+          >
+            <span>New version available — refresh to update.</span>
+            <button onClick={() => {
+              setUpdateAvailable(false)
+              if (waitingServiceWorker) {
+                waitingServiceWorker.postMessage({ type: 'SKIP_WAITING' })
+              } else {
+                window.location.reload()
+              }
+            }} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Refresh</button>
           </motion.div>
         )}
       </AnimatePresence>

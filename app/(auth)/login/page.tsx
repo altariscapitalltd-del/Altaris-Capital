@@ -30,18 +30,25 @@ export default function LoginPage() {
       // Subscribe to push notifications (if not already subscribed)
       if ('serviceWorker' in navigator && 'PushManager' in window) {
         try {
-          const reg = await navigator.serviceWorker.ready
-          const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-          if (vapidKey) {
-            let sub = await reg.pushManager.getSubscription()
-            if (!sub) {
-              sub = await reg.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(vapidKey),
-              })
-            }
-            if (sub) {
-              await fetch('/api/user/push-subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(sub) })
+          if (Notification.permission === 'default') {
+            await Notification.requestPermission()
+          }
+          if (Notification.permission !== 'granted') {
+            // User denied notifications, skip subscription
+          } else {
+            const reg = await navigator.serviceWorker.ready
+            const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            if (vapidKey) {
+              let sub = await reg.pushManager.getSubscription()
+              if (!sub) {
+                sub = await reg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: urlBase64ToUint8Array(vapidKey),
+                })
+              }
+              if (sub) {
+                await fetch('/api/user/push-subscribe', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(sub) })
+              }
             }
           }
         } catch (err) {
