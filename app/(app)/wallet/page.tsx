@@ -27,7 +27,7 @@ export default function WalletPage() {
       d.user?.balances?.forEach((b:any) => { bals[b.currency] = b.amount })
       setBalances(bals)
     })
-    fetch('/api/deposits').then(r=>r.json()).then(d => {
+    fetch('/api/wallet/addresses').then(r=>r.json()).then(d => {
       const addrs: Record<string,string> = {}
       d.addresses?.forEach((a:any) => { addrs[a.currency] = a.address })
       setWalletAddresses(addrs)
