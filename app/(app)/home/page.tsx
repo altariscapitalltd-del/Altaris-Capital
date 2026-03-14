@@ -446,26 +446,6 @@ export default function HomePage() {
               </div>
             </Link>
           ))}
-          <button
-            onClick={() => window.dispatchEvent(new Event('altaris:show-install'))}
-            style={{
-              padding: '12px 14px',
-              background: 'rgba(242,186,14,0.12)',
-              border: '1px solid rgba(242,186,14,0.25)',
-              borderRadius: 12,
-              color: 'var(--text-primary)',
-              fontWeight: 700,
-              fontSize: 12,
-              cursor: 'pointer',
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <AltarisLogoMark size={18} />
-            Install App
-          </button>
         </div>
       </div>
 
