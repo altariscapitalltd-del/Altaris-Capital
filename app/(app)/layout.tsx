@@ -162,16 +162,17 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   )?.href || '/home'
 
   const isMarkets = pathname?.startsWith('/markets')
+  const isHome = pathname === '/home' || pathname === '/'
   const searchParams = useSearchParams()
   const urlQ = searchParams?.get('q') ?? ''
   const [marketSearch, setMarketSearch] = useState(urlQ)
   useEffect(() => { setMarketSearch(urlQ) }, [urlQ])
   const handleMarketSearch = useCallback((value: string) => {
     setMarketSearch(value)
-    const base = pathname?.startsWith('/markets') ? '/markets' : '/markets'
+    const base = '/markets'
     const url = value.trim() ? `${base}?q=${encodeURIComponent(value.trim())}` : base
     router.replace(url)
-  }, [pathname, router])
+  }, [router])
 
   return (
     <div className="app-container" style={{
@@ -207,7 +208,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         </Link>
 
-        {isMarkets ? (
+        {(isMarkets || isHome) ? (
           <div style={{
             flex: 1,
             background: '#1A1A1A',
@@ -233,20 +234,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             />
           </div>
         ) : (
-          <Link href="/markets" style={{ flex: 1, textDecoration: 'none' }}>
-            <div style={{
-              background: '#1A1A1A', borderRadius: 99, padding: '9px 14px',
-              display: 'flex', alignItems: 'center', gap: 8,
-              border: '1px solid rgba(255,255,255,0.07)',
-            }}>
-              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#4A4A4A" strokeWidth="2.5" style={{ flexShrink: 0 }}>
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/>
-              </svg>
-              <span key={tickerIdx} style={{ color: '#6A6A6A', fontSize: 12, fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', animation: 'fadeIn .3s ease' }}>
-                {TRENDING[tickerIdx]}
-              </span>
-            </div>
-          </Link>
+          <div style={{ flex: 1 }} />
         )}
 
         {!isMarkets && (

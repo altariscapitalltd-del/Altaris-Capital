@@ -156,6 +156,14 @@ function InvestPageContent() {
           Balance: <strong style={{ color:'var(--text-primary)' }}>${balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
         </p>
 
+        {/* Search plans */}
+        <div style={{ padding:'0 0 16px' }}>
+          <div style={{ position:'relative' }}>
+            <svg style={{ position:'absolute', left:13, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }} width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/></svg>
+            <input className="input" style={{ paddingLeft:36, borderRadius:99, fontSize:13 }} placeholder="Search plans..." value={q} onChange={e=>setQ(e.target.value)} />
+          </div>
+        </div>
+
         {/* Tabs */}
         <div style={{ display:'flex', background:'var(--bg-elevated)', borderRadius:99, padding:3, marginBottom:16, gap:2 }}>
           {[{id:'marketplace',l:'Marketplace'},{id:'my',l:`My Plans (${userInvestments.length})`}].map(t=>(
