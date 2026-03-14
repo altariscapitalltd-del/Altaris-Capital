@@ -35,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-theme="dark">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="icon" href="/icons/icon-192x192.png" />
@@ -47,7 +48,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ background: 'var(--bg-primary)' }}>
         <script dangerouslySetInnerHTML={{ __html: `document.documentElement.setAttribute('data-theme','dark');` }} />
         <ThemeProvider>
-          {children}
+          <div className="app-container">
+            {children}
+          </div>
         </ThemeProvider>
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {

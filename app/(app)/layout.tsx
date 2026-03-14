@@ -160,7 +160,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   }, [pathname, router])
 
   return (
-    <div style={{
+    <div className="app-container" style={{
       background: 'var(--bg-page)',
       minHeight: '100svh',
       display: 'flex',
@@ -169,8 +169,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     }}>
 
       {/* ── Top Bar — safe area aware; on Markets: expanded search, no right icons ── */}
-      <header style={{
-        padding: '10px 16px',
+      <header className="header" style={{
+        padding: 'max(env(safe-area-inset-top, 0px), 10px) 16px 10px',
         display: 'flex',
         alignItems: 'center',
         gap: 10,
@@ -274,19 +274,19 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
+      <main style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
         {children}
       </main>
 
       {/* ── Bottom Navigation — safe area bottom ── */}
-      <nav style={{
+      <nav className="bottom-nav" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
         background: 'var(--nav-bg)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
         borderRadius: '20px 20px 0 0',
         borderTop: '1px solid rgba(255,255,255,0.07)',
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
         boxShadow: '0 -4px 30px rgba(0,0,0,0.5)',
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 62 }}>
