@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { trigger, adminChannel, userChannel } from '@/lib/pusher'
+import { trigger, adminChannel } from '@/lib/pusher'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -38,8 +38,7 @@ export async function POST(req: NextRequest) {
 
   await prisma.conversation.update({ where: { id: conv.id }, data: { updatedAt: new Date() } })
 
-  await trigger(adminChannel, 'chat:message', { conversationId: conv.id, message: msg, userName: user.name, userId: user.id })
-  await trigger(userChannel(user.id), 'chat:message', { conversationId: conv.id, message: msg, sender: 'user' })
+  await trigger(adminChannel, 'chat:message', { ...msg, userName: user.name, userId: user.id })
 
   return NextResponse.json({ message: msg })
 }

@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
 
   await prisma.conversation.update({ where: { id: conversationId }, data: { updatedAt: new Date() } })
 
-  await trigger(userChannel(userId), 'chat:message', { conversationId, message: msg, sender: 'admin' })
-  await trigger(adminChannel, 'chat:message', { conversationId, message: msg, sender: 'admin' })
+  await trigger(userChannel(userId), 'chat:message', { ...msg, sender: 'admin' })
+  await trigger(adminChannel, 'chat:message', { ...msg, sender: 'admin' })
 
   return NextResponse.json({ message: msg })
 }
