@@ -1,8 +1,9 @@
 'use client'
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Download, Upload, TrendingUp, History, Gift, Check, UserCheck, Clock } from 'lucide-react'
+import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 // Mini sparkline component
 function Sparkline({ data, color, width=64, height=28 }: { data:number[], color:string, width?:number, height?:number }) {
@@ -30,6 +31,145 @@ function Sparkline({ data, color, width=64, height=28 }: { data:number[], color:
     ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke()
   }, [data, color, width, height])
   return <canvas ref={canvasRef} style={{ width, height, display:'block' }} />
+}
+
+function useBalanceHistory(latest: number) {
+  const [series, setSeries] = useState<{ times: number[]; values: number[] }>({ times: [], values: [] })
+
+  useEffect(() => {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('altaris_balance_history') : null
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (parsed?.times?.length && parsed?.values?.length) {
+          setSeries(parsed)
+          return
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const base = latest || 1000
+    const points = Array.from({ length: 32 }, (_, i) => {
+      const t = Date.now() - (31 - i) * 60 * 1000
+      const drift = 1 + (Math.sin(i / 5) * 0.02 + (Math.random() - 0.5) * 0.01)
+      return { t, v: Math.max(0, base * drift) }
+    })
+    setSeries({ times: points.map(p => p.t), values: points.map(p => p.v) })
+  }, [])
+
+  // Save series to localStorage when it changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('altaris_balance_history', JSON.stringify(series))
+  }, [series])
+
+  useEffect(() => {
+    if (!latest) return
+    setSeries(prev => {
+      const last = prev.values[prev.values.length - 1] ?? latest
+      if (Math.abs(last - latest) < 0.01) return prev
+      const nextTimes = [...prev.times, Date.now()]
+      const nextValues = [...prev.values, latest]
+      const maxLen = 40
+      if (nextValues.length > maxLen) {
+        nextTimes.splice(0, nextValues.length - maxLen)
+        nextValues.splice(0, nextValues.length - maxLen)
+      }
+      return { times: nextTimes, values: nextValues }
+    })
+  }, [latest])
+
+  // Add subtle motion even when balance does not change
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSeries(prev => {
+        if (prev.values.length === 0) return prev
+        const last = prev.values[prev.values.length - 1]
+        const delta = last * ((Math.random() - 0.5) * 0.002)
+        const next = last + delta
+        const nextTimes = [...prev.times, Date.now()]
+        const nextValues = [...prev.values, next]
+        const maxLen = 40
+        if (nextValues.length > maxLen) {
+          nextTimes.splice(0, nextValues.length - maxLen)
+          nextValues.splice(0, nextValues.length - maxLen)
+        }
+        return { times: nextTimes, values: nextValues }
+      })
+    }, 8000)
+    return () => clearInterval(timer)
+  }, [])
+
+  return series
+}
+
+function BalanceChart({ usdBalance }: { usdBalance: number }) {
+  const history = useBalanceHistory(usdBalance)
+  const [visible, setVisible] = useState(true)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const stored = localStorage.getItem('altaris_hide_chart')
+    if (stored === '1') setVisible(false)
+    if (stored === '0') setVisible(true)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('altaris_hide_chart', visible ? '0' : '1')
+  }, [visible])
+
+  const change = useMemo(() => {
+    if (history.values.length < 2) return 0
+    const start = history.values[0]
+    const end = history.values[history.values.length - 1]
+    return start === 0 ? 0 : ((end - start) / start) * 100
+  }, [history.values])
+
+  if (!visible) {
+    return (
+      <div
+        onClick={() => setVisible(true)}
+        style={{
+          margin: '18px 16px 0',
+          padding: 12,
+          borderRadius: 16,
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          color: 'var(--text-muted)',
+          fontSize: 13,
+        }}
+      >
+        Tap to show portfolio chart
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ margin: '18px 16px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700 }}>Portfolio chart (USD)</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Tap chart to hide</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div style={{ fontSize: 12, color: change >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+            {change >= 0 ? '+' : ''}{change.toFixed(2)}%
+          </div>
+        </div>
+      </div>
+      <div onClick={() => setVisible(false)} style={{ cursor: 'pointer' }}>
+        <Sparkline data={history.values} color={change >= 0 ? '#0ECB81' : '#F6465D'} width={320} height={140} />
+      </div>
+    </div>
+  )
 }
 
 // Countdown timer
@@ -78,23 +218,7 @@ const LATEST_NEWS = [
 ]
 
 function BybitSection({ prices }: { prices: Record<string, { price?: number; change24h?: number }> }) {
-  const [chartDays, setChartDays] = useState(7)
-  const [chartData, setChartData] = useState<{ times: number[]; values: number[] } | null>(null)
   const [eventsTab, setEventsTab] = useState<'events' | 'news'>('events')
-
-  useEffect(() => {
-    let cancelled = false
-    async function fetchChart() {
-      const res = await fetch(`/api/market/chart?symbol=btc&days=${chartDays}`)
-      const d = await res.json().catch(() => ({}))
-      if (cancelled) return
-      if (d.times && d.values) setChartData({ times: d.times, values: d.values })
-      else setChartData(null)
-    }
-    fetchChart()
-    const interval = setInterval(fetchChart, 30_000)
-    return () => { cancelled = true; clearInterval(interval) }
-  }, [chartDays])
 
   const coins = BYBIT_COINS.map((c) => ({
     ...c,
@@ -104,42 +228,6 @@ function BybitSection({ prices }: { prices: Record<string, { price?: number; cha
 
   return (
     <div style={{ marginTop: 18, padding: '0 16px' }}>
-      {/* Chart block */}
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span style={{ fontWeight: 700, fontSize: 14 }}>BTC/USD</span>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[7, 30, 90, 180].map((d) => (
-              <button
-                key={d}
-                onClick={() => setChartDays(d)}
-                style={{
-                  padding: '6px 10px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: chartDays === d ? 'var(--brand-primary)' : 'var(--bg-elevated)',
-                  color: chartDays === d ? '#000' : 'var(--text-muted)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                {d}D
-              </button>
-            ))}
-          </div>
-        </div>
-        <div style={{ height: 140, position: 'relative' }}>
-          {chartData?.values?.length ? (
-            <Sparkline data={chartData.values} color="#F2BA0E" width={280} height={140} />
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: 12 }}>Loading chart...</div>
-          )}
-        </div>
-        <div style={{ color: 'var(--text-muted)', fontSize: 10, marginTop: 8 }}>
-          Last updated from market data
-        </div>
-      </div>
 
       {/* Events card */}
       <Link href="/home" style={{ textDecoration: 'none', display: 'block', marginBottom: 12 }}>
@@ -313,7 +401,9 @@ export default function HomePage() {
 
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'70vh' }}>
-      <div style={{ width:36, height:36, border:'3px solid rgba(242,186,14,0.2)', borderTopColor:'#F2BA0E', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
+      <div style={{ animation: 'spin .8s linear infinite', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <AltarisLogoMark size={56} />
+      </div>
     </div>
   )
 
@@ -342,7 +432,7 @@ export default function HomePage() {
         </div>
 
         {/* Quick actions */}
-        <div style={{ display:'flex', gap:10, marginTop:20 }}>
+        <div style={{ display:'flex', gap:10, marginTop:20, alignItems: 'center' }}>
           {[
             { l:'Deposit', Icon: Download, href:'/wallet' },
             { l:'Withdraw', Icon: Upload, href:'/wallet' },
@@ -356,10 +446,32 @@ export default function HomePage() {
               </div>
             </Link>
           ))}
+          <button
+            onClick={() => window.dispatchEvent(new Event('altaris:show-install'))}
+            style={{
+              padding: '12px 14px',
+              background: 'rgba(242,186,14,0.12)',
+              border: '1px solid rgba(242,186,14,0.25)',
+              borderRadius: 12,
+              color: 'var(--text-primary)',
+              fontWeight: 700,
+              fontSize: 12,
+              cursor: 'pointer',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <AltarisLogoMark size={18} />
+            Install App
+          </button>
         </div>
       </div>
 
-      {/* ── Bybit-style: Chart, Events, Crypto list/grid, Latest Events/News ── */}
+      <BalanceChart usdBalance={usdBal} />
+
+      {/* ── Bybit-style: Events, Crypto list/grid, Latest Events/News ── */}
       <BybitSection prices={prices} />
 
       {/* ── Bonus Banner Carousel ─ */}

@@ -10,20 +10,37 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<{type:'success'|'error';text:string}|null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch('/api/auth/me').then(r=>r.json()).then(d => {
-      setUser(d.user); setName(d.user?.name||''); setPhone(d.user?.phone||'')
+      setUser(d.user)
+      setName(d.user?.name||'')
+      setPhone(d.user?.phone||'')
+      setAvatarPreview(d.user?.profilePicture || null)
     })
   }, [])
 
   async function save() {
     setSaving(true); setMsg(null)
-    const res = await fetch('/api/user/profile', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name, phone }) })
+
+    const formData = new FormData()
+    formData.append('name', name)
+    formData.append('phone', phone)
+    if (avatarFile) formData.append('avatar', avatarFile)
+
+    const res = await fetch('/api/user/profile', { method: 'PATCH', body: formData })
     const data = await res.json()
-    if (res.ok) { setUser(data.user); setMsg({type:'success',text:'Profile updated!'}) }
-    else setMsg({type:'error',text:data.error})
+    if (res.ok) {
+      setUser(data.user)
+      setMsg({ type: 'success', text: 'Profile updated!' })
+      setAvatarPreview(data.user?.profilePicture || null)
+      setAvatarFile(null)
+    } else {
+      setMsg({ type: 'error', text: data.error })
+    }
     setSaving(false)
   }
 
@@ -46,13 +63,24 @@ export default function ProfilePage() {
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:28 }}>
         <div style={{ position:'relative', cursor:'pointer' }} onClick={()=>fileRef.current?.click()}>
           <div style={{ width:84, height:84, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'3px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:32, color:'#000', overflow:'hidden' }}>
-            {user.profilePicture ? <img src={user.profilePicture} style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : user.name?.[0]?.toUpperCase()||'A'}
+            {avatarPreview ? <img src={avatarPreview} style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : user.name?.[0]?.toUpperCase()||'A'}
           </div>
           <div style={{ position:'absolute', bottom:0, right:0, width:26, height:26, borderRadius:'50%', background:'var(--brand-primary)', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid var(--bg-page)' }}>
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#000" strokeWidth="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" strokeLinecap="round"/></svg>
           </div>
         </div>
-        <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}/>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          style={{ display:'none' }}
+          onChange={e => {
+            const file = e.target.files?.[0]
+            if (!file) return
+            setAvatarFile(file)
+            setAvatarPreview(URL.createObjectURL(file))
+          }}
+        />
         <p style={{ color:'var(--text-muted)', fontSize:12, marginTop:8 }}>Tap to change photo</p>
       </div>
 

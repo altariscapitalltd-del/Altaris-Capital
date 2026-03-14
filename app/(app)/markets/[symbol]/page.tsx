@@ -82,6 +82,37 @@ export default function MarketChartPage() {
   }, [symbol, chartData.values.length])
 
   useEffect(() => {
+    if (!symbol) return
+    const stream = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}usdt@kline_1m`
+    const ws = new WebSocket(stream)
+
+    ws.addEventListener('message', (event) => {
+      try {
+        const msg = JSON.parse(event.data)
+        const k = msg.k
+        if (!k) return
+        const close = parseFloat(k.c)
+        const time = k.t
+        setPrice(close)
+        setChartData(prev => {
+          const values = [...prev.values, close]
+          const times = [...prev.times, time]
+          const max = 60
+          if (values.length > max) {
+            values.splice(0, values.length - max)
+            times.splice(0, times.length - max)
+          }
+          return { times, values }
+        })
+      } catch {
+        // ignore
+      }
+    })
+
+    return () => ws.close()
+  }, [symbol])
+
+  useEffect(() => {
     const el = chartRef.current
     if (!el) return
     const ro = new ResizeObserver(() => {

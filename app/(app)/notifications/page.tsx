@@ -7,6 +7,7 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [marking, setMarking] = useState(false)
+  const [selected, setSelected] = useState<any|null>(null)
 
   async function load() {
     setLoading(true)
@@ -25,6 +26,15 @@ export default function NotificationsPage() {
     await load()
     window.dispatchEvent(new Event('notifications:updated'))
     setMarking(false)
+  }
+
+  async function openNotification(n: any) {
+    setSelected(n)
+    if (!n.read) {
+      await fetch('/api/user/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [n.id] }) })
+      await load()
+      window.dispatchEvent(new Event('notifications:updated'))
+    }
   }
 
   return (
@@ -47,7 +57,19 @@ export default function NotificationsPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {notifications.map((n) => (
-            <div key={n.id} style={{ background: n.read ? 'var(--bg-card)' : 'rgba(242,186,14,0.12)', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
+            <button
+              key={n.id}
+              type="button"
+              onClick={() => openNotification(n)}
+              style={{
+                textAlign: 'left',
+                background: n.read ? 'var(--bg-card)' : 'rgba(242,186,14,0.12)',
+                border: '1px solid var(--border)',
+                borderRadius: 14,
+                padding: 14,
+                cursor: 'pointer',
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{n.title}</div>
@@ -61,8 +83,53 @@ export default function NotificationsPage() {
               {n.url && (
                 <Link href={n.url} style={{ marginTop: 10, display: 'inline-block', fontSize: 12, color: 'var(--brand-primary)', fontWeight: 700 }}>View details →</Link>
               )}
-            </div>
+            </button>
           ))}
+        </div>
+      )}
+
+      {selected && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 60,
+            padding: 16,
+          }}
+          onClick={() => setSelected(null)}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 480,
+              background: 'var(--bg-page)',
+              borderRadius: 18,
+              padding: 22,
+              boxShadow: '0 20px 40px rgba(0,0,0,0.35)',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelected(null)}
+              style={{ position: 'absolute', top: 14, right: 14, border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18 }}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{selected.title}</h2>
+            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 4 }}>{new Date(selected.createdAt).toLocaleString()}</div>
+            <div style={{ marginTop: 14, color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.5 }}>{selected.body}</div>
+            {selected.url && (
+              <Link href={selected.url} style={{ display: 'block', marginTop: 14, color: 'var(--brand-primary)', fontWeight: 700 }}>
+                View details →
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </div>

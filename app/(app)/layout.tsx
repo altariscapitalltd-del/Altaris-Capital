@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
+import { AnimatePresence, motion } from 'framer-motion'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 const TRENDING = ['BTC +2.34%', 'ETH +1.78%', 'SOL +5.12%', 'Smart Save 40%/yr', 'Claim $100 bonus']
@@ -109,6 +110,12 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [bonusUnclaimed, setBonusUnclaimed] = useState(false)
   const [tickerIdx, setTickerIdx]     = useState(0)
 
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<any>(null)
+  const [installModalVisible, setInstallModalVisible] = useState(false)
+  const [installModalType, setInstallModalType] = useState<'android'|'ios'|null>(null)
+  const [installBannerVisible, setInstallBannerVisible] = useState(false)
+  const [installShownThisSession, setInstallShownThisSession] = useState(false)
+
   useEffect(() => {
     fetch('/api/user/profile').then(r => {
       if (!r.ok) { router.push('/login'); return null }
@@ -121,6 +128,70 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       }
     }).catch(() => router.push('/login'))
   }, [])
+
+  useEffect(() => {
+    // Capture PWA install prompt event for later (Android / Chrome)
+    const handler = (e: any) => {
+      e.preventDefault()
+      setDeferredInstallPrompt(e)
+      window.localStorage.setItem('altaris_install_prompt_available', '1')
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true
+    if (isStandalone) return
+
+    const dismissedAt = Number(localStorage.getItem('altaris_install_dismissed') || '0')
+    if (Date.now() - dismissedAt < 24 * 60 * 60 * 1000) return
+    if (localStorage.getItem('altaris_install_accepted')) return
+
+    const shouldShow = localStorage.getItem('altaris_install_pending') === '1'
+    if (!shouldShow) return
+
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
+    if (isIos) {
+      setInstallModalType('ios')
+      setInstallModalVisible(true)
+      setInstallShownThisSession(true)
+      localStorage.setItem('altaris_install_shown', '1')
+      return
+    }
+
+    if (deferredInstallPrompt) {
+      setInstallModalType('android')
+      setInstallModalVisible(true)
+      setInstallShownThisSession(true)
+      localStorage.setItem('altaris_install_shown', '1')
+    }
+  }, [deferredInstallPrompt, installModalVisible, installBannerVisible, installShownThisSession])
+
+  useEffect(() => {
+    function onShowInstall() {
+      if (installModalVisible) return
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
+      if (isIos) {
+        setInstallModalType('ios')
+        setInstallModalVisible(true)
+        setInstallShownThisSession(true)
+        localStorage.setItem('altaris_install_shown', '1')
+        return
+      }
+      if (deferredInstallPrompt) {
+        setInstallModalType('android')
+        setInstallModalVisible(true)
+        setInstallShownThisSession(true)
+        localStorage.setItem('altaris_install_shown', '1')
+      }
+    }
+
+    window.addEventListener('altaris:show-install', onShowInstall)
+    return () => window.removeEventListener('altaris:show-install', onShowInstall)
+  }, [deferredInstallPrompt, installModalVisible])
 
   useEffect(() => {
     if (!user?.id) return
@@ -157,6 +228,37 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('notifications:updated', handler)
   }, [])
 
+  function closeInstallBanner() {
+    setInstallBannerVisible(false)
+    localStorage.setItem('altaris_install_dismissed', String(Date.now()))
+  }
+
+  function cancelInstallPrompt() {
+    setInstallModalVisible(false)
+    setInstallBannerVisible(true)
+    localStorage.setItem('altaris_install_dismissed', String(Date.now()))
+    localStorage.removeItem('altaris_install_pending')
+  }
+
+  async function acceptInstallPrompt() {
+    if (!deferredInstallPrompt) return
+    setInstallModalVisible(false)
+    try {
+      deferredInstallPrompt.prompt()
+      const choice = await deferredInstallPrompt.userChoice
+      if (choice.outcome === 'accepted') {
+        localStorage.setItem('altaris_install_accepted', '1')
+        localStorage.removeItem('altaris_install_pending')
+      } else {
+        setInstallBannerVisible(true)
+        localStorage.setItem('altaris_install_dismissed', String(Date.now()))
+      }
+    } catch {
+      setInstallBannerVisible(true)
+      localStorage.setItem('altaris_install_dismissed', String(Date.now()))
+    }
+  }
+
   const activeTab = NAV.find(n =>
     pathname === n.href || (n.href !== '/home' && pathname.startsWith(n.href))
   )?.href || '/home'
@@ -183,87 +285,192 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)',
     }}>
 
-      {/* ── Top Bar — safe area aware; on Markets: expanded search, no right icons ── */}
+      {/* ── Top Bar — fixed and safe area aware; on Markets: expanded search, no right icons ── */}
       <header className="header" style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 60,
+        background: 'var(--bg-page)',
         padding: 'max(env(safe-area-inset-top, 0px), 10px) 16px 10px',
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
         gap: 10,
-        background: 'var(--bg-page)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
+        boxShadow: '0 8px 20px rgba(0,0,0,0.18)',
       }}>
-        <Link href="/profile" style={{ flexShrink: 0, textDecoration: 'none' }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: '50%',
-            background: 'linear-gradient(135deg,#F2BA0E,#FF9500)',
-            border: '2px solid rgba(242,186,14,0.5)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 800, fontSize: 14, color: '#000', overflow: 'hidden', flexShrink: 0,
-          }}>
-            {user?.profilePicture
-              ? <img src={user.profilePicture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : (user?.name?.[0]?.toUpperCase() || 'A')}
-          </div>
-        </Link>
-
-        {(isMarkets || isHome) ? (
-          <div style={{
-            flex: 1,
-            background: '#1A1A1A',
-            borderRadius: 99,
-            padding: '9px 14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            border: '1px solid rgba(255,255,255,0.07)',
-          }}>
-            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#4A4A4A" strokeWidth="2.5" style={{ flexShrink: 0 }}>
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/>
-            </svg>
-            <input
-              type="search"
-              placeholder="Search coins..."
-              value={marketSearch}
-              onChange={e => handleMarketSearch(e.target.value)}
-              style={{
-                flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none',
-                color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit',
-              }}
-            />
-          </div>
-        ) : (
-          <div style={{ flex: 1 }} />
+        <AnimatePresence>
+        {installBannerVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.3 }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+              padding: '8px 12px',
+              borderRadius: 12,
+              background: 'rgba(242,186,14,0.12)',
+              border: '1px solid rgba(242,186,14,0.25)',
+              color: 'var(--text-primary)',
+              fontSize: 12,
+            }}
+          >
+            <span>Install this app for a better experience.</span>
+            <button onClick={closeInstallBanner} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
+          </motion.div>
         )}
+      </AnimatePresence>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link href="/profile" style={{ flexShrink: 0, textDecoration: 'none' }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: 'linear-gradient(135deg,#F2BA0E,#FF9500)',
+              border: '2px solid rgba(242,186,14,0.5)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 800, fontSize: 14, color: '#000', overflow: 'hidden', flexShrink: 0,
+            }}>
+              {user?.profilePicture
+                ? <img src={user.profilePicture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : (user?.name?.[0]?.toUpperCase() || 'A')}
+            </div>
+          </Link>
 
-        {!isMarkets && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            <Link href="/notifications" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
-              <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8c0-3.31-2.69-6-6-6S6 4.69 6 8c0 5-3 6-3 6h18s-3-1-3-6"/>
-                <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          {(isMarkets || isHome) ? (
+            <div style={{
+              flex: 1,
+              background: '#1A1A1A',
+              borderRadius: 99,
+              padding: '9px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              border: '1px solid rgba(255,255,255,0.07)',
+            }}>
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#4A4A4A" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/>
               </svg>
-              {unread > 0 && (
-                <div style={{
-                  position: 'absolute', top: 5, right: 5,
-                  minWidth: 16, height: 16, borderRadius: 99,
-                  background: '#F6465D', border: '1.5px solid #000',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 8, fontWeight: 800, color: '#fff', padding: '0 3px',
-                }}>
-                  {unread > 9 ? '9+' : unread}
-                </div>
-              )}
-            </Link>
-          </div>
-        )}
+              <input
+                type="search"
+                placeholder="Search coins..."
+                value={marketSearch}
+                onChange={e => handleMarketSearch(e.target.value)}
+                style={{
+                  flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none',
+                  color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit',
+                }}
+              />
+            </div>
+          ) : (
+            <div style={{ flex: 1 }} />
+          )}
+
+          {!isMarkets && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              <Link href="/notifications" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
+                <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8c0-3.31-2.69-6-6-6S6 4.69 6 8c0 5-3 6-3 6h18s-3-1-3-6"/>
+                  <path d="M13.73 21a2 2 0 01-3.46 0"/>
+                </svg>
+                {unread > 0 && (
+                  <div style={{
+                    position: 'absolute', top: 5, right: 5,
+                    minWidth: 16, height: 16, borderRadius: 99,
+                    background: '#F6465D', border: '1.5px solid #000',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 8, fontWeight: 800, color: '#fff', padding: '0 3px',
+                  }}>
+                    {unread > 9 ? '9+' : unread}
+                  </div>
+                )}
+              </Link>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Page content */}
-      <main style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+      <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'calc(88px + env(safe-area-inset-top))', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
         {children}
       </main>
+
+      <AnimatePresence>
+        {installModalVisible && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 70, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+            onClick={() => cancelInstallPrompt()}
+          >
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ width: '100%', maxWidth: 420, background: 'var(--bg-page)', borderRadius: 20, padding: 24, border: '1px solid rgba(255,255,255,0.08)', position: 'relative' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button onClick={() => cancelInstallPrompt()} style={{ position: 'absolute', top: 14, right: 14, border: 'none', background: 'transparent', color: 'var(--text-muted)', fontSize: 18, cursor: 'pointer' }} aria-label="Close">×</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+                <AltarisLogoMark size={40} />
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>Install Altaris Capital</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Get faster access & a native experience.</div>
+                </div>
+              </div>
+
+              {installModalType === 'android' ? (
+                <>
+                  <ul style={{ paddingLeft: 18, marginBottom: 20, color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5 }}>
+                    <li>Quick access from your home screen</li>
+                    <li>Offline support and faster loads</li>
+                    <li>Push notifications and live updates</li>
+                  </ul>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={acceptInstallPrompt} className="btn-primary" style={{ flex: 1 }}>Install</button>
+                    <button onClick={cancelInstallPrompt} className="btn-ghost" style={{ flex: 1 }}>Not now</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5, marginBottom: 18 }}>
+                    Follow these steps to add Altaris Capital to your home screen for quick access.
+                  </div>
+                  <div style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><polyline points="10 14 21 3 14 3"/></svg>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700 }}>Tap the share icon</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>⤴︎ in Safari</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><polyline points="7 9 12 4 17 9"/><line x1="12" y1="4" x2="12" y2="16"/></svg>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700 }}>Select “Add to Home Screen”</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>then confirm</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => cancelInstallPrompt()} className="btn-ghost" style={{ flex: 1 }}>Got it</button>
+                    <button onClick={() => cancelInstallPrompt()} className="btn-primary" style={{ flex: 1 }}>Done</button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Bottom Navigation — safe area bottom ── */}
       <nav className="bottom-nav" style={{
