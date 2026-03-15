@@ -55,14 +55,14 @@ export default function AdminDashboard() {
   )
 
   const STATS = [
-    {label:'Total Users',        value:stats?.totalUsers?.toLocaleString()||'0',       icon:'👥', color:'#3B82F6', sub:`+${stats?.newToday||0} today`},
-    {label:'KYC Verified',       value:stats?.verifiedUsers?.toLocaleString()||'0',     icon:'✅', color:'#0ECB81', sub:`${((stats?.verifiedUsers/Math.max(1,stats?.totalUsers))*100).toFixed(0)}% of users`},
-    {label:'Pending Deposits',   value:stats?.pendingDeposits?.toLocaleString()||'0',   icon:'⏳', color:'#F2BA0E', link:'/admin/deposits', alert:(stats?.pendingDeposits||0)>0},
-    {label:'Pending KYC',        value:stats?.pendingKyc?.toLocaleString()||'0',        icon:'🪪', color:'#A78BFA', link:'/admin/kyc', alert:(stats?.pendingKyc||0)>0},
-    {label:'Pending Withdrawals',value:stats?.pendingWithdrawals?.toLocaleString()||'0',icon:'💸', color:'#F6465D', alert:(stats?.pendingWithdrawals||0)>0},
-    {label:'Total AUM',          value:`$${((stats?.totalAUM||0)/1000).toFixed(1)}K`,   icon:'💰', color:'#F2BA0E'},
-    {label:'Total Deposited',    value:`$${((stats?.totalDeposited||0)/1000).toFixed(1)}K`, icon:'⬇️', color:'#0ECB81'},
-    {label:'Total Withdrawn',    value:`$${((stats?.totalWithdrawn||0)/1000).toFixed(1)}K`, icon:'⬆️', color:'#F6465D'},
+    {label:'Total Users',        value:stats?.totalUsers?.toLocaleString()||'0',       icon:'', color:'#3B82F6', sub:`+${stats?.newToday||0} today`},
+    {label:'KYC Verified',       value:stats?.verifiedUsers?.toLocaleString()||'0',     icon:'Verified', color:'#0ECB81', sub:`${((stats?.verifiedUsers/Math.max(1,stats?.totalUsers))*100).toFixed(0)}% of users`},
+    {label:'Pending Deposits',   value:stats?.pendingDeposits?.toLocaleString()||'0',   icon:'PENDING', color:'#F2BA0E', link:'/admin/deposits', alert:(stats?.pendingDeposits||0)>0},
+    {label:'Pending KYC',        value:stats?.pendingKyc?.toLocaleString()||'0',        icon:'', color:'#A78BFA', link:'/admin/kyc', alert:(stats?.pendingKyc||0)>0},
+    {label:'Pending Withdrawals',value:stats?.pendingWithdrawals?.toLocaleString()||'0',icon:'', color:'#F6465D', alert:(stats?.pendingWithdrawals||0)>0},
+    {label:'Total AUM',          value:`$${((stats?.totalAUM||0)/1000).toFixed(1)}K`,   icon:'', color:'#F2BA0E'},
+    {label:'Total Deposited',    value:`$${((stats?.totalDeposited||0)/1000).toFixed(1)}K`, icon:'IN', color:'#0ECB81'},
+    {label:'Total Withdrawn',    value:`$${((stats?.totalWithdrawn||0)/1000).toFixed(1)}K`, icon:'OUT', color:'#F6465D'},
   ]
 
   const SPARK_NEW = [2,5,3,8,6,9,7,11,8,12,10,14,11,15,12,16,13,18,14,20]
@@ -130,7 +130,7 @@ export default function AdminDashboard() {
                       <span style={{padding:'3px 9px',borderRadius:99,fontSize:11,fontWeight:700,
                         background:u.kycStatus==='APPROVED'?'rgba(14,203,129,0.1)':u.kycStatus==='PENDING_REVIEW'?'rgba(242,186,14,0.1)':'rgba(255,255,255,0.05)',
                         color:u.kycStatus==='APPROVED'?'#0ECB81':u.kycStatus==='PENDING_REVIEW'?'#F2BA0E':'#555'}}>
-                        {u.kycStatus==='APPROVED'?'✓ Verified':u.kycStatus==='PENDING_REVIEW'?'Pending':'Unverified'}
+                        {u.kycStatus==='APPROVED'?'Verified':u.kycStatus==='PENDING_REVIEW'?'Pending':'Unverified'}
                       </span>
                     </td>
                     <td style={{padding:'12px 16px',fontSize:12,fontWeight:600,color:'#ccc',whiteSpace:'nowrap'}}>

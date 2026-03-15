@@ -37,6 +37,20 @@ function MiniSpark({ data, color, w=80, h=32 }: { data:number[]; color:string; w
   return <canvas ref={ref} style={{ width:w, height:h, display:'block' }}/>
 }
 
+function UiGlyph({ kind, color = '#F2BA0E', size = 22 }: { kind: string; color?: string; size?: number }) {
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: '2', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  if (kind === 'security') return <svg {...common}><path d='M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z'/><path d='M9 12l2 2 4-4'/></svg>
+  if (kind === 'speed') return <svg {...common}><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
+  if (kind === 'ai') return <svg {...common}><rect x='4' y='4' width='16' height='16' rx='4'/><path d='M9 9h.01M15 9h.01M8 15h8'/></svg>
+  if (kind === 'global') return <svg {...common}><circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18'/></svg>
+  if (kind === 'chart') return <svg {...common}><path d='M4 19V5'/><path d='M4 19h16'/><path d='M8 14l3-3 3 2 4-5'/></svg>
+  if (kind === 'target') return <svg {...common}><circle cx='12' cy='12' r='9'/><circle cx='12' cy='12' r='4'/><circle cx='12' cy='12' r='1'/></svg>
+  if (kind === 'account') return <svg {...common}><circle cx='12' cy='8' r='4'/><path d='M4 20c2-3 5-4 8-4s6 1 8 4'/></svg>
+  if (kind === 'kyc') return <svg {...common}><rect x='4' y='4' width='16' height='16' rx='2'/><path d='M8 9h8M8 13h8M8 17h4'/></svg>
+  if (kind === 'invest') return <svg {...common}><path d='M4 18l6-6 4 4 6-8'/><path d='M14 8h6v6'/></svg>
+  return <svg {...common}><circle cx='12' cy='12' r='9'/></svg>
+}
+
 function Counter({ to, prefix='', suffix='' }: { to:number; prefix?:string; suffix?:string }) {
   const [v, setV] = useState(0)
   const ref = useRef<HTMLDivElement>(null)
@@ -78,12 +92,12 @@ const PLANS = [
 ]
 
 const FEATURES = [
-  { icon:'🔐', title:'Bank-Grade Security',   desc:'Multi-layer encryption, 2FA, biometrics, and real-time fraud detection protect every account.' },
-  { icon:'⚡', title:'Instant Confirmation',  desc:'Deposits appear in seconds. Our 24/7 automated system never sleeps.' },
-  { icon:'🤖', title:'AI-Powered Returns',    desc:'Machine learning models optimise your portfolio across 200+ market signals daily.' },
-  { icon:'🌍', title:'Global Access',         desc:'Available in 150+ countries. Multilingual support. Withdraw in your local currency.' },
-  { icon:'📊', title:'Live Portfolio Tracker',desc:'Real-time charts, ROI projections, and daily profit summaries at a glance.' },
-  { icon:'🎯', title:'Tailored Strategies',   desc:'From conservative bonds to high-yield crypto — pick a plan that matches your risk appetite.' },
+  { icon:'security', title:'Bank-Grade Security',   desc:'Multi-layer encryption, 2FA, biometrics, and real-time fraud detection protect every account.' },
+  { icon:'speed', title:'Instant Confirmation',  desc:'Deposits appear in seconds. Our 24/7 automated system never sleeps.' },
+  { icon:'ai', title:'AI-Powered Returns',    desc:'Machine learning models optimise your portfolio across 200+ market signals daily.' },
+  { icon:'global', title:'Global Access',         desc:'Available in 150+ countries. Multilingual support. Withdraw in your local currency.' },
+  { icon:'chart', title:'Live Portfolio Tracker',desc:'Real-time charts, ROI projections, and daily profit summaries at a glance.' },
+  { icon:'target', title:'Tailored Strategies',   desc:'From conservative bonds to high-yield crypto — pick a plan that matches your risk appetite.' },
 ]
 
 const TESTIMONIALS = [
@@ -279,7 +293,7 @@ export default function LandingPage() {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(242,186,14,0.2)'; (e.currentTarget as HTMLElement).style.transform='translateY(-3px)' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.transform='translateY(0)' }}>
                 <div style={{ position:'absolute', top:0, right:0, width:80, height:80, background:'radial-gradient(circle at 100% 0%, rgba(242,186,14,0.06), transparent 70%)', pointerEvents:'none' }}/>
-                <div style={{ width:48, height:48, borderRadius:14, background:'rgba(242,186,14,0.07)', border:'1px solid rgba(242,186,14,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, marginBottom:18 }}>{f.icon}</div>
+                <div style={{ width:48, height:48, borderRadius:14, background:'rgba(242,186,14,0.07)', border:'1px solid rgba(242,186,14,0.15)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:18 }}><UiGlyph kind={f.icon} /></div>
                 <h3 style={{ fontSize:16, fontWeight:700, marginBottom:8 }}>{f.title}</h3>
                 <p style={{ color:'#555', fontSize:13, lineHeight:1.7 }}>{f.desc}</p>
               </div>
@@ -335,13 +349,13 @@ export default function LandingPage() {
           <p style={{ color:'#555', fontSize:15, marginBottom:60 }}>From signup to your first ROI — typically under 15 minutes.</p>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:0, position:'relative' }}>
             {[
-              { step:'01', title:'Create Account',   desc:'Sign up free. Verify your email in 60 seconds.', icon:'👤', color:'#F2BA0E' },
-              { step:'02', title:'Complete KYC',      desc:'Quick 5-step identity check. Usually approved in minutes.', icon:'🪪', color:'#A78BFA' },
-              { step:'03', title:'Fund & Invest',     desc:'Deposit crypto or USD. Pick a plan. Earn daily.', icon:'📈', color:'#0ECB81' },
+              { step:'01', title:'Create Account',   desc:'Sign up free. Verify your email in 60 seconds.', icon:'account', color:'#F2BA0E' },
+              { step:'02', title:'Complete KYC',      desc:'Quick 5-step identity check. Usually approved in minutes.', icon:'kyc', color:'#A78BFA' },
+              { step:'03', title:'Fund & Invest',     desc:'Deposit crypto or USD. Pick a plan. Earn daily.', icon:'invest', color:'#0ECB81' },
             ].map((s, i) => (
               <div key={s.step} style={{ padding:'32px 28px', background:'#0E0E0E', border:'1px solid rgba(255,255,255,0.06)', borderRadius: i===0 ? '18px 0 0 18px' : i===2 ? '0 18px 18px 0' : '0', borderLeft: i>0 ? 'none' : undefined, position:'relative' }}>
                 <div style={{ position:'absolute', top:-1, left:'50%', transform:'translateX(-50%)', background:'#060606', padding:'0 12px', fontSize:11, fontWeight:800, color:s.color, letterSpacing:'0.1em' }}>STEP {s.step}</div>
-                <div style={{ fontSize:36, marginBottom:16, marginTop:8 }}>{s.icon}</div>
+                <div style={{ marginBottom:16, marginTop:8, display:'inline-flex', width:40, height:40, alignItems:'center', justifyContent:'center', borderRadius:12, background:'rgba(255,255,255,0.04)' }}><UiGlyph kind={s.icon} color={s.color} size={26} /></div>
                 <h3 style={{ fontSize:17, fontWeight:800, marginBottom:10 }}>{s.title}</h3>
                 <p style={{ color:'#555', fontSize:13, lineHeight:1.7 }}>{s.desc}</p>
               </div>
@@ -351,6 +365,21 @@ export default function LandingPage() {
             <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'14px 36px', background:'#F2BA0E', color:'#000', textDecoration:'none', borderRadius:12, fontWeight:800, fontSize:15 }}>
               Get Started Free →
             </Link>
+          </div>
+        </div>
+      </section>
+
+
+      <section style={{ padding:'24px 24px 80px' }}>
+        <div style={{ maxWidth:980, margin:'0 auto' }}>
+          <div style={{ textAlign:'center', marginBottom:20 }}>
+            <h3 style={{ fontSize:'clamp(22px, 3vw, 34px)', fontWeight:900, marginBottom:10 }}>See Altaris in action</h3>
+            <p style={{ color:'#555', fontSize:14 }}>A short product walkthrough optimized for first-time visitors.</p>
+          </div>
+          <div style={{ border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, overflow:'hidden', background:'#050505' }}>
+            <video controls playsInline preload="metadata" style={{ width:'100%', display:'block' }} poster="/icons/icon-512x512.png">
+              <source src="/videos/altaris-explainer.mp4" type="video/mp4" />
+            </video>
           </div>
         </div>
       </section>
@@ -369,7 +398,7 @@ export default function LandingPage() {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-2px)'; (e.currentTarget as HTMLElement).style.borderColor=`${t.color}30` }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='translateY(0)'; (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.06)' }}>
                 {/* Stars */}
-                <div style={{ display:'flex', gap:2 }}>{[...Array(5)].map((_,i)=><span key={i} style={{ color:'#F2BA0E', fontSize:13 }}>★</span>)}</div>
+                <div style={{ display:'flex', gap:2 }}>{[...Array(5)].map((_,i)=><span key={i} style={{ color:'#F2BA0E', fontSize:13 }}>*</span>)}</div>
                 <p style={{ color:'#999', fontSize:13, lineHeight:1.7, flex:1 }}>"{t.text}"</p>
                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                   <div style={{ width:38, height:38, borderRadius:'50%', background:`${t.color}20`, border:`1.5px solid ${t.color}40`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:15, color:t.color, flexShrink:0 }}>{t.init}</div>
@@ -389,7 +418,7 @@ export default function LandingPage() {
         <div style={{ maxWidth:900, margin:'0 auto', background:'linear-gradient(135deg, #1A1200 0%, #0F0A00 50%, #000 100%)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:24, padding:'60px 40px', textAlign:'center', position:'relative', overflow:'hidden' }}>
           <div style={{ position:'absolute', top:-60, right:-60, width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle, rgba(242,186,14,0.08), transparent 70%)', pointerEvents:'none' }}/>
           <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 16px', borderRadius:99, background:'rgba(242,186,14,0.1)', border:'1px solid rgba(242,186,14,0.25)', color:'#F2BA0E', fontSize:12, fontWeight:700, marginBottom:20 }}>
-            🎁 LIMITED TIME OFFER
+             LIMITED TIME OFFER
           </div>
           <h2 style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:900, marginBottom:14 }}>
             Claim your <span style={{ color:'#F2BA0E' }}>$100 welcome bonus</span>
@@ -494,7 +523,7 @@ export default function LandingPage() {
           <div style={{ borderTop:'1px solid rgba(255,255,255,0.05)', paddingTop:24, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
             <p style={{ color:'#333', fontSize:12 }}>© {new Date().getFullYear()} Altaris Capital Ltd. All rights reserved.</p>
             <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              {['🔒 SSL Secured','🏦 Segregated Funds','📋 KYC Compliant'].map(b => (
+              {[' SSL Secured',' Segregated Funds',' KYC Compliant'].map(b => (
                 <span key={b} style={{ padding:'4px 10px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', color:'#444', fontSize:11 }}>{b}</span>
               ))}
             </div>

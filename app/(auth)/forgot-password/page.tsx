@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
 
         {sent ? (
           <div style={{ background:'#111', border:'1px solid rgba(14,203,129,0.2)', borderRadius:18, padding:32, textAlign:'center' }}>
-            <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(14,203,129,0.1)', border:'1px solid rgba(14,203,129,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:24 }}>✓</div>
+            <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(14,203,129,0.1)', border:'1px solid rgba(14,203,129,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:24 }}>Check</div>
             <h2 style={{ fontSize:18, fontWeight:700, marginBottom:8, color:'#0ECB81' }}>Check your inbox</h2>
             <p style={{ color:'#666', fontSize:13, lineHeight:1.6 }}>
               We sent a password reset link to <strong style={{ color:'#ddd' }}>{email}</strong>. The link expires in 1 hour.

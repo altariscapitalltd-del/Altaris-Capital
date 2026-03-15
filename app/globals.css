@@ -5,6 +5,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root, [data-theme="dark"] {
+  --app-header-height: 112px;
+  --app-bottom-nav-height: 84px;
   --bg-page:#000000; --bg-primary:#000000; --bg-card:#141414;
   --bg-secondary:#141414; --bg-input:#1C1C1C; --bg-tertiary:#1C1C1C;
   --bg-elevated:#222222; --bg-hover:#2A2A2A;
@@ -36,7 +38,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
-html, body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+html, body { padding: 0; margin: 0; }
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-page);color:var(--text-primary);line-height:1.5;overflow-x:hidden}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -79,6 +81,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 @keyframes balanceChartShimmer{0%,100%{opacity:1}50%{opacity:.92}}
 @keyframes candlePulse{0%,100%{opacity:1}50%{opacity:.75}}
+@keyframes chartScanline{0%{transform:translateX(0)}100%{transform:translateX(220%)}}
 .animate-fade-in{animation:fadeIn .25s ease-out}
 .animate-slide-up{animation:slideUp .35s ease-out}
 .animate-slide-in-r{animation:slideInR .3s ease-out}
@@ -90,8 +93,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
 /* Safe-area and edge-to-edge support */
 .app-container {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: 0;
+  padding-bottom: 0;
   min-height: 100svh;
 }
 
@@ -105,4 +108,54 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   left: 0;
   right: 0;
   padding-bottom: calc(env(safe-area-inset-bottom) + 10px);
+}
+
+
+/* UI refresh helpers */
+.ui-upgrade-card{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.ui-upgrade-card:hover{transform:translateY(-1px);border-color:var(--border-strong)}
+
+
+.app-container {
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  position: relative;
+}
+
+.app-top-header {
+  z-index: 120;
+}
+
+.app-main-scroll {
+  position: absolute;
+  inset: 0;
+  top: var(--app-header-height);
+  bottom: var(--app-bottom-nav-height);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+}
+
+.app-bottom-nav {
+  z-index: 110;
+}
+
+@supports (height: 100svh) {
+  .app-container {
+    height: 100svh;
+    min-height: 100svh;
+  }
+}
+
+
+.root-shell {
+  min-height: 100dvh;
+  width: 100%;
+}
+
+@supports (height: 100svh) {
+  .root-shell {
+    min-height: 100svh;
+  }
 }

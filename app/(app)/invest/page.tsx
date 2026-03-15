@@ -35,9 +35,9 @@ function RiskBar({ level }: { level: number }) {
 // 30 investment plans across all asset classes
 const PLANS = [
   // ── Crypto ──
-  { id:'btc-yield',    name:'BTC Yield Vault',        class:'Crypto',       icon:'BTC',   iconBg:'#F7931A', daily:2.50, roi:'912%',  dur:14,  min:1000,  risk:4, investors:1892, spots:null,  badge:'🔥 Hot',    spark:[30,34,38,36,42,45,48,46,52,55,58,56,62,65,68,66,72,75,78,80] },
+  { id:'btc-yield',    name:'BTC Yield Vault',        class:'Crypto',       icon:'BTC',   iconBg:'#F7931A', daily:2.50, roi:'912%',  dur:14,  min:1000,  risk:4, investors:1892, spots:null,  badge:'Hot',    spark:[30,34,38,36,42,45,48,46,52,55,58,56,62,65,68,66,72,75,78,80] },
   { id:'eth-stake',    name:'ETH Staking Pool',        class:'Crypto',       icon:'ETH',  iconBg:'#627EEA', daily:1.20, roi:'438%',  dur:90,  min:500,   risk:3, investors:3241, spots:null,  badge:'Popular',   spark:[20,22,21,24,23,26,25,28,27,30,29,32,31,34,33,36,35,38,37,40] },
-  { id:'defi-accel',   name:'DeFi Accelerator',        class:'DeFi',         icon:'DEF',  iconBg:'#7C3AED', daily:3.50, roi:'1277%', dur:7,   min:2000,  risk:5, investors:891,  spots:5,     badge:'🔥 Limited', spark:[10,15,14,20,18,25,22,30,28,35,32,40,38,45,42,50,48,55,52,60] },
+  { id:'defi-accel',   name:'DeFi Accelerator',        class:'DeFi',         icon:'DEF',  iconBg:'#7C3AED', daily:3.50, roi:'1277%', dur:7,   min:2000,  risk:5, investors:891,  spots:5,     badge:'Limited', spark:[10,15,14,20,18,25,22,30,28,35,32,40,38,45,42,50,48,55,52,60] },
   { id:'altcoin',      name:'Altcoin Growth Fund',     class:'Crypto',       icon:'ALT',  iconBg:'#06B6D4', daily:1.80, roi:'657%',  dur:30,  min:300,   risk:4, investors:2156, spots:null,  badge:null,        spark:[25,27,26,29,28,31,30,33,32,35,34,37,36,39,38,41,40,43,42,45] },
   { id:'btc-micro',    name:'Micro BTC Accumulator',   class:'Crypto',       icon:'BTC',  iconBg:'#F7931A', daily:0.80, roi:'292%',  dur:60,  min:100,   risk:2, investors:8910, spots:null,  badge:'Beginner',  spark:[30,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41,40,42,43] },
   { id:'web3-venture', name:'Web3 Venture Capital',    class:'Crypto',       icon:'WEB3', iconBg:'#10B981', daily:2.20, roi:'803%',  dur:20,  min:3000,  risk:4, investors:412,  spots:10,    badge:'VIP',       spark:[20,23,22,26,25,29,28,32,31,35,34,38,37,41,40,44,43,47,46,50] },
@@ -62,7 +62,7 @@ const PLANS = [
   { id:'em-bond',      name:'Emerging Markets Bond',   class:'Bonds',        icon:'EMB',  iconBg:'#1E3A8A', daily:0.28, roi:'102%',  dur:150, min:300,   risk:2, investors:2156, spots:null,  badge:null,        spark:[28,29,30,29,31,32,31,33,34,33,35,36,35,37,38,37,39,40,39,41] },
 
   // ── Fixed Income ──
-  { id:'smart-save',   name:'Altaris Smart Save',      class:'Fixed Income', icon:'SAV',  iconBg:'#059669', daily:0.11, roi:'40%',   dur:365, min:500,   risk:1, investors:8241, spots:null,  badge:'⭐ Flagship', spark:[30,31,30,32,31,33,32,34,33,35,34,36,35,37,36,38,37,39,38,40] },
+  { id:'smart-save',   name:'Altaris Smart Save',      class:'Fixed Income', icon:'SAV',  iconBg:'#059669', daily:0.11, roi:'40%',   dur:365, min:500,   risk:1, investors:8241, spots:null,  badge:'Flagship', spark:[30,31,30,32,31,33,32,34,33,35,34,36,35,37,36,38,37,39,38,40] },
   { id:'stablecoin',   name:'Stablecoin Reserve',      class:'Fixed Income', icon:'USDT', iconBg:'#047857', daily:0.60, roi:'219%',  dur:60,  min:100,   risk:1, investors:15234,spots:null,  badge:'Beginner',  spark:[38,39,38,39,40,39,40,41,40,41,42,41,42,43,42,43,44,43,44,45] },
 
   // ── Commodities ──
@@ -150,8 +150,7 @@ function InvestPageContent() {
   return (
     <div style={{ padding:'0 0 12px' }}>
       {/* Header */}
-      <div style={{ padding:'12px 16px 0' }}>
-        <h1 style={{ fontSize:22, fontWeight:800, marginBottom:4 }}>Invest</h1>
+      <div style={{ padding:'8px 16px 0' }}>
         <p style={{ color:'var(--text-muted)', fontSize:12, marginBottom:14 }}>
           Balance: <strong style={{ color:'var(--text-primary)' }}>${balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
         </p>
@@ -192,7 +191,7 @@ function InvestPageContent() {
         </div>
 
         {/* Sort */}
-        <div style={{ display:'flex', gap:6, padding:'0 16px', marginBottom:16 }}>
+        <div style={{ display:'flex', gap:6, padding:'0 16px', marginBottom:16, overflowX:'auto' }} className="no-scrollbar">
           <span style={{ color:'var(--text-muted)', fontSize:11, alignSelf:'center', flexShrink:0 }}>Sort:</span>
           {[{id:'popular',l:'Popular'},{id:'roi',l:'Highest ROI'},{id:'min',l:'Min Investment'},{id:'risk',l:'Lowest Risk'}].map(s=>(
             <button key={s.id} onClick={()=>setSortBy(s.id as any)}
@@ -288,7 +287,7 @@ function InvestPageContent() {
         <div style={{ padding:'0 16px' }}>
           {userInvestments.length===0 ? (
             <div style={{ textAlign:'center', padding:'60px 20px' }}>
-              <div style={{ fontSize:48, marginBottom:16 }}>📈</div>
+              <div style={{ fontSize:48, marginBottom:16 }}></div>
               <div style={{ fontWeight:700, fontSize:18, marginBottom:8 }}>No Active Investments</div>
               <div style={{ color:'var(--text-muted)', fontSize:14, marginBottom:24 }}>Start investing to grow your portfolio</div>
               <button onClick={()=>setTab('marketplace')} style={{ padding:'12px 28px', background:'var(--brand-primary)', color:'#000', borderRadius:10, fontWeight:700, border:'none', cursor:'pointer', fontFamily:'inherit' }}>

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
@@ -116,6 +116,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
   const [installShownThisSession, setInstallShownThisSession] = useState(false)
   const [splashVisible, setSplashVisible] = useState(true)
+  const headerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     fetch('/api/user/profile').then(r => {
@@ -301,6 +302,24 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     router.replace(url)
   }, [router])
 
+
+  useEffect(() => {
+    const updateHeaderOffset = () => {
+      const headerHeight = headerRef.current?.offsetHeight || 0
+      document.documentElement.style.setProperty('--app-header-height', `${headerHeight}px`)
+    }
+
+    updateHeaderOffset()
+    window.addEventListener('resize', updateHeaderOffset)
+    const observer = new ResizeObserver(updateHeaderOffset)
+    if (headerRef.current) observer.observe(headerRef.current)
+
+    return () => {
+      window.removeEventListener('resize', updateHeaderOffset)
+      observer.disconnect()
+    }
+  }, [installBannerVisible, unread, pathname])
+
   if (splashVisible) {
     return (
       <div style={{
@@ -348,7 +367,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     }}>
 
       {/* ── Top Bar — solid opaque header so app UI never shows through status bar; no install logo ── */}
-      <header className="header" style={{
+      <header ref={headerRef} className="app-top-header" style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -359,9 +378,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         flexDirection: 'column',
         boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
       }}>
-        {/* Opaque fill for status bar / notch so content never shows through */}
-        <div style={{ height: 'env(safe-area-inset-top, 0px)', minHeight: 0, background: '#0a0a0a', flexShrink: 0 }} />
-        <div style={{ paddingRight: 16, paddingBottom: 10, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ paddingTop: 'calc(env(safe-area-inset-top) + 4px)', paddingRight: 14, paddingBottom: 8, paddingLeft: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <AnimatePresence>
         {installBannerVisible && (
           <motion.div
@@ -405,7 +422,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Link href="/profile" style={{ flexShrink: 0, textDecoration: 'none' }}>
             <div style={{
-              width: 36, height: 36, borderRadius: '50%',
+              width: 34, height: 34, borderRadius: '50%',
               background: 'linear-gradient(135deg,#F2BA0E,#FF9500)',
               border: '2px solid rgba(242,186,14,0.5)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -422,7 +439,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
               flex: 1,
               background: '#1A1A1A',
               borderRadius: 99,
-              padding: '9px 14px',
+              padding: '7px 12px',
               display: 'flex',
               alignItems: 'center',
               gap: 8,
@@ -448,7 +465,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
           {!isMarkets && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <Link href="/notifications" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
+              <Link href="/notifications" style={{ position: 'relative', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
                 <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8c0-3.31-2.69-6-6-6S6 4.69 6 8c0 5-3 6-3 6h18s-3-1-3-6"/>
                   <path d="M13.73 21a2 2 0 01-3.46 0"/>
@@ -472,7 +489,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'calc(88px + env(safe-area-inset-top))', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+      <main className="app-main-scroll" style={{ flex: 1 }}>
         {children}
       </main>
 
@@ -527,7 +544,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                       </div>
                       <div>
                         <div style={{ fontWeight: 700 }}>Tap the share icon</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>⤴︎ in Safari</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Share in Safari</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -552,7 +569,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       {/* ── Bottom Navigation — safe area bottom ── */}
-      <nav className="bottom-nav" style={{
+      <nav className="bottom-nav app-bottom-nav" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
         background: 'var(--nav-bg)',
         backdropFilter: 'blur(24px)',

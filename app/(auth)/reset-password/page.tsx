@@ -38,7 +38,7 @@ function ResetForm() {
     <div style={{ background:'#111', border:'1px solid rgba(255,255,255,0.07)', borderRadius:18, padding:28 }}>
       {done ? (
         <div style={{ textAlign:'center', padding:'8px 0' }}>
-          <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(14,203,129,0.1)', border:'1px solid rgba(14,203,129,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:24 }}>✓</div>
+          <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(14,203,129,0.1)', border:'1px solid rgba(14,203,129,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:24 }}>Check</div>
           <h2 style={{ fontSize:18, fontWeight:700, marginBottom:8, color:'#0ECB81' }}>Password updated!</h2>
           <p style={{ color:'#555', fontSize:13 }}>Redirecting you to sign in…</p>
         </div>
@@ -58,7 +58,7 @@ function ResetForm() {
                 placeholder="At least 8 characters"
                 onFocus={e => e.target.style.borderColor='#F2BA0E'} onBlur={e => e.target.style.borderColor='rgba(255,255,255,0.08)'}/>
               <button type="button" onClick={() => setShowPw(v => !v)} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'#555', cursor:'pointer', fontSize:13 }}>
-                {showPw ? '🙈' : '👁'}
+                {showPw ? 'Hide' : 'Show'}
               </button>
             </div>
             {password.length > 0 && (

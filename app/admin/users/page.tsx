@@ -18,9 +18,9 @@ export default function AdminUsersPage() {
   const paged = filtered.slice(0,(page)*25)
 
   const KYC_STYLE: Record<string,{bg:string;color:string;label:string}> = {
-    APPROVED:       {bg:'rgba(14,203,129,0.1)',color:'#0ECB81',label:'✓ Verified'},
-    PENDING_REVIEW: {bg:'rgba(242,186,14,0.1)',color:'#F2BA0E',label:'⏳ Pending'},
-    REJECTED:       {bg:'rgba(246,70,93,0.1)', color:'#F6465D',label:'✗ Rejected'},
+    APPROVED:       {bg:'rgba(14,203,129,0.1)',color:'#0ECB81',label:'Verified'},
+    PENDING_REVIEW: {bg:'rgba(242,186,14,0.1)',color:'#F2BA0E',label:'Pending'},
+    REJECTED:       {bg:'rgba(246,70,93,0.1)', color:'#F6465D',label:'Rejected'},
     NOT_SUBMITTED:  {bg:'rgba(255,255,255,0.05)',color:'#555',label:'Unverified'},
   }
 

@@ -106,8 +106,8 @@ export default function AdminKYCPage() {
               placeholder="Approve or reject note…"/>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
               <button onClick={()=>setSelected(null)} style={{padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#555',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancel</button>
-              <button onClick={()=>decide(selected.id,'reject')} disabled={loading} style={{padding:'11px',borderRadius:9,border:'1px solid rgba(246,70,93,0.2)',background:'rgba(246,70,93,0.08)',color:'#F6465D',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>✗ Reject</button>
-              <button onClick={()=>decide(selected.id,'approve')} disabled={loading} style={{padding:'11px',borderRadius:9,border:'none',background:'#F2BA0E',color:'#000',fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>✓ Approve</button>
+              <button onClick={()=>decide(selected.id,'reject')} disabled={loading} style={{padding:'11px',borderRadius:9,border:'1px solid rgba(246,70,93,0.2)',background:'rgba(246,70,93,0.08)',color:'#F6465D',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Rejected Reject</button>
+              <button onClick={()=>decide(selected.id,'approve')} disabled={loading} style={{padding:'11px',borderRadius:9,border:'none',background:'#F2BA0E',color:'#000',fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Check Approve</button>
             </div>
           </div>
         </div>

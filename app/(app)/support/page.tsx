@@ -31,7 +31,8 @@ export default function SupportPage() {
       fetch('/api/support').then(r=>r.json()).then(d => {
         if (d.conversation) {
           setConversationId(d.conversation.id)
-          setMessages(d.conversation.messages || [])
+          const normalized = (d.conversation.messages || []).map((m: any) => ({ ...m, isAdmin: m.sender === 'admin' }))
+          setMessages(normalized)
           setSessionEnded(d.conversation.status === 'ended')
         }
       })
@@ -47,11 +48,11 @@ export default function SupportPage() {
   async function send() {
     if(!input.trim()||sending||sessionEnded) return
     const text = input.trim(); setInput(''); setSending(true)
-    const optimistic = { id:'temp', content:text, isAdmin:false, createdAt:new Date().toISOString() }
+    const optimistic = { id:'temp', content:text, sender:'user', isAdmin:false, createdAt:new Date().toISOString() }
     setMessages(m=>[...m, optimistic])
     const res = await fetch('/api/support', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ content: text }) })
     const data = await res.json()
-    if(res.ok) { setMessages(m=>[...m.filter(x=>x.id!=='temp'), data.message]) }
+    if(res.ok) { setMessages(m=>[...m.filter(x=>x.id!=='temp'), { ...data.message, isAdmin: data.message?.sender === 'admin' }]) }
     setSending(false)
   }
 
@@ -83,17 +84,19 @@ export default function SupportPage() {
             <div style={{color:'var(--text-muted)',fontSize:13}}>Usually responds within minutes</div>
           </div>
         )}
-        {messages.map((m:any)=>(
-          <div key={m.id} style={{display:'flex',justifyContent:m.isAdmin?'flex-start':'flex-end'}}>
-            {m.isAdmin&&(
+        {messages.map((m:any)=>{
+          const isAdmin = m.sender === 'admin' || m.isAdmin
+          return (
+          <div key={m.id} style={{display:'flex',justifyContent:isAdmin?'flex-start':'flex-end'}}>
+            {isAdmin&&(
               <div style={{width:28,height:28,borderRadius:'50%',background:'linear-gradient(135deg,#F2BA0E,#FF9500)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'#000',flexShrink:0,marginRight:8,alignSelf:'flex-end'}}>A</div>
             )}
-            <div style={{maxWidth:'72%',padding:'10px 14px',borderRadius:m.isAdmin?'4px 14px 14px 14px':'14px 4px 14px 14px',background:m.isAdmin?'var(--bg-card)':'var(--brand-primary)',color:m.isAdmin?'var(--text-primary)':'#000',fontSize:14,lineHeight:1.5,border:m.isAdmin?'1px solid var(--border)':'none'}}>
+            <div style={{maxWidth:'72%',padding:'10px 14px',borderRadius:isAdmin?'4px 14px 14px 14px':'14px 4px 14px 14px',background:isAdmin?'var(--bg-card)':'var(--brand-primary)',color:isAdmin?'var(--text-primary)':'#000',fontSize:14,lineHeight:1.5,border:isAdmin?'1px solid var(--border)':'none'}}>
               {m.content}
               <div style={{fontSize:10,opacity:.6,marginTop:4,textAlign:'right'}}>{new Date(m.createdAt).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div>
             </div>
           </div>
-        ))}
+          )})}
         <div ref={bottomRef}/>
       </div>
 

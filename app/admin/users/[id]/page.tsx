@@ -73,7 +73,7 @@ export default function UserDetailPage() {
               padding:'3px 10px',borderRadius:99,fontSize:11,fontWeight:700,
               background:user.kycStatus==='APPROVED'?'rgba(14,203,129,0.1)':'rgba(242,186,14,0.1)',
               color:user.kycStatus==='APPROVED'?'#0ECB81':'#F2BA0E'
-            }}>{user.kycStatus==='APPROVED'?'✓ KYC Verified':'KYC '+user.kycStatus}</span>
+            }}>{user.kycStatus==='APPROVED'?'Check KYC Verified':'KYC '+user.kycStatus}</span>
           </div>
           <div style={{color:'#555',fontSize:13,marginBottom:8}}>{user.email} · {user.phone||'No phone'}</div>
           <div style={{display:'flex',gap:16,flexWrap:'wrap'}}>
@@ -88,11 +88,11 @@ export default function UserDetailPage() {
         <div style={{display:'flex',gap:8,flexWrap:'wrap',flexShrink:0}}>
           <button onClick={()=>action('toggle_freeze',{})} disabled={actionLoading==='toggle_freeze'}
             style={{padding:'9px 14px',borderRadius:9,border:`1px solid ${user.isFrozen?'rgba(14,203,129,0.25)':'rgba(246,70,93,0.25)'}`,background:user.isFrozen?'rgba(14,203,129,0.07)':'rgba(246,70,93,0.07)',color:user.isFrozen?'#0ECB81':'#F6465D',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
-            {user.isFrozen?'🔓 Unfreeze':'🔒 Freeze'}
+            {user.isFrozen?'Unfreeze':' Freeze'}
           </button>
           <button onClick={()=>{if(confirm('Override KYC to APPROVED?'))action('override_kyc',{status:'APPROVED'})}} disabled={actionLoading==='override_kyc'}
             style={{padding:'9px 14px',borderRadius:9,border:'1px solid rgba(242,186,14,0.2)',background:'rgba(242,186,14,0.07)',color:'#F2BA0E',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
-            ✅ Approve KYC
+            Verified Approve KYC
           </button>
         </div>
       </div>
