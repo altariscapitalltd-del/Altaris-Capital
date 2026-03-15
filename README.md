@@ -117,5 +117,9 @@ Addresses are manageable from Admin → Settings.
 - Removed hardcoded credential examples and improved secure setup guidance.
 - Refreshed the in-app Home dashboard UI with upgraded portfolio header, richer quick-action cards, and polished market/KYC surfaces for better mobile readability.
 - Reworked Wallet UX with a cleaner balance hero + mini trend chart, deposit-first crypto/fiat flow, branded QR receive card, and recent activity summaries.
+- Wallet flow now opens with neutral state (no auto-selected action), introduces full-screen crypto receive dashboard, and adds a premium referral rewards dashboard.
+- iOS PWA header safe-area handling was tightened so content no longer leaks into the status-bar region.
+- Market chart endpoint now falls back to CoinGecko OHLC to keep candlestick charts visible when exchange pairs are unavailable.
+- Profile image uploads now accept modern iPhone formats (HEIC/HEIF) in addition to JPEG/PNG/WebP.
 - Home crypto and top-mover sections now use live provider market data (not placeholder rows).
 - Improved chat message alignment and settings interactivity (push toggle wiring, notification preferences UX).

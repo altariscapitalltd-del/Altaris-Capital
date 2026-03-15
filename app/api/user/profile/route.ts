@@ -5,8 +5,8 @@ import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
-const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
-const ALLOWED_AVATAR_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp'])
+const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
+const ALLOWED_AVATAR_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'])
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)

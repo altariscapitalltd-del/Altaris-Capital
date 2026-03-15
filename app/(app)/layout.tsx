@@ -348,7 +348,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     }}>
 
       {/* ── Top Bar — solid opaque header so app UI never shows through status bar; no install logo ── */}
-      <header className="header" style={{
+      <header style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -359,9 +359,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         flexDirection: 'column',
         boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
       }}>
-        {/* Opaque fill for status bar / notch so content never shows through */}
-        <div style={{ height: 'env(safe-area-inset-top, 0px)', minHeight: 0, background: '#0a0a0a', flexShrink: 0 }} />
-        <div style={{ paddingRight: 16, paddingBottom: 10, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)', paddingRight: 16, paddingBottom: 10, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <AnimatePresence>
         {installBannerVisible && (
           <motion.div
@@ -472,7 +470,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'calc(102px + env(safe-area-inset-top))', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+      <main style={{ flex: 1, overflowY: 'auto', paddingTop: '112px', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
         {children}
       </main>
 

@@ -11,6 +11,8 @@ const DEPOSIT_COINS = [
   { sym: 'USDT', name: 'Tether', color: '#26A17B', minDeposit: 10 },
 ] as const
 
+type WalletTab = 'none' | 'deposit' | 'withdraw' | 'reward'
+
 function MiniTrend({ values }: { values: number[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -20,8 +22,8 @@ function MiniTrend({ values }: { values: number[] }) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const width = 120
-    const height = 48
+    const width = 130
+    const height = 52
     const dpr = window.devicePixelRatio || 1
     canvas.width = width * dpr
     canvas.height = height * dpr
@@ -30,14 +32,16 @@ function MiniTrend({ values }: { values: number[] }) {
     const min = Math.min(...values)
     const max = Math.max(...values)
     const range = max - min || 1
+
     const points = values.map((v, i) => ({
       x: (i / (values.length - 1)) * width,
       y: height - ((v - min) / range) * (height - 8) - 4,
     }))
 
     ctx.clearRect(0, 0, width, height)
+
     const grad = ctx.createLinearGradient(0, 0, 0, height)
-    grad.addColorStop(0, 'rgba(242,186,14,0.35)')
+    grad.addColorStop(0, 'rgba(242,186,14,0.38)')
     grad.addColorStop(1, 'rgba(242,186,14,0)')
 
     ctx.beginPath()
@@ -53,17 +57,17 @@ function MiniTrend({ values }: { values: number[] }) {
     ctx.moveTo(points[0].x, points[0].y)
     for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y)
     ctx.strokeStyle = '#F2BA0E'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 2.2
     ctx.lineJoin = 'round'
     ctx.lineCap = 'round'
     ctx.stroke()
   }, [values])
 
-  return <canvas ref={canvasRef} style={{ width: 120, height: 48, display: 'block' }} />
+  return <canvas ref={canvasRef} style={{ width: 130, height: 52, display: 'block' }} />
 }
 
 export default function WalletPage() {
-  const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit')
+  const [tab, setTab] = useState<WalletTab>('none')
   const [depositMode, setDepositMode] = useState<'select' | 'crypto' | 'fiat'>('select')
   const [coin, setCoin] = useState<(typeof DEPOSIT_COINS)[number]['sym']>('USDT')
   const [amount, setAmount] = useState('')
@@ -73,12 +77,12 @@ export default function WalletPage() {
   const [balances, setBalances] = useState<Record<string, number>>({})
   const [investedTotal, setInvestedTotal] = useState(0)
   const [profitToday, setProfitToday] = useState(0)
-  const [investments, setInvestments] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [refCode, setRefCode] = useState('')
 
   function loadProfile() {
     fetch('/api/user/profile')
@@ -91,9 +95,11 @@ export default function WalletPage() {
         setBalances(nextBalances)
 
         const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
-        setInvestments(active)
         setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
         setProfitToday(active.reduce((sum: number, i: any) => sum + i.amount * (i.dailyRoi || 0), 0))
+
+        const code = (d.user?.id || '').slice(-8).toUpperCase()
+        setRefCode(code || 'ALTARIS01')
       })
       .catch(() => {})
   }
@@ -132,15 +138,15 @@ export default function WalletPage() {
 
   useEffect(() => {
     const address = walletAddresses[coin]
-    if (!address) {
+    if (!address || tab !== 'deposit' || depositMode !== 'crypto') {
       setQrDataUrl(null)
       return
     }
 
-    QRCode.toDataURL(address, { width: 340, margin: 1 })
+    QRCode.toDataURL(address, { width: 420, margin: 1 })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null))
-  }, [coin, walletAddresses])
+  }, [coin, walletAddresses, tab, depositMode])
 
   const usdBalance = balances.USD || 0
   const totalBalance = usdBalance + investedTotal
@@ -148,9 +154,9 @@ export default function WalletPage() {
 
   const trendData = useMemo(() => {
     const base = totalBalance || 500
-    return Array.from({ length: 18 }, (_, i) => {
-      const wave = Math.sin(i / 2.5) * base * 0.03
-      const noise = (Math.random() - 0.5) * base * 0.01
+    return Array.from({ length: 22 }, (_, i) => {
+      const wave = Math.sin(i / 2.3) * base * 0.03
+      const noise = (Math.random() - 0.5) * base * 0.012
       return Math.max(0, base + wave + noise)
     })
   }, [totalBalance])
@@ -159,7 +165,7 @@ export default function WalletPage() {
     const list = transactions.slice(0, 5)
     return {
       totalCount: transactions.length,
-      pending: list.filter((t: any) => t.status === 'PENDING').length,
+      pending: transactions.filter((t: any) => t.status === 'PENDING').length,
       latest: list,
     }
   }, [transactions])
@@ -254,6 +260,19 @@ export default function WalletPage() {
     setAmount(next)
   }
 
+  async function shareReferral() {
+    const referralUrl = `${window.location.origin}/signup?ref=${refCode}`
+    const text = `Join me on Altaris Capital and earn referral rewards: ${referralUrl}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Join Altaris Capital', text, url: referralUrl })
+        return
+      } catch {}
+    }
+    navigator.clipboard.writeText(referralUrl)
+    setMsg({ type: 'success', text: 'Referral link copied to clipboard.' })
+  }
+
   const ActionButton = ({
     active,
     onClick,
@@ -266,34 +285,33 @@ export default function WalletPage() {
     label: string
     icon: React.ReactNode
     color: string
-  }) => {
-    const commonStyle: any = {
-      padding: 14,
-      borderRadius: 14,
-      border: '1px solid rgba(255,255,255,0.08)',
-      background: active ? `${color}20` : 'var(--bg-card)',
-      color: active ? color : 'var(--text-secondary)',
-      fontWeight: 700,
-      fontSize: 13,
-      cursor: onClick ? 'pointer' : 'default',
-      fontFamily: 'inherit',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 6,
-    }
-
-    if (!onClick) {
-      return <div style={commonStyle} className="ui-upgrade-card">{icon}{label}</div>
-    }
-
-    return (
-      <button onClick={onClick} type="button" style={commonStyle} className="pressable ui-upgrade-card">
-        {icon}
-        {label}
-      </button>
-    )
-  }
+  }) => (
+    <button
+      onClick={onClick}
+      type="button"
+      style={{
+        minHeight: 96,
+        padding: 12,
+        borderRadius: 14,
+        border: '1px solid rgba(255,255,255,0.08)',
+        background: active ? `${color}20` : 'var(--bg-card)',
+        color: active ? color : 'var(--text-secondary)',
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+      }}
+      className="pressable ui-upgrade-card"
+    >
+      {icon}
+      <span style={{ textAlign: 'center' }}>{label}</span>
+    </button>
+  )
 
   return (
     <div style={{ padding: '6px 16px 22px' }}>
@@ -301,8 +319,8 @@ export default function WalletPage() {
         <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
           TOTAL BALANCE
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-end' }}>
-          <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-end' }}>
+          <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: '-1.2px', lineHeight: 1 }}>${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <div style={{ marginTop: 8, color: 'var(--success)', fontWeight: 700, fontSize: 14 }}>
               +${profitToday.toFixed(2)} today
@@ -311,13 +329,13 @@ export default function WalletPage() {
               Available ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <MiniTrend values={trendData} />
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
         <ActionButton
           active={tab === 'deposit'}
           onClick={() => {
@@ -340,28 +358,29 @@ export default function WalletPage() {
           color="var(--danger)"
           icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>}
         />
-        <Link href="/invest" style={{ textDecoration: 'none' }}>
-          <ActionButton
-            active={false}
-            label="My Invest"
-            color="var(--brand-primary)"
-            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>}
-          />
-        </Link>
-        <Link href="/home" style={{ textDecoration: 'none' }}>
-          <ActionButton
-            active={false}
-            label="Rewards"
-            color="var(--brand-primary)"
-            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>}
-          />
-        </Link>
+        <ActionButton
+          active={false}
+          onClick={() => (window.location.href = '/invest?tab=my')}
+          label="My Invest"
+          color="var(--brand-primary)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>}
+        />
+        <ActionButton
+          active={tab === 'reward'}
+          onClick={() => {
+            setTab('reward')
+            setMsg(null)
+          }}
+          label="Rewards"
+          color="var(--brand-primary)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>}
+        />
       </div>
 
       {tab === 'deposit' && (
-        <div>
+        <div style={{ marginBottom: 14 }}>
           {depositMode === 'select' && (
-            <div style={{ marginBottom: 14 }}>
+            <div>
               <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>Deposit with</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <button
@@ -380,100 +399,6 @@ export default function WalletPage() {
                 >
                   Fiat
                 </a>
-              </div>
-            </div>
-          )}
-
-          {depositMode === 'crypto' && (
-            <div style={{ background: 'linear-gradient(180deg,#1A1D23,#151A21)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: 16, marginBottom: 14 }}>
-              <button
-                onClick={() => setDepositMode('select')}
-                type="button"
-                style={{ border: 'none', background: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', marginBottom: 8 }}
-              >
-                ← Back
-              </button>
-
-              <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, background: 'rgba(242,186,14,0.16)', border: '1px solid rgba(242,186,14,0.24)', color: '#F2BA0E', fontSize: 12, fontWeight: 600 }}>
-                Only send {coin} to this address. Sending other assets may result in permanent loss.
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto' }} className="no-scrollbar">
-                {DEPOSIT_COINS.map((c) => (
-                  <button
-                    key={c.sym}
-                    onClick={() => setCoin(c.sym)}
-                    style={{
-                      whiteSpace: 'nowrap',
-                      border: '1px solid',
-                      borderColor: c.sym === coin ? c.color : 'var(--border)',
-                      background: c.sym === coin ? `${c.color}22` : 'var(--bg-card)',
-                      color: c.sym === coin ? c.color : 'var(--text-muted)',
-                      borderRadius: 999,
-                      padding: '7px 12px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    {c.sym}
-                  </button>
-                ))}
-              </div>
-
-              <div style={{ textAlign: 'center', marginBottom: 14 }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 8 }}>
-                  {selectedCoin.sym} · {selectedCoin.name}
-                </div>
-
-                <div
-                  style={{
-                    margin: '0 auto',
-                    width: 250,
-                    height: 250,
-                    borderRadius: 18,
-                    background: '#fff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {qrDataUrl ? <img src={qrDataUrl} alt={`${coin} QR`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ color: '#111', fontWeight: 700 }}>Generating QR...</div>}
-                  <div style={{ position: 'absolute', width: 46, height: 46, borderRadius: 14, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <AltarisLogoMark size={28} />
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 10, fontFamily: 'monospace', fontSize: 13, color: 'var(--text-secondary)', wordBreak: 'break-all' }}>
-                  {activeAddress || 'Address unavailable'}
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
-                <button onClick={copyAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>{copied ? 'Copied' : 'Copy'}</button>
-                <button onClick={setSuggestedAmount} type="button" className="btn-ghost" style={{ width: '100%' }}>Set Amount</button>
-                <button onClick={shareAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>Share</button>
-              </div>
-
-              <div style={{ display: 'grid', gap: 10 }}>
-                <div>
-                  <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
-                    Amount ({coin})
-                  </label>
-                  <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(selectedCoin.minDeposit)} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
-                    Transaction Hash
-                  </label>
-                  <input className="input" value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="Paste blockchain tx hash" />
-                </div>
-                <button onClick={submitDeposit} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
-                  {loading ? 'Submitting...' : 'I sent crypto'}
-                </button>
               </div>
             </div>
           )}
@@ -514,13 +439,41 @@ export default function WalletPage() {
         </div>
       )}
 
+      {tab === 'reward' && (
+        <div style={{ marginBottom: 14, background: 'linear-gradient(155deg, rgba(242,186,14,0.18), rgba(21,26,33,1) 38%, rgba(11,14,17,1))', border: '1px solid rgba(242,186,14,0.24)', borderRadius: 18, padding: 16 }}>
+          <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Referral Rewards</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 14 }}>
+            Invite friends, earn commission on every qualified deposit and investment.
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+            <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Your Code</div>
+              <div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>{refCode}</div>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Referral Rate</div>
+              <div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>Up to 30%</div>
+            </div>
+            <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Bonus Pool</div>
+              <div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>$100+</div>
+            </div>
+          </div>
+
+          <button onClick={shareReferral} className="btn-primary" style={{ width: '100%' }}>
+            Share referral link
+          </button>
+        </div>
+      )}
+
       {msg && (
         <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)', fontSize: 12, fontWeight: 700 }}>
           {msg.text}
         </div>
       )}
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14, marginBottom: 12 }}>
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Recent activity</div>
           <Link href="/transactions" style={{ color: 'var(--brand-primary)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>View all →</Link>
@@ -549,20 +502,82 @@ export default function WalletPage() {
         )}
       </div>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>My invest</div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: 12 }}>
-          <span>Active plans</span>
-          <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{investments.length}</span>
+      {/* Full-screen crypto receive dashboard */}
+      {tab === 'deposit' && depositMode === 'crypto' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <button onClick={() => setDepositMode('select')} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>Receive</div>
+            <div style={{ width: 36 }} />
+          </div>
+
+          <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, background: 'rgba(242,186,14,0.16)', border: '1px solid rgba(242,186,14,0.24)', color: '#F2BA0E', fontSize: 12, fontWeight: 600 }}>
+            Only send {coin} to this address. Other assets may be lost permanently.
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto' }} className="no-scrollbar">
+            {DEPOSIT_COINS.map((c) => (
+              <button
+                key={c.sym}
+                onClick={() => setCoin(c.sym)}
+                style={{
+                  whiteSpace: 'nowrap',
+                  border: '1px solid',
+                  borderColor: c.sym === coin ? c.color : 'var(--border)',
+                  background: c.sym === coin ? `${c.color}22` : 'var(--bg-card)',
+                  color: c.sym === coin ? c.color : 'var(--text-muted)',
+                  borderRadius: 999,
+                  padding: '7px 12px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {c.sym} · {c.name}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: 14, background: '#fff', borderRadius: 20, padding: 14 }}>
+            <div style={{ margin: '0 auto', width: '100%', maxWidth: 340, aspectRatio: '1/1', borderRadius: 16, overflow: 'hidden', position: 'relative', background: '#fff' }}>
+              {qrDataUrl ? <img src={qrDataUrl} alt={`${coin} QR`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', color: '#111', fontWeight: 700 }}>Generating QR...</div>}
+              <div style={{ position: 'absolute', inset: '50% auto auto 50%', transform: 'translate(-50%, -50%)', width: 54, height: 54, borderRadius: 16, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>
+                <AltarisLogoMark size={34} />
+              </div>
+            </div>
+            <div style={{ marginTop: 10, color: '#2B3139', fontFamily: 'monospace', fontSize: 14, wordBreak: 'break-all', fontWeight: 700 }}>
+              {activeAddress || 'Address unavailable'}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+            <button onClick={copyAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>{copied ? 'Copied' : 'Copy'}</button>
+            <button onClick={setSuggestedAmount} type="button" className="btn-ghost" style={{ width: '100%' }}>Set Amount</button>
+            <button onClick={shareAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>Share</button>
+          </div>
+
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+                  Amount ({coin})
+                </label>
+                <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(selectedCoin.minDeposit)} />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+                  Transaction Hash
+                </label>
+                <input className="input" value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="Paste blockchain tx hash" />
+              </div>
+              <button onClick={submitDeposit} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
+                {loading ? 'Submitting...' : 'I sent crypto'}
+              </button>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: 12, marginTop: 6 }}>
-          <span>Invested capital</span>
-          <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>${investedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-        </div>
-        <Link href="/invest?tab=my" className="btn-ghost" style={{ width: '100%', marginTop: 12, textDecoration: 'none', display: 'inline-flex', justifyContent: 'center' }}>
-          Open My Plans
-        </Link>
-      </div>
+      )}
     </div>
   )
 }
