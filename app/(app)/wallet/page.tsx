@@ -1,590 +1,584 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import QRCode from 'qrcode'
-import { motion, AnimatePresence } from 'framer-motion'
-import CoinIcon from '@/components/ui/CoinIcon'
+import { AltarisLogoMark } from '@/components/AltarisLogo'
 
-const COINS = [
+const DEPOSIT_COINS = [
   { sym: 'BTC', name: 'Bitcoin', color: '#F7931A', minDeposit: 0.001 },
   { sym: 'ETH', name: 'Ethereum', color: '#627EEA', minDeposit: 0.01 },
   { sym: 'USDT', name: 'Tether', color: '#26A17B', minDeposit: 10 },
-]
+] as const
+
+type WalletTab = 'none' | 'deposit' | 'withdraw' | 'reward'
+
+function MiniTrend({ values }: { values: number[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || values.length < 2) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const width = 130
+    const height = 52
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = width * dpr
+    canvas.height = height * dpr
+    ctx.scale(dpr, dpr)
+
+    const min = Math.min(...values)
+    const max = Math.max(...values)
+    const range = max - min || 1
+
+    const points = values.map((v, i) => ({
+      x: (i / (values.length - 1)) * width,
+      y: height - ((v - min) / range) * (height - 8) - 4,
+    }))
+
+    ctx.clearRect(0, 0, width, height)
+
+    const grad = ctx.createLinearGradient(0, 0, 0, height)
+    grad.addColorStop(0, 'rgba(242,186,14,0.38)')
+    grad.addColorStop(1, 'rgba(242,186,14,0)')
+
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y)
+    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y)
+    ctx.lineTo(width, height)
+    ctx.lineTo(0, height)
+    ctx.closePath()
+    ctx.fillStyle = grad
+    ctx.fill()
+
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y)
+    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y)
+    ctx.strokeStyle = '#F2BA0E'
+    ctx.lineWidth = 2.2
+    ctx.lineJoin = 'round'
+    ctx.lineCap = 'round'
+    ctx.stroke()
+  }, [values])
+
+  return <canvas ref={canvasRef} style={{ width: 130, height: 52, display: 'block' }} />
+}
 
 export default function WalletPage() {
-  const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit')
+  const [tab, setTab] = useState<WalletTab>('none')
   const [depositMode, setDepositMode] = useState<'select' | 'crypto' | 'fiat'>('select')
-  const [coin, setCoin] = useState('USDT')
+  const [coin, setCoin] = useState<(typeof DEPOSIT_COINS)[number]['sym']>('USDT')
   const [amount, setAmount] = useState('')
   const [txHash, setTxHash] = useState('')
+  const [withdrawAddress, setWithdrawAddress] = useState('')
   const [walletAddresses, setWalletAddresses] = useState<Record<string, string>>({})
   const [balances, setBalances] = useState<Record<string, number>>({})
   const [investedTotal, setInvestedTotal] = useState(0)
   const [profitToday, setProfitToday] = useState(0)
-  const [investments, setInvestments] = useState<any[]>([])
-  const [withdrawAddress, setWithdrawAddress] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [copied, setCopied] = useState(false)
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [refCode, setRefCode] = useState('')
 
   function loadProfile() {
     fetch('/api/user/profile')
       .then((r) => r.json())
       .then((d) => {
-        const bals: Record<string, number> = {}
+        const nextBalances: Record<string, number> = {}
         d.user?.balances?.forEach((b: any) => {
-          bals[b.currency] = b.amount
+          nextBalances[b.currency] = b.amount
         })
-        setBalances(bals)
+        setBalances(nextBalances)
+
         const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
-        setInvestments(active)
-        setInvestedTotal(active.reduce((s: number, i: any) => s + i.amount, 0))
-        setProfitToday(active.reduce((s: number, i: any) => s + i.amount * (i.dailyRoi || 0), 0))
+        setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
+        setProfitToday(active.reduce((sum: number, i: any) => sum + i.amount * (i.dailyRoi || 0), 0))
+
+        const code = (d.user?.id || '').slice(-8).toUpperCase()
+        setRefCode(code || 'ALTARIS01')
       })
+      .catch(() => {})
+  }
+
+  function loadTransactions() {
+    fetch('/api/transactions?page=1')
+      .then((r) => r.json())
+      .then((d) => setTransactions(d.transactions || []))
+      .catch(() => setTransactions([]))
   }
 
   useEffect(() => {
     loadProfile()
+    loadTransactions()
+
     fetch('/api/wallet/addresses')
       .then((r) => r.json())
       .then((d) => {
-        const addrs: Record<string, string> = {}
+        const mapped: Record<string, string> = {}
         d.addresses?.forEach((a: any) => {
-          addrs[a.currency] = a.address
+          mapped[a.currency] = a.address
         })
-        setWalletAddresses(addrs)
+        setWalletAddresses(mapped)
       })
+      .catch(() => setWalletAddresses({}))
   }, [])
 
   useEffect(() => {
-    const handler = () => loadProfile()
+    const handler = () => {
+      loadProfile()
+      loadTransactions()
+    }
     window.addEventListener('balance:refresh', handler)
     return () => window.removeEventListener('balance:refresh', handler)
   }, [])
 
   useEffect(() => {
-    const addr = walletAddresses[coin]
-    if (!addr) {
+    if (tab !== 'deposit' || depositMode !== 'select') return
+    const timer = window.setTimeout(() => {
+      setTab((current) => (current === 'deposit' ? 'none' : current))
+    }, 10000)
+    return () => window.clearTimeout(timer)
+  }, [tab, depositMode])
+
+  useEffect(() => {
+    const address = walletAddresses[coin]
+    if (!address || tab !== 'deposit' || depositMode !== 'crypto') {
       setQrDataUrl(null)
       return
     }
-    QRCode.toDataURL(addr, { width: 200, margin: 1 })
+
+    QRCode.toDataURL(address, { width: 420, margin: 1 })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null))
-  }, [coin, walletAddresses])
+  }, [coin, walletAddresses, tab, depositMode])
+
+  const usdBalance = balances.USD || 0
+  const totalBalance = usdBalance + investedTotal
+  const fiatWidgetUrl = process.env.NEXT_PUBLIC_MOONPAY_WIDGET_URL || 'https://buy.moonpay.com'
+
+  const trendData = useMemo(() => {
+    const base = totalBalance || 500
+    return Array.from({ length: 22 }, (_, i) => {
+      const wave = Math.sin(i / 2.3) * base * 0.03
+      const noise = (Math.random() - 0.5) * base * 0.012
+      return Math.max(0, base + wave + noise)
+    })
+  }, [totalBalance])
+
+  const txSummary = useMemo(() => {
+    const list = transactions.slice(0, 5)
+    return {
+      totalCount: transactions.length,
+      pending: transactions.filter((t: any) => t.status === 'PENDING').length,
+      latest: list,
+    }
+  }, [transactions])
+
+  const selectedCoin = DEPOSIT_COINS.find((c) => c.sym === coin)!
+  const activeAddress = walletAddresses[coin] || ''
 
   async function submitDeposit() {
-    if (!amount || !txHash) {
-      setMsg({ type: 'error', text: 'Please fill all fields' })
+    if (!amount || !txHash.trim()) {
+      setMsg({ type: 'error', text: 'Please enter amount and transaction hash' })
       return
     }
+
     setLoading(true)
     setMsg(null)
-    const res = await fetch('/api/deposits', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currency: coin, amount: parseFloat(amount), txHash }),
-    })
-    const data = await res.json()
-    if (res.ok) {
-      setMsg({ type: 'success', text: 'Deposit submitted! Pending admin approval.' })
+    try {
+      const res = await fetch('/api/deposits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currency: coin, amount: Number(amount), txHash: txHash.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setMsg({ type: 'error', text: data.error || 'Failed to submit deposit' })
+        return
+      }
+      setMsg({ type: 'success', text: 'Deposit submitted. Awaiting admin confirmation.' })
       setAmount('')
       setTxHash('')
-    } else setMsg({ type: 'error', text: data.error })
-    setLoading(false)
+      loadTransactions()
+    } catch {
+      setMsg({ type: 'error', text: 'Failed to submit deposit' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function submitWithdraw() {
-    if (!amount || !withdrawAddress) {
-      setMsg({ type: 'error', text: 'Please fill all fields' })
+    if (!amount || !withdrawAddress.trim()) {
+      setMsg({ type: 'error', text: 'Please enter amount and destination wallet address' })
       return
     }
+
     setLoading(true)
     setMsg(null)
-    const res = await fetch('/api/withdrawals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currency: coin, amount: parseFloat(amount), walletAddress: withdrawAddress }),
-    })
-    const data = await res.json()
-    if (res.ok) {
-      setMsg({ type: 'success', text: 'Withdrawal requested! Processing...' })
+    try {
+      const res = await fetch('/api/withdrawals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currency: 'USD', amount: Number(amount), address: withdrawAddress.trim() }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setMsg({ type: 'error', text: data.error || 'Failed to request withdrawal' })
+        return
+      }
+      setMsg({ type: 'success', text: 'Withdrawal request submitted successfully' })
       setAmount('')
       setWithdrawAddress('')
-    } else setMsg({ type: 'error', text: data.error })
-    setLoading(false)
+      loadProfile()
+      loadTransactions()
+    } catch {
+      setMsg({ type: 'error', text: 'Failed to request withdrawal' })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  function copy(text: string) {
-    navigator.clipboard.writeText(text)
+  function copyAddress() {
+    if (!activeAddress) return
+    navigator.clipboard.writeText(activeAddress)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setTimeout(() => setCopied(false), 1800)
   }
 
-  const usdBalance = balances['USD'] ?? 0
-  const totalBalance = usdBalance + investedTotal
-  const selectedCoin = COINS.find((c) => c.sym === coin)!
+  async function shareAddress() {
+    if (!activeAddress) return
+    const amountQuery = amount ? `?amount=${encodeURIComponent(amount)}` : ''
+    const payload = `${coin} deposit address:\n${activeAddress}${amountQuery}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${coin} Deposit Address`, text: payload })
+        return
+      } catch {}
+    }
+    copyAddress()
+  }
 
-  const fiatWidgetUrl = process.env.NEXT_PUBLIC_MOONPAY_WIDGET_URL || 'https://buy.moonpay.com'
+  function setSuggestedAmount() {
+    const next = prompt(`Set ${coin} amount`, amount || String(selectedCoin.minDeposit))
+    if (next === null) return
+    setAmount(next)
+  }
 
-  const IconDeposit = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-  )
-  const IconWithdraw = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-  )
-  const IconRewards = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>
-  )
-  const IconCrypto = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83M19.07 4.93l-2.83 2.83M7.76 16.24l-2.83 2.83"/><circle cx="12" cy="12" r="4"/></svg>
-  )
-  const IconFiat = () => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-  )
-  const IconExternal = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-  )
-  const IconWarning = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  async function shareReferral() {
+    const referralUrl = `${window.location.origin}/signup?ref=${refCode}`
+    const text = `Join me on Altaris Capital and earn referral rewards: ${referralUrl}`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Join Altaris Capital', text, url: referralUrl })
+        return
+      } catch {}
+    }
+    navigator.clipboard.writeText(referralUrl)
+    setMsg({ type: 'success', text: 'Referral link copied to clipboard.' })
+  }
+
+  function closeDashboard() {
+    setTab('none')
+    setDepositMode('select')
+    setMsg(null)
+  }
+
+  const ActionButton = ({
+    active,
+    onClick,
+    label,
+    icon,
+    color,
+  }: {
+    active: boolean
+    onClick?: () => void
+    label: string
+    icon: React.ReactNode
+    color: string
+  }) => (
+    <button
+      onClick={onClick}
+      type="button"
+      style={{
+        minHeight: 96,
+        padding: 12,
+        borderRadius: 14,
+        border: '1px solid rgba(255,255,255,0.08)',
+        background: active ? `${color}20` : 'var(--bg-card)',
+        color: active ? color : 'var(--text-secondary)',
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+      }}
+      className="pressable ui-upgrade-card"
+    >
+      {icon}
+      <span style={{ textAlign: 'center' }}>{label}</span>
+    </button>
   )
 
   return (
-    <div style={{ padding: '0 0 24px' }}>
-      <div style={{ padding: '12px 16px 0' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16 }}>Wallet</h1>
-
-        {/* Premium balance card — Bybit-style sharp, dark, clean */}
-        <div
-          style={{
-            background: 'linear-gradient(145deg, #0d0d0d 0%, #0a0a0a 100%)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: 12,
-            padding: 20,
-            marginBottom: 18,
-            boxShadow: '0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)',
-          }}
-        >
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', marginBottom: 6, textTransform: 'uppercase' }}>Total Balance</div>
-          <div style={{ fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', marginBottom: 20, color: '#fff' }}>
-            ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div>
-              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4 }}>Available</div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            </div>
-            <div>
-              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4 }}>Invested</div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>${investedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            </div>
-            <div>
-              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4 }}>Profit today</div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--success)' }}>+${profitToday.toFixed(2)}</div>
-            </div>
-            <div>
-              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4 }}>Crypto</div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#fff' }}>
-                {(balances['BTC'] || 0).toFixed(4)} BTC, {(balances['ETH'] || 0).toFixed(4)} ETH
-              </div>
-            </div>
-          </div>
+    <div style={{ padding: '6px 16px 22px' }}>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
+          TOTAL BALANCE
         </div>
-
-        {/* Action buttons: Deposit, Withdraw, Rewards — SVG icons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
-          <button
-            onClick={() => { setTab('deposit'); setDepositMode('select'); setMsg(null) }}
-            style={{
-              padding: 14,
-              borderRadius: 12,
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: tab === 'deposit' ? 'rgba(14,203,129,0.12)' : '#111',
-              color: tab === 'deposit' ? 'var(--success)' : 'var(--text-secondary)',
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <IconDeposit /> Deposit
-          </button>
-          <button
-            onClick={() => { setTab('withdraw'); setDepositMode('select'); setMsg(null) }}
-            style={{
-              padding: 14,
-              borderRadius: 12,
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: tab === 'withdraw' ? 'rgba(246,70,93,0.12)' : '#111',
-              color: tab === 'withdraw' ? 'var(--danger)' : 'var(--text-secondary)',
-              fontWeight: 700,
-              fontSize: 13,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <IconWithdraw /> Withdraw
-          </button>
-          <Link
-            href="/home"
-            style={{
-              padding: 14,
-              borderRadius: 12,
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: '#111',
-              color: 'var(--brand-primary)',
-              fontWeight: 700,
-              fontSize: 13,
-              textDecoration: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <IconRewards /> Rewards
-          </Link>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-end' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: '-1.2px', lineHeight: 1 }}>${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style={{ marginTop: 8, color: 'var(--success)', fontWeight: 700, fontSize: 14 }}>
+              +${profitToday.toFixed(2)} today
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 6 }}>
+              Available ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <MiniTrend values={trendData} />
+          </div>
         </div>
       </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
+        <ActionButton
+          active={tab === 'deposit'}
+          onClick={() => {
+            setTab('deposit')
+            setDepositMode('select')
+            setMsg(null)
+          }}
+          label="Deposit"
+          color="var(--success)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>}
+        />
+        <ActionButton
+          active={tab === 'withdraw'}
+          onClick={() => {
+            setTab('withdraw')
+            setDepositMode('select')
+            setMsg(null)
+          }}
+          label="Withdraw"
+          color="var(--danger)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>}
+        />
+        <ActionButton
+          active={false}
+          onClick={() => (window.location.href = '/invest?tab=my')}
+          label="Invested"
+          color="var(--brand-primary)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>}
+        />
+        <ActionButton
+          active={tab === 'reward'}
+          onClick={() => {
+            setTab('reward')
+            setMsg(null)
+          }}
+          label="Rewards"
+          color="var(--brand-primary)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>}
+        />
+      </div>
+
       {tab === 'deposit' && (
-        <div style={{ padding: '0 16px' }}>
+        <div style={{ marginBottom: 14 }}>
           {depositMode === 'select' && (
-            <div style={{ marginBottom: 16 }}>
+            <div>
               <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>Deposit with</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <button
                   onClick={() => setDepositMode('crypto')}
-                  style={{
-                    padding: 18,
-                    borderRadius: 14,
-                    border: '2px solid rgba(255,255,255,0.08)',
-                    background: '#111',
-                    color: 'var(--text-primary)',
-                    fontWeight: 700,
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                  }}
                   className="pressable"
+                  style={{ padding: 16, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
-                  <IconCrypto /> Crypto
+                  Crypto
                 </button>
                 <a
                   href={fiatWidgetUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    padding: 18,
-                    borderRadius: 14,
-                    border: '2px solid rgba(255,255,255,0.08)',
-                    background: '#111',
-                    color: 'var(--text-primary)',
-                    fontWeight: 700,
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    textDecoration: 'none',
-                  }}
                   className="pressable"
+                  style={{ textDecoration: 'none', textAlign: 'center', padding: 16, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 16 }}
                 >
-                  <IconFiat /> Fiat
+                  Fiat
                 </a>
               </div>
-              <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 10 }}>Fiat opens Moonpay in your browser to buy crypto.</p>
             </div>
-          )}
-
-          {depositMode === 'crypto' && (
-            <>
-              <button
-                onClick={() => setDepositMode('select')}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', marginBottom: 10 }}
-              >
-                ← Back
-              </button>
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Select coin</div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {COINS.map((c) => (
-                    <button
-                      key={c.sym}
-                      onClick={() => {
-                        setCoin(c.sym)
-                        setMsg(null)
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: '10px 8px',
-                        borderRadius: 11,
-                        border: `2px solid ${coin === c.sym ? c.color : 'var(--border)'}`,
-                        background: coin === c.sym ? c.color + '15' : 'var(--bg-card)',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        transition: 'all .15s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                      }}
-                    >
-                      <CoinIcon symbol={c.sym} bg={c.color} size={18} />
-                      <span style={{ fontSize: 14, fontWeight: 800, color: coin === c.sym ? c.color : 'var(--text-secondary)' }}>{c.sym}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, marginBottom: 14, textAlign: 'center' }}>
-                {qrDataUrl && walletAddresses[coin] ? (
-                  <div style={{ display: 'inline-block', background: '#fff', padding: 8, borderRadius: 12, marginBottom: 12 }}>
-                    <img src={qrDataUrl} alt="QR Code" width={200} height={200} style={{ display: 'block', borderRadius: 6 }} />
-                  </div>
-                ) : (
-                  <div style={{ width: 200, height: 200, margin: '0 auto 12px', background: 'var(--bg-elevated)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                    {walletAddresses[coin] ? 'Generating QR…' : `No ${coin} address`}
-                  </div>
-                )}
-                <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>Scan to get {coin} deposit address</p>
-                {walletAddresses[coin] ? (
-                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left' }}>
-                    <code style={{ flex: 1, fontSize: 11, color: 'var(--text-secondary)', wordBreak: 'break-all', fontFamily: 'monospace', lineHeight: 1.5 }}>{walletAddresses[coin]}</code>
-                    <button
-                      onClick={() => copy(walletAddresses[coin])}
-                      style={{
-                        flexShrink: 0,
-                        padding: '7px 12px',
-                        borderRadius: 8,
-                        border: '1px solid var(--border)',
-                        background: copied ? 'var(--success-bg)' : 'var(--bg-card)',
-                        color: copied ? 'var(--success)' : 'var(--text-secondary)',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        transition: 'all .15s',
-                      }}
-                    >
-                      {copied ? '✓ Copied' : 'Copy'}
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>No {coin} address configured yet</div>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 14 }}>
-                <div>
-                  <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>Amount Sent ({coin})</label>
-                  <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={`Min: ${selectedCoin.minDeposit} ${coin}`} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>Transaction Hash / TXID</label>
-                  <input className="input" value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="0x..." style={{ fontFamily: 'monospace', fontSize: 13 }} />
-                </div>
-              </div>
-
-              {msg && (
-                <div
-                  style={{
-                    padding: '10px 14px',
-                    borderRadius: 9,
-                    marginBottom: 12,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)',
-                    color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)',
-                  }}
-                >
-                  {msg.text}
-                </div>
-              )}
-
-              <button onClick={submitDeposit} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
-                {loading ? 'Submitting...' : 'Confirm Deposit'}
-              </button>
-
-              <div style={{ marginTop: 14, padding: 14, background: 'rgba(242,186,14,0.06)', borderRadius: 12, border: '1px solid rgba(242,186,14,0.2)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ color: 'var(--brand-primary)', flexShrink: 0, marginTop: 1 }}><IconWarning /></span>
-                <p style={{ color: 'var(--text-muted)', fontSize: 11, lineHeight: 1.7, margin: 0 }}>
-                  Only send <strong>{coin}</strong> to this address. Deposits are credited after admin confirmation (1–24 hours).
-                </p>
-              </div>
-            </>
           )}
         </div>
       )}
+
+      {msg && (
+        <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)', fontSize: 12, fontWeight: 700 }}>
+          {msg.text}
+        </div>
+      )}
+
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>Recent activity</div>
+          <Link href="/transactions" style={{ color: 'var(--brand-primary)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>View all →</Link>
+        </div>
+
+        {txSummary.latest.length === 0 ? (
+          <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>No transactions yet.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {txSummary.latest.slice(0, 4).map((t: any) => (
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 12 }}>{t.type}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{new Date(t.createdAt).toLocaleString()}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, fontSize: 12 }}>${Number(t.amount || 0).toFixed(2)}</div>
+                  <div style={{ color: t.status === 'SUCCESS' ? 'var(--success)' : t.status === 'PENDING' ? 'var(--warning)' : 'var(--danger)', fontSize: 10, fontWeight: 700 }}>{t.status}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>
+              {txSummary.totalCount} total · {txSummary.pending} pending
+            </div>
+          </div>
+        )}
+      </div>
+
 
       {tab === 'withdraw' && (
-        <div style={{ padding: '0 16px' }}>
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>Select coin</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {COINS.map((c) => (
-                <button
-                  key={c.sym}
-                  onClick={() => {
-                    setCoin(c.sym)
-                    setMsg(null)
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '10px 8px',
-                    borderRadius: 11,
-                    border: `2px solid ${coin === c.sym ? c.color : 'var(--border)'}`,
-                    background: coin === c.sym ? c.color + '15' : 'var(--bg-card)',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    transition: 'all .15s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <CoinIcon symbol={c.sym} bg={c.color} size={18} />
-                  <span style={{ fontSize: 14, fontWeight: 800, color: coin === c.sym ? c.color : 'var(--text-secondary)' }}>{c.sym}</span>
-                </button>
-              ))}
-            </div>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>Withdraw</div>
+            <div style={{ width: 36 }} />
           </div>
 
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 14 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Available Balance</div>
-            <div style={{ fontWeight: 900, fontSize: 28 }}>
-              {(balances[coin] || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}{' '}
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-muted)' }}>{coin}</span>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 14 }}>
-            <div>
-              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>Your {coin} Wallet Address</label>
-              <input className="input" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="Enter destination address" style={{ fontFamily: 'monospace', fontSize: 13 }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 7 }}>Amount ({coin})</label>
-              <div style={{ position: 'relative' }}>
-                <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={{ paddingRight: 60 }} />
-                <button
-                  onClick={() => setAmount(String(balances[coin] || 0))}
-                  style={{
-                    position: 'absolute',
-                    right: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'rgba(242,186,14,0.1)',
-                    color: 'var(--brand-primary)',
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '4px 9px',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  MAX
-                </button>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>Withdraw from account balance (USD)</div>
+            <div style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: 24, marginBottom: 12 }}>${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Destination wallet address</label>
+                <input className="input" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="Enter wallet address" />
               </div>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Amount (USD)</label>
+                <div style={{ position: 'relative' }}>
+                  <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={{ paddingRight: 64 }} />
+                  <button onClick={() => setAmount(String(usdBalance))} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 6, background: 'rgba(242,186,14,0.16)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: 11, padding: '4px 8px', cursor: 'pointer' }}>MAX</button>
+                </div>
+              </div>
+              <button onClick={submitWithdraw} disabled={loading} className="btn-primary" style={{ width: '100%', marginTop: 6 }}>
+                {loading ? 'Processing...' : 'Request Withdrawal'}
+              </button>
             </div>
-          </div>
-
-          {msg && (
-            <div
-              style={{
-                padding: '10px 14px',
-                borderRadius: 9,
-                marginBottom: 12,
-                fontSize: 13,
-                fontWeight: 600,
-                background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)',
-                color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)',
-              }}
-            >
-              {msg.text}
-            </div>
-          )}
-
-          <button onClick={submitWithdraw} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
-            {loading ? 'Processing...' : 'Request Withdrawal'}
-          </button>
-
-          <div style={{ marginTop: 14, padding: 14, background: 'rgba(246,70,93,0.06)', borderRadius: 12, border: '1px solid rgba(246,70,93,0.2)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <span style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 1 }}><IconWarning /></span>
-            <p style={{ color: 'var(--text-muted)', fontSize: 11, lineHeight: 1.7, margin: 0 }}>KYC verification required for withdrawals. Processing time: 1–3 business days.</p>
           </div>
         </div>
       )}
 
-      {/* Active investments — below deposit/withdraw flows */}
-      {investments.length > 0 && (
-        <div style={{ padding: '0 16px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Active investments</h2>
-            <Link href="/invest" style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-primary)', textDecoration: 'none' }}>View all</Link>
+      {tab === 'reward' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>Rewards</div>
+            <div style={{ width: 36 }} />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <AnimatePresence>
-              {investments.map((inv, idx) => {
-                const start = new Date(inv.startDate).getTime()
-                const end = new Date(inv.endDate).getTime()
-                const prog = Math.min(100, ((Date.now() - start) / (end - start)) * 100)
-                const dailyEarn = inv.amount * (inv.dailyRoi || 0)
-                const daysLeft = Math.max(0, Math.ceil((end - Date.now()) / 86400000))
-                return (
-                  <motion.div
-                    key={inv.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05, duration: 0.25 }}
-                    style={{
-                      background: '#111',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      borderRadius: 12,
-                      padding: 14,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{inv.planName || inv.planId}</span>
-                      <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--success)' }}>+${dailyEarn.toFixed(2)}/day</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-muted)' }}>
-                      <span>${inv.amount.toLocaleString()} invested</span>
-                      <span>{daysLeft}d left</span>
-                    </div>
-                    <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: prog + '%' }}
-                        transition={{ duration: 0.5, delay: idx * 0.05 }}
-                        style={{ height: '100%', background: 'var(--brand-primary)', borderRadius: 2 }}
-                      />
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
+
+          <div style={{ marginBottom: 14, background: 'linear-gradient(155deg, rgba(242,186,14,0.2), rgba(21,26,33,1) 38%, rgba(11,14,17,1))', border: '1px solid rgba(242,186,14,0.24)', borderRadius: 18, padding: 16 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Referral Rewards</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 14 }}>Invite friends and unlock bonus tiers. Earn recurring referral commission on qualifying deposits and investments.</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Your Code</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>{refCode}</div></div>
+              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Referral Rate</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>Up to 30%</div></div>
+              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Bonus Pool</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>$100+</div></div>
+            </div>
+            <button onClick={shareReferral} className="btn-primary" style={{ width: '100%' }}>Share referral link</button>
+          </div>
+        </div>
+      )}
+      {/* Full-screen crypto receive dashboard */}
+      {tab === 'deposit' && depositMode === 'crypto' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <button onClick={() => setDepositMode('select')} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>Receive</div>
+            <div style={{ width: 36 }} />
+          </div>
+
+          <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, background: 'rgba(242,186,14,0.16)', border: '1px solid rgba(242,186,14,0.24)', color: '#F2BA0E', fontSize: 12, fontWeight: 600 }}>
+            Only send {coin} to this address. Other assets may be lost permanently.
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto' }} className="no-scrollbar">
+            {DEPOSIT_COINS.map((c) => (
+              <button
+                key={c.sym}
+                onClick={() => setCoin(c.sym)}
+                style={{
+                  whiteSpace: 'nowrap',
+                  border: '1px solid',
+                  borderColor: c.sym === coin ? c.color : 'var(--border)',
+                  background: c.sym === coin ? `${c.color}22` : 'var(--bg-card)',
+                  color: c.sym === coin ? c.color : 'var(--text-muted)',
+                  borderRadius: 999,
+                  padding: '7px 12px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {c.sym} · {c.name}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: 14, background: '#fff', borderRadius: 20, padding: 14 }}>
+            <div style={{ margin: '0 auto', width: '100%', maxWidth: 340, aspectRatio: '1/1', borderRadius: 16, overflow: 'hidden', position: 'relative', background: '#fff' }}>
+              {qrDataUrl ? <img src={qrDataUrl} alt={`${coin} QR`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', color: '#111', fontWeight: 700 }}>Generating QR...</div>}
+              <div style={{ position: 'absolute', inset: '50% auto auto 50%', transform: 'translate(-50%, -50%)', width: 54, height: 54, borderRadius: 16, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>
+                <AltarisLogoMark size={34} />
+              </div>
+            </div>
+            <div style={{ marginTop: 10, color: '#2B3139', fontFamily: 'monospace', fontSize: 14, wordBreak: 'break-all', fontWeight: 700 }}>
+              {activeAddress || 'Address unavailable'}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+            <button onClick={copyAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>{copied ? 'Copied' : 'Copy'}</button>
+            <button onClick={setSuggestedAmount} type="button" className="btn-ghost" style={{ width: '100%' }}>Set Amount</button>
+            <button onClick={shareAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>Share</button>
+          </div>
+
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+                  Amount ({coin})
+                </label>
+                <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(selectedCoin.minDeposit)} />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+                  Transaction Hash
+                </label>
+                <input className="input" value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="Paste blockchain tx hash" />
+              </div>
+              <button onClick={submitDeposit} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
+                {loading ? 'Submitting...' : 'I sent crypto'}
+              </button>
+            </div>
           </div>
         </div>
       )}

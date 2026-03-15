@@ -24,10 +24,10 @@ export default function AdminNotificationsPage() {
   }
 
   const TEMPLATES = [
-    {t:'KYC Approved 🎉',m:'Your identity verification has been approved! You can now withdraw funds and claim your $100 bonus.'},
-    {t:'Deposit Confirmed ✅',m:'Your deposit has been confirmed and credited to your account.'},
-    {t:'New Investment Plan 📈',m:'A new high-yield investment plan is now available. Log in to invest before spots run out!'},
-    {t:'Security Alert 🔒',m:'A new login was detected on your account. If this was not you, please contact support immediately.'},
+    {t:'KYC Approved ',m:'Your identity verification has been approved! You can now withdraw funds and claim your $100 bonus.'},
+    {t:'Deposit Confirmed ',m:'Your deposit has been confirmed and credited to your account.'},
+    {t:'New Investment Plan ',m:'A new high-yield investment plan is now available. Log in to invest before spots run out!'},
+    {t:'Security Alert',m:'A new login was detected on your account. If this was not you, please contact support immediately.'},
   ]
 
   return (
@@ -84,7 +84,7 @@ export default function AdminNotificationsPage() {
           </div>
           <button onClick={send} disabled={loading||!title||!message}
             style={{width:'100%',padding:'13px',background:'#F2BA0E',color:'#000',border:'none',borderRadius:10,fontWeight:800,fontSize:14,cursor:'pointer',fontFamily:'inherit',opacity:loading||!title||!message?0.4:1,transition:'opacity .2s'}}>
-            {loading?'Sending…':'🔔 Send Notification'}
+            {loading?'Sending…':'Send Notification'}
           </button>
         </div>
 
@@ -107,7 +107,7 @@ export default function AdminNotificationsPage() {
             <div style={{marginTop:16,background:'#0E0E0E',border:'1px solid rgba(242,186,14,0.15)',borderRadius:12,padding:14}}>
               <div style={{color:'#F2BA0E',fontSize:10,fontWeight:700,letterSpacing:'0.08em',marginBottom:8}}>PREVIEW</div>
               <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
-                <div style={{width:36,height:36,borderRadius:9,background:'rgba(242,186,14,0.1)',border:'1px solid rgba(242,186,14,0.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>🔔</div>
+                <div style={{width:36,height:36,borderRadius:9,background:'rgba(242,186,14,0.1)',border:'1px solid rgba(242,186,14,0.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>N</div>
                 <div>
                   <div style={{fontWeight:700,fontSize:13,marginBottom:3}}>{title}</div>
                   <div style={{color:'#555',fontSize:12,lineHeight:1.5}}>{message}</div>

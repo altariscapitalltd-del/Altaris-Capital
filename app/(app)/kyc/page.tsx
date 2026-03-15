@@ -2,11 +2,19 @@
 import { useEffect, useState, useRef } from 'react'
 import { COUNTRIES } from '@/lib/countries'
 
+function KycIcon({ type }: { type: 'personal'|'document'|'selfie'|'review'|'camera'|'check' }) {
+  if (type === 'personal') return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+  if (type === 'document') return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+  if (type === 'selfie') return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 6l1.5-2h3L15 6"/></svg>
+  if (type === 'camera') return <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/></svg>
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
+}
+
 const STEPS = [
-  { id:'personal', icon:'👤', label:'Personal Info' },
-  { id:'document', icon:'🪪', label:'ID Document' },
-  { id:'selfie',   icon:'🤳', label:'Selfie' },
-  { id:'review',   icon:'✅', label:'Review' },
+  { id:'personal', icon:'personal', label:'Personal Info' },
+  { id:'document', icon:'document', label:'ID Document' },
+  { id:'selfie',   icon:'selfie', label:'Selfie' },
+  { id:'review',   icon:'review', label:'Review' },
 ]
 
 export default function KYCPage() {
@@ -83,7 +91,7 @@ export default function KYCPage() {
             <div style={{display:'flex',alignItems:'center',width:'100%'}}>
               {i>0&&<div style={{flex:1,height:2,background:i<=step?'var(--brand-primary)':'var(--bg-elevated)',transition:'background .3s'}}/>}
               <div style={{width:32,height:32,borderRadius:'50%',background:i<step?'var(--success)':i===step?'var(--brand-primary)':'var(--bg-elevated)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:i<step?16:14,flexShrink:0,transition:'all .3s',border:i===step?'none':'2px solid var(--border)'}}>
-                {i<step?'✓':s.icon}
+                {i<step ? <KycIcon type="check" /> : <KycIcon type={s.icon as any} />}
               </div>
               {i<STEPS.length-1&&<div style={{flex:1,height:2,background:i<step?'var(--brand-primary)':'var(--bg-elevated)',transition:'background .3s'}}/>}
             </div>
@@ -117,7 +125,7 @@ export default function KYCPage() {
           <div>
             <label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:10}}>Document Type</label>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
-              {[{id:'passport',l:'🛂 Passport'},{id:'drivers_license',l:"🪪 Driver's License"},{id:'national_id',l:'🆔 National ID'}].map(d=>(
+              {[{id:'passport',l:'Passport'},{id:'drivers_license',l:"Driver's License"},{id:'national_id',l:'National ID'}].map(d=>(
                 <button key={d.id} onClick={()=>setForm(f=>({...f,docType:d.id}))}
                   style={{padding:'10px 6px',borderRadius:11,border:`2px solid ${form.docType===d.id?'var(--brand-primary)':'var(--border)'}`,background:form.docType===d.id?'rgba(242,186,14,0.08)':'var(--bg-card)',cursor:'pointer',fontFamily:'inherit',fontSize:11,fontWeight:600,color:form.docType===d.id?'var(--brand-primary)':'var(--text-secondary)'}}>
                   {d.l}
@@ -129,7 +137,7 @@ export default function KYCPage() {
           <div>
             <label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Upload Document Photo</label>
             <div onClick={()=>docRef.current?.click()} style={{border:'2px dashed var(--border)',borderRadius:12,padding:28,textAlign:'center',cursor:'pointer',transition:'border-color .2s',background:docFile?'var(--success-bg)':'transparent'}} onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--brand-primary)')} onMouseLeave={e=>(e.currentTarget.style.borderColor='var(--border)')}>
-              <div style={{fontSize:32,marginBottom:8}}>{docFile?'✅':'📷'}</div>
+              <div style={{fontSize:32,marginBottom:8}}>{docFile ? <KycIcon type='check' /> : <KycIcon type='camera' />}</div>
               <div style={{fontWeight:600,fontSize:13,color:docFile?'var(--success)':'var(--text-secondary)'}}>{docFile?docFile.name:'Tap to upload'}</div>
               <div style={{color:'var(--text-muted)',fontSize:11,marginTop:4}}>JPG, PNG or PDF • Max 10MB</div>
             </div>
@@ -146,7 +154,7 @@ export default function KYCPage() {
       {step===2&&(
         <div style={{display:'flex',flexDirection:'column',gap:14}}>
           <div style={{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:14,padding:16}}>
-            <div style={{fontWeight:700,marginBottom:8}}>📸 Selfie Requirements</div>
+            <div style={{fontWeight:700,marginBottom:8}}>Selfie Requirements</div>
             {['Hold your ID document next to your face','Ensure good lighting — face clearly visible','No glasses or hats','Photo must match your document'].map(t=>(
               <div key={t} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid var(--border)'}}>
                 <span style={{color:'var(--success)',fontWeight:700}}>✓</span>
@@ -155,7 +163,7 @@ export default function KYCPage() {
             ))}
           </div>
           <div onClick={()=>selfieRef.current?.click()} style={{border:'2px dashed var(--border)',borderRadius:12,padding:36,textAlign:'center',cursor:'pointer',transition:'border-color .2s',background:selfieFile?'var(--success-bg)':'transparent'}} onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--brand-primary)')} onMouseLeave={e=>(e.currentTarget.style.borderColor='var(--border)')}>
-            <div style={{fontSize:40,marginBottom:8}}>{selfieFile?'✅':'🤳'}</div>
+            <div style={{fontSize:40,marginBottom:8}}>{selfieFile ? <KycIcon type='check' /> : <KycIcon type='selfie' />}</div>
             <div style={{fontWeight:600,fontSize:13,color:selfieFile?'var(--success)':'var(--text-secondary)'}}>{selfieFile?selfieFile.name:'Take or upload selfie'}</div>
           </div>
           <input ref={selfieRef} type="file" accept="image/*" capture="user" style={{display:'none'}} onChange={e=>setSelfieFile(e.target.files?.[0]||null)}/>

@@ -58,7 +58,7 @@ function ResetForm() {
                 placeholder="At least 8 characters"
                 onFocus={e => e.target.style.borderColor='#F2BA0E'} onBlur={e => e.target.style.borderColor='rgba(255,255,255,0.08)'}/>
               <button type="button" onClick={() => setShowPw(v => !v)} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'#555', cursor:'pointer', fontSize:13 }}>
-                {showPw ? '🙈' : '👁'}
+                {showPw ? 'Hide' : 'Show'}
               </button>
             </div>
             {password.length > 0 && (

@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 const TYPE_CONFIG: Record<string, {icon:string, color:string, label:string}> = {
   DEPOSIT:    { icon:'⬇', color:'var(--success)', label:'Deposit' },
   WITHDRAWAL: { icon:'⬆', color:'var(--danger)',  label:'Withdrawal' },
-  INVESTMENT: { icon:'📈', color:'var(--brand-primary)', label:'Investment' },
-  ROI:        { icon:'💰', color:'var(--success)', label:'ROI Credit' },
-  BONUS:      { icon:'🎁', color:'#F2BA0E',        label:'Bonus' },
+  INVESTMENT: { icon:'INV', color:'var(--brand-primary)', label:'Investment' },
+  ROI:        { icon:'ROI', color:'var(--success)', label:'ROI Credit' },
+  BONUS:      { icon:'BON', color:'#F2BA0E',        label:'Bonus' },
 }
 
 export default function TransactionsPage() {
@@ -45,14 +45,14 @@ export default function TransactionsPage() {
 
       {paged.length===0 ? (
         <div style={{ textAlign:'center', padding:'60px 20px' }}>
-          <div style={{ fontSize:48, marginBottom:14 }}>📋</div>
+          <div style={{ fontSize:48, marginBottom:14 }}>Transactions</div>
           <div style={{ fontWeight:700, fontSize:16, marginBottom:6 }}>No transactions yet</div>
           <div style={{ color:'var(--text-muted)', fontSize:13 }}>Your transaction history will appear here</div>
         </div>
       ) : (
         <div style={{ padding:'0 16px' }}>
           {paged.map((tx:any, i:number) => {
-            const cfg = TYPE_CONFIG[tx.type] || { icon:'💱', color:'var(--text-secondary)', label:tx.type }
+            const cfg = TYPE_CONFIG[tx.type] || { icon:'TX', color:'var(--text-secondary)', label:tx.type }
             const isCredit = ['DEPOSIT','ROI','BONUS'].includes(tx.type)
             const date = new Date(tx.createdAt)
             const isNewDay = i===0 || new Date(paged[i-1].createdAt).toDateString()!==date.toDateString()

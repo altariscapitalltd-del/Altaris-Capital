@@ -104,8 +104,7 @@ export default function MarketsPage() {
 
   return (
     <div style={{ padding: '0 0 12px' }}>
-      <div style={{ padding: '12px 16px 0' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>Markets</h1>
+      <div style={{ padding: '8px 16px 0' }}>
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }} className="no-scrollbar">
           {allTabs.map(t => (
             <button

@@ -70,8 +70,8 @@ app.prepare().then(() => {
 
   const PORT = process.env.PORT || 3000;
   httpServer.listen(PORT, () => {
-    console.log(`🚀 Altaris Capital running on http://localhost:${PORT}`);
-    console.log(`📡 WebSocket server active on /api/socket`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+    console.log(`Altaris Capital running on http://localhost:${PORT}`);
+    console.log(`WebSocket server active on /api/socket`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
   });
 });

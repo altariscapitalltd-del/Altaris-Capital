@@ -69,6 +69,23 @@ function CandlestickChart({
 
   return (
     <svg width={width} height={height} style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(14,203,129,0.16)" />
+          <stop offset="100%" stopColor="rgba(14,203,129,0.02)" />
+        </linearGradient>
+        <linearGradient id="scanlineGradient" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="rgba(242,186,14,0)" />
+          <stop offset="50%" stopColor="rgba(242,186,14,0.10)" />
+          <stop offset="100%" stopColor="rgba(242,186,14,0)" />
+        </linearGradient>
+      </defs>
+      <rect x={0} y={0} width={width} height={height} fill="url(#chartGlow)" opacity={0.45} />
+      <g opacity={0.22}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <line key={i} x1={padding.left} y1={padding.top + ((i + 1) * h) / 5} x2={width - padding.right} y2={padding.top + ((i + 1) * h) / 5} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+        ))}
+      </g>
       {candles.map((c, i) => (
         <g key={i}>
           <line
@@ -88,10 +105,11 @@ function CandlestickChart({
             stroke={c.isUp ? bullishColor : bearishColor}
             strokeWidth={c.isLast ? 1.5 : 0}
             opacity={c.isLast ? 1 : 0.9}
-            style={c.isLast ? { animation: 'candlePulse 1.5s ease-in-out infinite' } : undefined}
+            style={c.isLast ? { animation: 'candlePulse 1.1s ease-in-out infinite' } : undefined}
           />
         </g>
       ))}
+      <rect x={-width} y={0} width={width * 0.7} height={height} fill="url(#scanlineGradient)" style={{ animation: 'chartScanline 2.8s linear infinite' }} />
     </svg>
   )
 }
