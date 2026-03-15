@@ -66,9 +66,13 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetch('/api/auth/me').then(r=>r.json()).then(d=>setUser(d.user)).catch(() => {})
-    setNotifPush(localStorage.getItem('altaris_notif_push') === '1')
-    setNotifEmail(localStorage.getItem('altaris_notif_email') !== '0')
-    setNotifInvest(localStorage.getItem('altaris_notif_invest') !== '0')
+    fetch('/api/user/push-subscribe').then(r=>r.json()).then(d=>{
+      if (d?.preferences) {
+        setNotifPush(Boolean(d.preferences.pushAlerts))
+        setNotifEmail(Boolean(d.preferences.emailUpdates))
+        setNotifInvest(Boolean(d.preferences.investmentAlerts))
+      }
+    }).catch(() => {})
     setBiometric(localStorage.getItem('altaris_biometric') === '1')
   }, [])
 
@@ -81,9 +85,13 @@ export default function SettingsPage() {
   async function enablePush(enable: boolean) {
     try {
       if (!enable) {
+        await fetch('/api/user/push-subscribe', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pushAlerts: false }),
+        })
         setNotifPush(false)
-        localStorage.setItem('altaris_notif_push', '0')
-        setMsg({ type: 'success', text: 'Push alerts disabled on this device.' })
+        setMsg({ type: 'success', text: 'Push alerts disabled.' })
         return
       }
 
@@ -119,8 +127,12 @@ export default function SettingsPage() {
         body: JSON.stringify(subscription),
       })
 
+      await fetch('/api/user/push-subscribe', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pushAlerts: true }),
+      })
       setNotifPush(true)
-      localStorage.setItem('altaris_notif_push', '1')
       setMsg({ type: 'success', text: 'Push alerts enabled.' })
     } catch {
       setMsg({ type: 'error', text: 'Unable to enable push alerts.' })
@@ -129,13 +141,21 @@ export default function SettingsPage() {
 
   function toggleEmail(next: boolean) {
     setNotifEmail(next)
-    localStorage.setItem('altaris_notif_email', next ? '1' : '0')
+    fetch('/api/user/push-subscribe', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emailUpdates: next }),
+    }).catch(() => {})
     setMsg({ type: 'success', text: next ? 'Email updates enabled.' : 'Email updates disabled.' })
   }
 
   function toggleInvest(next: boolean) {
     setNotifInvest(next)
-    localStorage.setItem('altaris_notif_invest', next ? '1' : '0')
+    fetch('/api/user/push-subscribe', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ investmentAlerts: next }),
+    }).catch(() => {})
   }
 
   function toggleBiometric(next: boolean) {

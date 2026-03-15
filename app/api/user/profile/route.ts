@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
@@ -66,21 +65,10 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Unsupported avatar format' }, { status: 400 })
       }
 
-      const filename = `avatars/${user.id}-${Date.now()}${ext}`
-
-      if (process.env.BLOB_READ_WRITE_TOKEN) {
-        const { put } = await import('@vercel/blob')
-        const blob = await put(filename, file, { access: 'public', addRandomSuffix: true })
-        profilePicture = blob.url
-      } else {
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-        const dir = path.join(process.cwd(), 'uploads', 'avatars')
-        await mkdir(dir, { recursive: true })
-        const localFilename = `${user.id}-${Date.now()}${ext}`
-        await writeFile(path.join(dir, localFilename), buffer)
-        profilePicture = `/api/user/avatar/${localFilename}`
-      }
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      const mimeType = file.type || 'image/jpeg'
+      profilePicture = `data:${mimeType};base64,${buffer.toString('base64')}`
     }
 
     const updated = await prisma.user.update({
