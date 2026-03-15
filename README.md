@@ -125,5 +125,10 @@ Addresses are manageable from Admin → Settings.
 - Wallet quick action label updated from “My Invest” to “Invested” for clearer navigation.
 - Profile avatar validation now supports iOS uploads that omit MIME type by securely validating extension fallback.
 - Candlestick chart visuals were upgraded with animated scanline/grid motion for a more live exchange-style feel.
+- Fixed installed PWA layout layering by enforcing a fixed header/nav shell and a dedicated middle scroll container that offsets content below the header and above the bottom nav.
+- Added stronger safe-area + dynamic viewport handling (`100dvh`/`100svh`) for iOS/Android standalone behavior.
+- Added class-based sharp SVG plan logos under `public/plan-icons/` and wired them into investment plan cards.
+- Added a minimal website explainer video section (`/videos/altaris-explainer.mp4`) for landing-page storytelling.
+- Removed emoji-based UI markers across app/admin/user surfaces and replaced with text/SVG-based presentation patterns.
 - Home crypto and top-mover sections now use live provider market data (not placeholder rows).
 - Improved chat message alignment and settings interactivity (push toggle wiring, notification preferences UX).

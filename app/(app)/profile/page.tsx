@@ -113,8 +113,8 @@ export default function ProfilePage() {
       {/* Account info */}
       <div style={{ marginTop:28, background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
         {[
-          { icon:'📅', label:'Member Since', value: new Date(user.createdAt||Date.now()).toLocaleDateString('en-US',{month:'long',year:'numeric'}) },
-          { icon:'🪪', label:'KYC Status', value: user.kycStatus==='APPROVED'?'✓ Verified':'Not verified' },
+          { icon:'CAL', label:'Member Since', value: new Date(user.createdAt||Date.now()).toLocaleDateString('en-US',{month:'long',year:'numeric'}) },
+          { icon:'KYC', label:'KYC Status', value: user.kycStatus==='APPROVED'?'✓ Verified':'Not verified' },
           { icon:'🆔', label:'User ID', value: user.id?.slice(0,12)+'...' },
         ].map(({icon,label,value}) => (
           <div key={label} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderBottom:'1px solid var(--border)' }}>

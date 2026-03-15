@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   ])
 
   // Notify user
-  await notifyUser(prisma, user.id, '🎁 $100 Bonus Credited!', 'Your welcome bonus has been added to your account. Start investing today!', '/dashboard')
+  await notifyUser(prisma, user.id, 'Bonus $100 Bonus Credited!', 'Your welcome bonus has been added to your account. Start investing today!', '/dashboard')
 
   return NextResponse.json({ success: true, amount: BONUS_AMOUNT })
 }

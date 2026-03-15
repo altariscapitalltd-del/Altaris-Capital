@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
@@ -116,6 +116,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
   const [installShownThisSession, setInstallShownThisSession] = useState(false)
   const [splashVisible, setSplashVisible] = useState(true)
+  const headerRef = useRef<HTMLElement | null>(null)
+  const navRef = useRef<HTMLElement | null>(null)
+  const [headerOffset, setHeaderOffset] = useState(112)
+  const [navOffset, setNavOffset] = useState(80)
 
   useEffect(() => {
     fetch('/api/user/profile').then(r => {
@@ -301,6 +305,28 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     router.replace(url)
   }, [router])
 
+  useEffect(() => {
+    const updateLayoutOffsets = () => {
+      const nextHeader = headerRef.current?.getBoundingClientRect().height || 112
+      const nextNav = navRef.current?.getBoundingClientRect().height || 80
+      setHeaderOffset(nextHeader)
+      setNavOffset(nextNav)
+    }
+
+    updateLayoutOffsets()
+    const ro = new ResizeObserver(updateLayoutOffsets)
+    if (headerRef.current) ro.observe(headerRef.current)
+    if (navRef.current) ro.observe(navRef.current)
+    window.addEventListener('resize', updateLayoutOffsets)
+    window.addEventListener('orientationchange', updateLayoutOffsets)
+
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', updateLayoutOffsets)
+      window.removeEventListener('orientationchange', updateLayoutOffsets)
+    }
+  }, [])
+
   if (splashVisible) {
     return (
       <div style={{
@@ -341,14 +367,16 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-container" style={{
       background: 'var(--bg-page)',
-      minHeight: '100svh',
+      minHeight: '100dvh',
       display: 'flex',
       flexDirection: 'column',
+      height: '100dvh',
+      overflow: 'hidden',
       paddingTop: 0,
     }}>
 
       {/* ── Top Bar — solid opaque header so app UI never shows through status bar; no install logo ── */}
-      <header style={{
+      <header ref={headerRef} style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -470,7 +498,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main style={{ flex: 1, overflowY: 'auto', paddingTop: '112px', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+      <main style={{
+        flex: 1,
+        overflowY: 'auto',
+        overscrollBehavior: 'contain',
+        marginTop: headerOffset,
+        paddingTop: 0,
+        paddingBottom: 12,
+        height: `calc(100dvh - ${headerOffset}px - ${navOffset}px)`,
+      }}>
         {children}
       </main>
 
@@ -525,7 +561,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                       </div>
                       <div>
                         <div style={{ fontWeight: 700 }}>Tap the share icon</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>⤴︎ in Safari</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Share in Safari</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -550,7 +586,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       {/* ── Bottom Navigation — safe area bottom ── */}
-      <nav className="bottom-nav" style={{
+      <nav ref={navRef} className="bottom-nav" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
         background: 'var(--nav-bg)',
         backdropFilter: 'blur(24px)',

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024
+const MAX_AVATAR_BYTES = 8 * 1024 * 1024
 const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
 const ALLOWED_AVATAR_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'])
 
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest) {
     let profilePicture: string | undefined
     if (file && file.size > 0) {
       if (file.size > MAX_AVATAR_BYTES) {
-        return NextResponse.json({ error: 'Avatar file is too large (max 5MB)' }, { status: 400 })
+        return NextResponse.json({ error: 'Avatar file is too large (max 8MB)' }, { status: 400 })
       }
       const ext = (path.extname(file.name) || '.jpg').toLowerCase()
       if (!ALLOWED_AVATAR_EXT.has(ext)) {
@@ -58,6 +58,10 @@ export async function PUT(req: NextRequest) {
         const { put } = await import('@vercel/blob')
         const blob = await put(filename, file, { access: 'public', addRandomSuffix: true })
         profilePicture = blob.url
+      } else if (process.env.VERCEL === '1' || process.env.VERCEL === 'true') {
+        const bytes = await file.arrayBuffer()
+        const mime = hasMimeType ? file.type : 'image/jpeg'
+        profilePicture = `data:${mime};base64,${Buffer.from(bytes).toString('base64')}`
       } else {
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)

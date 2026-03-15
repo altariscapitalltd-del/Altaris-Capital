@@ -45,10 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="Altaris" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body style={{ background: 'var(--bg-primary)' }}>
+      <body className="pwa-root-viewport" style={{ background: 'var(--bg-primary)' }}>
         <script dangerouslySetInnerHTML={{ __html: `document.documentElement.setAttribute('data-theme','dark');` }} />
         <ThemeProvider>
-          <div className="app-container">
+          <div className="app-container" style={{ minHeight: "100%" }}>
             {children}
           </div>
         </ThemeProvider>

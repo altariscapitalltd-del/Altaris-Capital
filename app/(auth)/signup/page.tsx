@@ -144,7 +144,7 @@ export default function SignupPage() {
           ) : (
             <form onSubmit={handleVerify}>
               <div style={{ background:'rgba(240,185,11,0.05)', border:'1px solid rgba(240,185,11,0.15)', borderRadius:8, padding:16, marginBottom:24, fontSize:13, color:'#B0B3B8', textAlign:'center' }}>
-                ⏱ Code expires in 5 minutes
+                Code expires in 5 minutes
               </div>
               <label style={{ display:'block', color:'#B0B3B8', fontSize:13, marginBottom:6 }}>6-Digit Verification Code</label>
               <input style={{ ...inputStyle, fontSize:28, textAlign:'center', letterSpacing:'0.3em', fontWeight:700 }}

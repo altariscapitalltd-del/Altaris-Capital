@@ -49,7 +49,7 @@ export async function sendOTPEmail(email: string, name: string, otp: string, pur
             <div style="background:#1E2329;border:1px solid #2B3139;border-radius:12px;padding:32px;text-align:center;margin:0 0 24px;">
               <span style="font-size:48px;font-weight:800;color:#F0B90B;letter-spacing:0.2em;font-variant-numeric:tabular-nums;">${otp}</span>
             </div>
-            <p style="color:#B0B3B8;font-size:14px;margin:0 0 8px;">⏱ This code expires in <strong style="color:#FFFFFF;">5 minutes</strong></p>
+            <p style="color:#B0B3B8;font-size:14px;margin:0 0 8px;">This code expires in <strong style="color:#FFFFFF;">5 minutes</strong></p>
             <p style="color:#6E757C;font-size:13px;margin:0;">If you did not request this code, please ignore this email and ensure your account is secure.</p>
           </td>
         </tr>

@@ -55,12 +55,12 @@ export default function AdminDashboard() {
   )
 
   const STATS = [
-    {label:'Total Users',        value:stats?.totalUsers?.toLocaleString()||'0',       icon:'👥', color:'#3B82F6', sub:`+${stats?.newToday||0} today`},
-    {label:'KYC Verified',       value:stats?.verifiedUsers?.toLocaleString()||'0',     icon:'✅', color:'#0ECB81', sub:`${((stats?.verifiedUsers/Math.max(1,stats?.totalUsers))*100).toFixed(0)}% of users`},
+    {label:'Total Users',        value:stats?.totalUsers?.toLocaleString()||'0',       icon:'USR', color:'#3B82F6', sub:`+${stats?.newToday||0} today`},
+    {label:'KYC Verified',       value:stats?.verifiedUsers?.toLocaleString()||'0',     icon:'', color:'#0ECB81', sub:`${((stats?.verifiedUsers/Math.max(1,stats?.totalUsers))*100).toFixed(0)}% of users`},
     {label:'Pending Deposits',   value:stats?.pendingDeposits?.toLocaleString()||'0',   icon:'⏳', color:'#F2BA0E', link:'/admin/deposits', alert:(stats?.pendingDeposits||0)>0},
-    {label:'Pending KYC',        value:stats?.pendingKyc?.toLocaleString()||'0',        icon:'🪪', color:'#A78BFA', link:'/admin/kyc', alert:(stats?.pendingKyc||0)>0},
-    {label:'Pending Withdrawals',value:stats?.pendingWithdrawals?.toLocaleString()||'0',icon:'💸', color:'#F6465D', alert:(stats?.pendingWithdrawals||0)>0},
-    {label:'Total AUM',          value:`$${((stats?.totalAUM||0)/1000).toFixed(1)}K`,   icon:'💰', color:'#F2BA0E'},
+    {label:'Pending KYC',        value:stats?.pendingKyc?.toLocaleString()||'0',        icon:'KYC', color:'#A78BFA', link:'/admin/kyc', alert:(stats?.pendingKyc||0)>0},
+    {label:'Pending Withdrawals',value:stats?.pendingWithdrawals?.toLocaleString()||'0',icon:'WDL', color:'#F6465D', alert:(stats?.pendingWithdrawals||0)>0},
+    {label:'Total AUM',          value:`$${((stats?.totalAUM||0)/1000).toFixed(1)}K`,   icon:'', color:'#F2BA0E'},
     {label:'Total Deposited',    value:`$${((stats?.totalDeposited||0)/1000).toFixed(1)}K`, icon:'⬇️', color:'#0ECB81'},
     {label:'Total Withdrawn',    value:`$${((stats?.totalWithdrawn||0)/1000).toFixed(1)}K`, icon:'⬆️', color:'#F6465D'},
   ]
