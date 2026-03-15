@@ -376,10 +376,15 @@ export default function LandingPage() {
             <h3 style={{ fontSize:'clamp(22px, 3vw, 34px)', fontWeight:900, marginBottom:10 }}>See Altaris in action</h3>
             <p style={{ color:'#555', fontSize:14 }}>A short product walkthrough optimized for first-time visitors.</p>
           </div>
-          <div style={{ border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, overflow:'hidden', background:'#050505' }}>
-            <video controls playsInline preload="metadata" style={{ width:'100%', display:'block' }} poster="/icons/icon-512x512.png">
+          <div style={{ position:'relative', margin:'0 -24px' }}>
+            <video autoPlay muted loop playsInline preload="auto" style={{ width:'100%', display:'block', aspectRatio:'16/9', objectFit:'cover', background:'#000' }} poster="/icons/icon-512x512.png">
               <source src="/videos/altaris-explainer.mp4" type="video/mp4" />
             </video>
+            <div style={{ pointerEvents:'none', position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.24), transparent 42%)' }} />
+            <div style={{ pointerEvents:'none', position:'absolute', left:18, bottom:18, display:'flex', alignItems:'center', gap:8 }}>
+              <AltarisLogoMark size={16} />
+              <span style={{ fontSize:11, fontWeight:700, letterSpacing:'0.08em', color:'#ddd' }}>ALTARIS APP PREVIEW · LOOP</span>
+            </div>
           </div>
         </div>
       </section>

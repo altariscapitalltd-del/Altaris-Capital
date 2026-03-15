@@ -161,12 +161,12 @@ export default function WalletPage() {
 
   const fiatProviders = useMemo(
     () => [
-      { name: 'MoonPay', url: process.env.NEXT_PUBLIC_MOONPAY_WIDGET_URL || 'https://buy.moonpay.com' },
-      { name: 'Ramp', url: process.env.NEXT_PUBLIC_RAMP_WIDGET_URL || 'https://ramp.network/buy' },
-      { name: 'Transak', url: process.env.NEXT_PUBLIC_TRANSAK_WIDGET_URL || 'https://global.transak.com' },
-      { name: 'Alchemy Pay', url: process.env.NEXT_PUBLIC_ALCHEMY_PAY_WIDGET_URL || 'https://ramp.alchemypay.org' },
-      { name: 'Mercuryo', url: process.env.NEXT_PUBLIC_MERCURYO_WIDGET_URL || 'https://exchange.mercuryo.io' },
-      { name: 'Onramper', url: process.env.NEXT_PUBLIC_ONRAMPER_WIDGET_URL || 'https://buy.onramper.com' },
+      { name: 'MoonPay', logo: 'https://www.google.com/s2/favicons?domain=moonpay.com&sz=64', url: process.env.NEXT_PUBLIC_MOONPAY_WIDGET_URL || 'https://buy.moonpay.com' },
+      { name: 'Ramp', logo: 'https://www.google.com/s2/favicons?domain=ramp.network&sz=64', url: process.env.NEXT_PUBLIC_RAMP_WIDGET_URL || 'https://ramp.network/buy' },
+      { name: 'Transak', logo: 'https://www.google.com/s2/favicons?domain=transak.com&sz=64', url: process.env.NEXT_PUBLIC_TRANSAK_WIDGET_URL || 'https://global.transak.com' },
+      { name: 'Alchemy Pay', logo: 'https://www.google.com/s2/favicons?domain=alchemypay.org&sz=64', url: process.env.NEXT_PUBLIC_ALCHEMY_PAY_WIDGET_URL || 'https://ramp.alchemypay.org' },
+      { name: 'Mercuryo', logo: 'https://www.google.com/s2/favicons?domain=mercuryo.io&sz=64', url: process.env.NEXT_PUBLIC_MERCURYO_WIDGET_URL || 'https://exchange.mercuryo.io' },
+      { name: 'Onramper', logo: 'https://www.google.com/s2/favicons?domain=onramper.com&sz=64', url: process.env.NEXT_PUBLIC_ONRAMPER_WIDGET_URL || 'https://buy.onramper.com' },
     ],
     []
   )
@@ -359,6 +359,10 @@ export default function WalletPage() {
 
   return (
     <div style={{ padding: '6px 16px 22px' }}>
+      <div style={{ marginBottom: 10 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>Wallet</h1>
+        <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Funds, providers, and recent activity</div>
+      </div>
       <div style={{ marginBottom: 16 }}>
         <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
           TOTAL BALANCE
@@ -459,9 +463,10 @@ export default function WalletPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="pressable"
-                    style={{ textDecoration: 'none', textAlign: 'center', padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 13 }}
+                    style={{ textDecoration: 'none', textAlign: 'left', padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 10 }}
                   >
-                    {provider.name}
+                    <img src={provider.logo} alt={`${provider.name} logo`} width={18} height={18} style={{ borderRadius: 4, flexShrink: 0 }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                    <span>{provider.name}</span>
                   </a>
                 ))}
               </div>
@@ -507,7 +512,7 @@ export default function WalletPage() {
 
 
       {tab === 'withdraw' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
             <div style={{ fontSize: 20, fontWeight: 800 }}>Withdraw</div>
@@ -538,7 +543,7 @@ export default function WalletPage() {
       )}
 
       {tab === 'reward' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
             <div style={{ fontSize: 20, fontWeight: 800 }}>Rewards</div>
@@ -559,7 +564,7 @@ export default function WalletPage() {
       )}
       {/* Full-screen crypto receive dashboard */}
       {tab === 'deposit' && depositMode === 'crypto' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <button onClick={() => setDepositMode('select')} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
             <div style={{ fontSize: 20, fontWeight: 800 }}>Receive</div>
