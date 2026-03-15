@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import QRCode from 'qrcode'
+import { motion, AnimatePresence } from 'framer-motion'
 import CoinIcon from '@/components/ui/CoinIcon'
 
 const COINS = [
@@ -20,13 +21,14 @@ export default function WalletPage() {
   const [balances, setBalances] = useState<Record<string, number>>({})
   const [investedTotal, setInvestedTotal] = useState(0)
   const [profitToday, setProfitToday] = useState(0)
+  const [investments, setInvestments] = useState<any[]>([])
   const [withdrawAddress, setWithdrawAddress] = useState('')
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
-  useEffect(() => {
+  function loadProfile() {
     fetch('/api/user/profile')
       .then((r) => r.json())
       .then((d) => {
@@ -36,9 +38,14 @@ export default function WalletPage() {
         })
         setBalances(bals)
         const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
+        setInvestments(active)
         setInvestedTotal(active.reduce((s: number, i: any) => s + i.amount, 0))
         setProfitToday(active.reduce((s: number, i: any) => s + i.amount * (i.dailyRoi || 0), 0))
       })
+  }
+
+  useEffect(() => {
+    loadProfile()
     fetch('/api/wallet/addresses')
       .then((r) => r.json())
       .then((d) => {
@@ -48,6 +55,12 @@ export default function WalletPage() {
         })
         setWalletAddresses(addrs)
       })
+  }, [])
+
+  useEffect(() => {
+    const handler = () => loadProfile()
+    window.addEventListener('balance:refresh', handler)
+    return () => window.removeEventListener('balance:refresh', handler)
   }, [])
 
   useEffect(() => {
@@ -155,6 +168,61 @@ export default function WalletPage() {
             </div>
           </div>
         </div>
+
+        {/* Active investments list */}
+        {investments.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Active investments</h2>
+              <Link href="/invest" style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-primary)', textDecoration: 'none' }}>View all</Link>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <AnimatePresence>
+                {investments.map((inv, idx) => {
+                  const start = new Date(inv.startDate).getTime()
+                  const end = new Date(inv.endDate).getTime()
+                  const prog = Math.min(100, ((Date.now() - start) / (end - start)) * 100)
+                  const dailyEarn = inv.amount * (inv.dailyRoi || 0)
+                  const daysLeft = Math.max(0, Math.ceil((end - Date.now()) / 86400000))
+                  return (
+                    <motion.div
+                      key={inv.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05, duration: 0.25 }}
+                      style={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 14,
+                        padding: 14,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{inv.planName || inv.planId}</span>
+                        <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--success)' }}>+${dailyEarn.toFixed(2)}/day</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+                        <span>${inv.amount.toLocaleString()} invested</span>
+                        <span>{daysLeft}d left</span>
+                      </div>
+                      <div style={{ height: 4, background: 'var(--bg-elevated)', borderRadius: 2, overflow: 'hidden' }}>
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: prog + '%' }}
+                          transition={{ duration: 0.5, delay: idx * 0.05 }}
+                          style={{ height: '100%', background: 'var(--brand-primary)', borderRadius: 2 }}
+                        />
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </AnimatePresence>
+            </div>
+          </div>
+        )}
 
         {/* Action buttons: Deposit, Withdraw, Rewards */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
@@ -289,12 +357,37 @@ export default function WalletPage() {
                 ← Back
               </button>
               {fiatWidgetUrl ? (
-                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', minHeight: 500 }}>
-                  <iframe
-                    src={fiatWidgetUrl}
-                    title="Buy crypto"
-                    style={{ width: '100%', height: 520, border: 'none' }}
-                  />
+                <div style={{ marginBottom: 12 }}>
+                  <a
+                    href={fiatWidgetUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      padding: 14,
+                      borderRadius: 14,
+                      border: '1px solid var(--border)',
+                      background: 'var(--bg-card)',
+                      color: 'var(--brand-primary)',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      textDecoration: 'none',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <span style={{ fontSize: 18 }}>↗</span>
+                    Open buy page in browser
+                  </a>
+                  <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', minHeight: 400, marginTop: 12 }}>
+                    <iframe
+                      src={fiatWidgetUrl}
+                      title="Buy crypto"
+                      style={{ width: '100%', height: 460, border: 'none' }}
+                    />
+                  </div>
                 </div>
               ) : (
                 <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, textAlign: 'center' }}>

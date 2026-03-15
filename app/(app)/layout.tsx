@@ -324,10 +324,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       minHeight: '100svh',
       display: 'flex',
       flexDirection: 'column',
-      paddingTop: 'max(env(safe-area-inset-top, 0px), 8px)',
+      paddingTop: 0,
     }}>
 
-      {/* ── Top Bar — fixed and safe area aware; on Markets: expanded search, no right icons ── */}
+      {/* ── Top Bar — full-bleed to top; safe area only as internal padding so no black strip on iPhone ── */}
       <header className="header" style={{
         position: 'fixed',
         top: 0,
@@ -335,7 +335,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         right: 0,
         zIndex: 60,
         background: 'var(--bg-page)',
-        padding: 'max(env(safe-area-inset-top, 0px), 10px) 16px 10px',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingRight: 16,
+        paddingBottom: 10,
+        paddingLeft: 16,
         display: 'flex',
         flexDirection: 'column',
         gap: 10,

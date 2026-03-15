@@ -7,5 +7,10 @@ const nextConfig = {
   },
   typescript: { ignoreBuildErrors: false },
   eslint:     { ignoreDuringBuilds: true },
+  async headers() {
+    return [
+      { source: '/build-id.txt', headers: [{ key: 'Cache-Control', value: 'no-store, max-age=0' }] },
+    ]
+  },
 }
 module.exports = nextConfig
