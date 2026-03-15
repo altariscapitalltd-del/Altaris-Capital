@@ -10,6 +10,21 @@ const beamsClient =
     ? new PushNotifications({ instanceId, secretKey })
     : null
 
+type PreferenceSet = {
+  pushAlerts: boolean
+  emailUpdates: boolean
+  investmentAlerts: boolean
+}
+
+function userPreferences(raw: any): PreferenceSet {
+  const p = raw?.preferences || raw || {}
+  return {
+    pushAlerts: typeof p.pushAlerts === 'boolean' ? p.pushAlerts : false,
+    emailUpdates: typeof p.emailUpdates === 'boolean' ? p.emailUpdates : true,
+    investmentAlerts: typeof p.investmentAlerts === 'boolean' ? p.investmentAlerts : true,
+  }
+}
+
 export async function sendPushNotification(
   userId: string,
   payload: { title: string; body: string; url?: string }
@@ -24,6 +39,7 @@ export async function sendPushNotification(
       notification: {
         title: payload.title,
         body: payload.body,
+        icon: '/icons/icon-192x192.png',
         ...(deepLink && { deep_link: deepLink }),
       },
     },
@@ -35,26 +51,33 @@ export async function notifyUser(
   userId: string,
   title: string,
   body: string,
-  url = '/dashboard'
+  url = '/dashboard',
+  category: 'general' | 'investment' = 'general'
 ) {
   await prisma.notification.create({
     data: { userId, title, body, url },
   })
 
-  try {
-    const target = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } })
-    if (target?.email) {
-      await sendNotificationEmail(target.email, target.name || 'User', title, body)
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true, pushSubscription: true } })
+  const prefs = userPreferences(target?.pushSubscription)
+
+  const investmentAllowed = category !== 'investment' || prefs.investmentAlerts
+
+  if (prefs.emailUpdates && investmentAllowed) {
+    try {
+      if (target?.email) {
+        await sendNotificationEmail(target.email, target.name || 'User', title, body)
+      }
+    } catch {
+      // keep notification flow resilient if email fails
     }
-  } catch {
-    // keep notification flow resilient if email fails
   }
 
-  if (beamsClient) {
+  if (beamsClient && prefs.pushAlerts && investmentAllowed) {
     try {
       await sendPushNotification(userId, { title, body, url })
-    } catch (e) {
-      // Log but don't fail — in-app notification still works via Pusher
+    } catch {
+      // do not fail request if push fails
     }
   }
 

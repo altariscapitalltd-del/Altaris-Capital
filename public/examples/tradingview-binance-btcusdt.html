@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TradingView BTCUSDT Widget</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #090b10; color: #cbd5e1; font-family: Inter, Arial, sans-serif; }
+    .toolbar { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+    #chart { width: 100vw; height: calc(100vh - 42px); }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <strong>BINANCE:BTCUSDT</strong>
+    <span>TradingView Free Widget</span>
+  </div>
+  <div id="chart"></div>
+
+  <script src="https://s3.tradingview.com/tv.js"></script>
+  <script>
+    new TradingView.widget({
+      autosize: true,
+      symbol: 'BINANCE:BTCUSDT',
+      interval: '1',
+      timezone: 'Etc/UTC',
+      theme: 'dark',
+      style: '1',
+      locale: 'en',
+      withdateranges: true,
+      hide_legend: false,
+      allow_symbol_change: true,
+      container_id: 'chart',
+    })
+  </script>
+</body>
+</html>

@@ -219,13 +219,17 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     }
   }, [user?.id])
 
-  // Pusher Beams: subscribe this device to push for the current user
+  // Pusher Beams: subscribe this device only when push alerts are enabled
   useEffect(() => {
     if (!user?.id || typeof window === 'undefined') return
     const instanceId = process.env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID
     if (!instanceId) return
     let cancelled = false
-    navigator.serviceWorker.ready.then((reg) => {
+
+    Promise.all([
+      navigator.serviceWorker.ready,
+      fetch('/api/user/push-subscribe').then((r) => r.json()).catch(() => null),
+    ]).then(([reg, pref]) => {
       if (cancelled) return
       return import('@pusher/push-notifications-web').then((PusherPushNotifications) => {
         if (cancelled) return
@@ -233,9 +237,14 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           instanceId,
           serviceWorkerRegistration: reg,
         })
-        return client.start().then(() => client.addDeviceInterest(`user-${user.id}`)).catch(() => {})
+        return client.start().then(async () => {
+          const interest = `user-${user.id}`
+          if (pref?.preferences?.pushAlerts) await client.addDeviceInterest(interest)
+          else await client.removeDeviceInterest(interest)
+        }).catch(() => {})
       })
     }).catch(() => {})
+
     return () => { cancelled = true }
   }, [user?.id])
 

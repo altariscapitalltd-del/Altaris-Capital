@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
+import { notifyUser } from '@/lib/push'
 import { cookies } from 'next/headers'
 
 export async function GET() {
@@ -76,6 +77,8 @@ export async function POST(req: Request) {
       data: { balanceId: balance.id, amount: balance.amount - amount }
     }),
   ])
+
+  await notifyUser(prisma, payload.userId, 'Investment Started', `Your investment in ${planName || 'Investment Plan'} is now active.`, '/invest', 'investment')
 
   return NextResponse.json({ investment })
 }
