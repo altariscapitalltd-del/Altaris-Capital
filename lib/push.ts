@@ -1,33 +1,60 @@
-import PushNotifications from '@pusher/push-notifications-server'
 import { trigger, userChannel } from './pusher'
 import { sendNotificationEmail } from './email'
 
-const instanceId = process.env.PUSHER_BEAMS_INSTANCE_ID || ''
-const secretKey = process.env.PUSHER_BEAMS_SECRET_KEY || ''
+type PreferenceSet = {
+  pushAlerts: boolean
+  emailUpdates: boolean
+  investmentAlerts: boolean
+  oneSignalPlayerId?: string | null
+  oneSignalSubscriptionId?: string | null
+}
 
-const beamsClient =
-  instanceId && secretKey
-    ? new PushNotifications({ instanceId, secretKey })
-    : null
+function userPreferences(raw: unknown): PreferenceSet {
+  const p = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  return {
+    pushAlerts: typeof p.pushAlerts === 'boolean' ? p.pushAlerts : false,
+    emailUpdates: typeof p.emailUpdates === 'boolean' ? p.emailUpdates : true,
+    investmentAlerts: typeof p.investmentAlerts === 'boolean' ? p.investmentAlerts : true,
+    oneSignalPlayerId: typeof p.oneSignalPlayerId === 'string' ? p.oneSignalPlayerId : null,
+    oneSignalSubscriptionId: typeof p.oneSignalSubscriptionId === 'string' ? p.oneSignalSubscriptionId : null,
+  }
+}
 
 export async function sendPushNotification(
   userId: string,
   payload: { title: string; body: string; url?: string }
 ) {
-  if (!beamsClient) return
-  const interest = `user-${userId}`
-  const deepLink = payload.url
-    ? (payload.url.startsWith('http') ? payload.url : `${process.env.NEXT_PUBLIC_APP_URL || ''}${payload.url}`).trim()
-    : undefined
-  await beamsClient.publishToInterests([interest], {
-    web: {
-      notification: {
-        title: payload.title,
-        body: payload.body,
-        ...(deepLink && { deep_link: deepLink }),
-      },
+  const appId = process.env.ONESIGNAL_APP_ID
+  const apiKey = process.env.ONESIGNAL_REST_API_KEY
+  if (!appId || !apiKey) return
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+  const targetUrl = payload.url
+    ? (payload.url.startsWith('http') ? payload.url : `${appUrl}${payload.url}`)
+    : appUrl
+
+  const response = await fetch('https://api.onesignal.com/notifications', {
+    method: 'POST',
+    headers: {
+      Authorization: `Key ${apiKey}`,
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({
+      app_id: appId,
+      target_channel: 'push',
+      include_aliases: { external_id: [userId] },
+      include_external_user_ids: [userId],
+      headings: { en: payload.title },
+      contents: { en: payload.body },
+      ...(targetUrl ? { url: targetUrl } : {}),
+      web_push_topic: `altaris-${userId}`,
+    }),
   })
+
+  if (!response.ok) {
+    const msg = await response.text().catch(() => '')
+    throw new Error(`OneSignal push failed (${response.status}): ${msg}`)
+  }
 }
 
 export async function notifyUser(
@@ -35,26 +62,32 @@ export async function notifyUser(
   userId: string,
   title: string,
   body: string,
-  url = '/dashboard'
+  url = '/dashboard',
+  category: 'general' | 'investment' = 'general'
 ) {
   await prisma.notification.create({
     data: { userId, title, body, url },
   })
 
-  try {
-    const target = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } })
-    if (target?.email) {
-      await sendNotificationEmail(target.email, target.name || 'User', title, body)
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true, pushSubscription: true } })
+  const prefs = userPreferences(target?.pushSubscription)
+  const investmentAllowed = category !== 'investment' || prefs.investmentAlerts
+
+  if (prefs.emailUpdates && investmentAllowed) {
+    try {
+      if (target?.email) {
+        await sendNotificationEmail(target.email, target.name || 'User', title, body)
+      }
+    } catch {
+      // keep notification flow resilient if email fails
     }
-  } catch {
-    // keep notification flow resilient if email fails
   }
 
-  if (beamsClient) {
+  if (prefs.pushAlerts && investmentAllowed) {
     try {
       await sendPushNotification(userId, { title, body, url })
-    } catch (e) {
-      // Log but don't fail — in-app notification still works via Pusher
+    } catch {
+      // do not fail request if push fails
     }
   }
 

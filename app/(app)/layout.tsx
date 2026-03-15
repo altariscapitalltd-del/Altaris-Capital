@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Pusher from 'pusher-js'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
@@ -119,21 +118,50 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const headerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    fetch('/api/user/profile').then(r => {
-      if (!r.ok) { router.push('/login'); return null }
-      return r.json()
-    }).then(d => {
-      if (d) {
-        setUser(d.user)
-        setBonusUnclaimed(!d.user?.bonusClaimed)
-        setUnread(d.user?.notifications?.length || 0)
+    let cancelled = false
+
+    try {
+      const cached = window.localStorage.getItem('altaris_user_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        setUser(parsed)
+        setBonusUnclaimed(!parsed?.bonusClaimed)
       }
-      setSplashVisible(false)
-    }).catch(() => {
-      router.push('/login')
-      setSplashVisible(false)
-    })
-  }, [])
+    } catch {}
+
+    const run = async () => {
+      try {
+        const meRes = await fetch('/api/auth/me')
+        if (!meRes.ok) {
+          router.push('/login')
+          return
+        }
+        const meData = await meRes.json().catch(() => ({}))
+        if (cancelled) return
+        if (meData?.user) {
+          setUser((prev: any) => {
+            const merged = { ...(prev || {}), ...meData.user }
+            try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(merged)) } catch {}
+            return merged
+          })
+        }
+
+        const profileRes = await fetch('/api/user/profile').catch(() => null)
+        if (!profileRes || !profileRes.ok) return
+        const profileData = await profileRes.json().catch(() => null)
+        if (cancelled || !profileData?.user) return
+        setUser(profileData.user)
+        setBonusUnclaimed(!profileData.user?.bonusClaimed)
+        setUnread(profileData.user?.notifications?.length || 0)
+        try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(profileData.user)) } catch {}
+      } finally {
+        if (!cancelled) setSplashVisible(false)
+      }
+    }
+
+    run()
+    return () => { cancelled = true }
+  }, [router])
 
   useEffect(() => {
     // Capture PWA install prompt event for later (Android / Chrome)
@@ -201,42 +229,56 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user?.id) return
+    let disposed = false
+    let cleanup: (() => void) | null = null
 
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
-      authEndpoint: '/api/pusher/auth',
-    })
+    import('pusher-js').then(({ default: Pusher }) => {
+      if (disposed) return
 
-    const channel = pusher.subscribe(`private-user-${user.id}`)
+      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
+        authEndpoint: '/api/pusher/auth',
+      })
 
-    channel.bind('notification:new', () => setUnread(n => n + 1))
-    channel.bind('balance:update', () => window.dispatchEvent(new Event('balance:refresh')))
+      const channel = pusher.subscribe(`private-user-${user.id}`)
+      channel.bind('notification:new', () => setUnread(n => n + 1))
+      channel.bind('balance:update', () => window.dispatchEvent(new Event('balance:refresh')))
+
+      cleanup = () => {
+        channel.unbind_all()
+        pusher.unsubscribe(`private-user-${user.id}`)
+        pusher.disconnect()
+      }
+    }).catch(() => {})
 
     return () => {
-      channel.unbind_all()
-      pusher.unsubscribe(`private-user-${user.id}`)
-      pusher.disconnect()
+      disposed = true
+      cleanup?.()
     }
   }, [user?.id])
 
-  // Pusher Beams: subscribe this device to push for the current user
   useEffect(() => {
     if (!user?.id || typeof window === 'undefined') return
-    const instanceId = process.env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID
-    if (!instanceId) return
-    let cancelled = false
-    navigator.serviceWorker.ready.then((reg) => {
-      if (cancelled) return
-      return import('@pusher/push-notifications-web').then((PusherPushNotifications) => {
-        if (cancelled) return
-        const client = new PusherPushNotifications.Client({
-          instanceId,
-          serviceWorkerRegistration: reg,
-        })
-        return client.start().then(() => client.addDeviceInterest(`user-${user.id}`)).catch(() => {})
-      })
-    }).catch(() => {})
-    return () => { cancelled = true }
+    const win = window as typeof window & { OneSignalDeferred?: Array<(oneSignal: any) => void> }
+    win.OneSignalDeferred = win.OneSignalDeferred || []
+    win.OneSignalDeferred.push(async (OneSignal: any) => {
+      try {
+        await OneSignal.login(String(user.id))
+
+        const details = {
+          oneSignalPlayerId: OneSignal?.User?.onesignalId || null,
+          oneSignalSubscriptionId: OneSignal?.User?.PushSubscription?.id || null,
+        }
+
+        await fetch('/api/user/push-subscribe', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(details),
+        }).catch(() => null)
+      } catch {
+        // keep app responsive if OneSignal is unavailable
+      }
+    })
   }, [user?.id])
 
   useEffect(() => {

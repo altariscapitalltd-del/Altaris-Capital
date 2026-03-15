@@ -16,9 +16,9 @@ export default function AdminNotificationsPage() {
     if(!title||!message){setMsg({type:'error',text:'Title and message are required'});return}
     if(target==='single'&&!userId){setMsg({type:'error',text:'Select a user'});return}
     setLoading(true); setMsg(null)
-    const res = await fetch('/api/admin/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target,userId:target==='single'?userId:undefined,title,message})})
+    const res = await fetch('/api/admin/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ target, userId: target === 'single' ? userId : undefined, title, body: message })})
     const data = await res.json()
-    if(res.ok){setMsg({type:'success',text:`Notification sent to ${data.count} user(s)`});setTitle('');setMessage('')}
+    if(res.ok){setMsg({type:'success',text:`Notification sent to ${data.count ?? data.sent ?? 0} user(s)`});setTitle('');setMessage('')}
     else setMsg({type:'error',text:data.error})
     setLoading(false)
   }

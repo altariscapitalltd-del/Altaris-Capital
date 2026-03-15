@@ -8,6 +8,15 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
 const ALLOWED_AVATAR_EXT = new Set(['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'])
 
+function isVercelBlobUrl(url: string) {
+  try {
+    const u = new URL(url)
+    return u.hostname.endsWith('.blob.vercel-storage.com')
+  } catch {
+    return false
+  }
+}
+
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -20,6 +29,10 @@ export async function GET(req: NextRequest) {
       notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
     },
   })
+  if (full && full.profilePicture && isVercelBlobUrl(full.profilePicture)) {
+    full.profilePicture = `/api/user/avatar/blob?src=${encodeURIComponent(full.profilePicture)}`
+  }
+
   return NextResponse.json({ user: full })
 }
 
@@ -70,7 +83,7 @@ export async function PUT(req: NextRequest) {
 
       if (process.env.BLOB_READ_WRITE_TOKEN) {
         const { put } = await import('@vercel/blob')
-        const blob = await put(filename, file, { access: 'public', addRandomSuffix: true })
+        const blob = await put(filename, file, { access: 'private', addRandomSuffix: true })
         profilePicture = blob.url
       } else {
         const bytes = await file.arrayBuffer()

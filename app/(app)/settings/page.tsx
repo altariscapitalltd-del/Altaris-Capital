@@ -45,14 +45,6 @@ function SectionCard({ children }: { children:React.ReactNode }) {
   )
 }
 
-function base64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i)
-  return outputArray
-}
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -65,10 +57,22 @@ export default function SettingsPage() {
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r=>r.json()).then(d=>setUser(d.user)).catch(() => {})
-    setNotifPush(localStorage.getItem('altaris_notif_push') === '1')
-    setNotifEmail(localStorage.getItem('altaris_notif_email') !== '0')
-    setNotifInvest(localStorage.getItem('altaris_notif_invest') !== '0')
+    try {
+      const cached = window.localStorage.getItem('altaris_user_cache')
+      if (cached) setUser(JSON.parse(cached))
+    } catch {}
+
+    fetch('/api/user/profile').then(r=>r.json()).then(d=>{
+      setUser(d.user)
+      try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(d.user)) } catch {}
+    }).catch(() => {})
+    fetch('/api/user/push-subscribe').then(r=>r.json()).then(d=>{
+      if (d?.preferences) {
+        setNotifPush(Boolean(d.preferences.pushAlerts))
+        setNotifEmail(Boolean(d.preferences.emailUpdates))
+        setNotifInvest(Boolean(d.preferences.investmentAlerts))
+      }
+    }).catch(() => {})
     setBiometric(localStorage.getItem('altaris_biometric') === '1')
   }, [])
 
@@ -80,62 +84,81 @@ export default function SettingsPage() {
 
   async function enablePush(enable: boolean) {
     try {
+      const win = window as typeof window & { OneSignalDeferred?: Array<(oneSignal: any) => void> }
+      win.OneSignalDeferred = win.OneSignalDeferred || []
+
       if (!enable) {
-        setNotifPush(false)
-        localStorage.setItem('altaris_notif_push', '0')
-        setMsg({ type: 'success', text: 'Push alerts disabled on this device.' })
-        return
-      }
-
-      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-        setMsg({ type: 'error', text: 'Push notifications are not supported on this device.' })
-        return
-      }
-
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        setMsg({ type: 'error', text: 'Notification permission not granted.' })
-        return
-      }
-
-      const reg = await navigator.serviceWorker.ready
-      const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-      if (!vapid) {
-        setMsg({ type: 'error', text: 'Missing VAPID public key configuration.' })
-        return
-      }
-
-      let subscription = await reg.pushManager.getSubscription()
-      if (!subscription) {
-        subscription = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(vapid),
+        win.OneSignalDeferred.push(async (OneSignal: any) => {
+          try { await OneSignal.User.PushSubscription.optOut() } catch {}
         })
+
+        await fetch('/api/user/push-subscribe', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pushAlerts: false }),
+        })
+        setNotifPush(false)
+        setMsg({ type: 'success', text: 'Push alerts disabled.' })
+        return
       }
+
+      let details: { oneSignalPlayerId?: string | null; oneSignalSubscriptionId?: string | null } = {}
+      await new Promise<void>((resolve, reject) => {
+        win.OneSignalDeferred?.push(async (OneSignal: any) => {
+          try {
+            const permission = await OneSignal.Notifications.requestPermission()
+            if (!permission) {
+              reject(new Error('permission_denied'))
+              return
+            }
+            await OneSignal.User.PushSubscription.optIn()
+            details = {
+              oneSignalPlayerId: OneSignal?.User?.onesignalId || null,
+              oneSignalSubscriptionId: OneSignal?.User?.PushSubscription?.id || null,
+            }
+            resolve()
+          } catch (error) {
+            reject(error)
+          }
+        })
+      })
 
       await fetch('/api/user/push-subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscription),
+        body: JSON.stringify(details),
       })
 
+      await fetch('/api/user/push-subscribe', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pushAlerts: true, ...details }),
+      })
       setNotifPush(true)
-      localStorage.setItem('altaris_notif_push', '1')
-      setMsg({ type: 'success', text: 'Push alerts enabled.' })
+      setMsg({ type: 'success', text: 'Push alerts enabled for this device.' })
     } catch {
-      setMsg({ type: 'error', text: 'Unable to enable push alerts.' })
+      setMsg({ type: 'error', text: 'Unable to enable push alerts. Please allow browser notifications.' })
     }
   }
 
+
   function toggleEmail(next: boolean) {
     setNotifEmail(next)
-    localStorage.setItem('altaris_notif_email', next ? '1' : '0')
+    fetch('/api/user/push-subscribe', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emailUpdates: next }),
+    }).catch(() => {})
     setMsg({ type: 'success', text: next ? 'Email updates enabled.' : 'Email updates disabled.' })
   }
 
   function toggleInvest(next: boolean) {
     setNotifInvest(next)
-    localStorage.setItem('altaris_notif_invest', next ? '1' : '0')
+    fetch('/api/user/push-subscribe', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ investmentAlerts: next }),
+    }).catch(() => {})
   }
 
   function toggleBiometric(next: boolean) {
@@ -152,7 +175,7 @@ export default function SettingsPage() {
               {user?.profilePicture ? <img src={user.profilePicture} style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : user?.name?.[0]?.toUpperCase()||'A'}
             </div>
             <div style={{ flex:1 }}>
-              <div style={{ fontWeight:700, fontSize:16 }}>{user?.name || 'Loading...'}</div>
+              <div style={{ fontWeight:700, fontSize:16 }}>{user?.name || 'User'}</div>
               <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{user?.email}</div>
               <div style={{ marginTop:6 }}>
                 <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background: user?.kycStatus==='APPROVED'?'var(--success-bg)':'var(--warning-bg)', color: user?.kycStatus==='APPROVED'?'var(--success)':'var(--warning)' }}>
