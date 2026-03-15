@@ -7,29 +7,49 @@ export async function POST(req: NextRequest) {
   const admin = await getAdminUser(req)
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { target, userIds, title, body, url, kycOnly } = await req.json()
+  const payload = await req.json().catch(() => ({})) as Record<string, unknown>
+  const target = String(payload.target || 'all')
+  const title = String(payload.title || '').trim()
+  const body = String((payload.body ?? payload.message ?? '')).trim()
+
+  if (!title || !body) {
+    return NextResponse.json({ error: 'Title and message are required' }, { status: 400 })
+  }
 
   let recipients: string[] = []
 
-  if (target === 'single' && userIds?.length) {
-    recipients = userIds
-  } else if (target === 'multiple' && userIds?.length) {
-    recipients = userIds
-  } else if (target === 'all') {
+  if (target === 'single') {
+    const single = String(payload.userId || '').trim()
+    const userIds = Array.isArray(payload.userIds) ? payload.userIds.map((id) => String(id)).filter(Boolean) : []
+    recipients = single ? [single] : userIds
+  } else if (target === 'multiple') {
+    recipients = Array.isArray(payload.userIds) ? payload.userIds.map((id) => String(id)).filter(Boolean) : []
+  } else if (target === 'kyc') {
     const users = await prisma.user.findMany({
-      where: kycOnly ? { kycStatus: 'APPROVED' } : {},
+      where: { kycStatus: 'APPROVED' },
+      select: { id: true },
+    })
+    recipients = users.map((u: { id: string }) => u.id)
+  } else {
+    const users = await prisma.user.findMany({
       select: { id: true },
     })
     recipients = users.map((u: { id: string }) => u.id)
   }
 
-  await Promise.all(recipients.map((uid: string) => notifyUser(prisma, uid, title, body, url || '/dashboard')))
+  recipients = Array.from(new Set(recipients))
+
+  await Promise.all(recipients.map((uid) => notifyUser(prisma, uid, title, body, String(payload.url || '/dashboard'))))
 
   await prisma.adminAuditLog.create({
-    data: { adminId: admin.id, action: 'send_notification', details: { target, count: recipients.length, title } },
+    data: {
+      adminId: admin.id,
+      action: 'send_notification',
+      details: { target, count: recipients.length, title },
+    },
   })
 
-  return NextResponse.json({ success: true, sent: recipients.length })
+  return NextResponse.json({ success: true, count: recipients.length, sent: recipients.length })
 }
 
 export async function GET(req: NextRequest) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
+import { prisma } from '@/lib/db'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'altaris-secret-change-this')
 
@@ -26,58 +27,54 @@ async function getUserId(req: NextRequest) {
   }
 }
 
-function readPrefsCookie(req: NextRequest): Preferences {
-  const raw = req.cookies.get('notif_prefs')?.value
-  if (!raw) return DEFAULT_PREFS
-  try {
-    const parsed = JSON.parse(raw)
-    return {
-      pushAlerts: typeof parsed.pushAlerts === 'boolean' ? parsed.pushAlerts : DEFAULT_PREFS.pushAlerts,
-      emailUpdates: typeof parsed.emailUpdates === 'boolean' ? parsed.emailUpdates : DEFAULT_PREFS.emailUpdates,
-      investmentAlerts: typeof parsed.investmentAlerts === 'boolean' ? parsed.investmentAlerts : DEFAULT_PREFS.investmentAlerts,
-    }
-  } catch {
-    return DEFAULT_PREFS
+function normalizePrefs(raw: unknown): Preferences {
+  const p = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  return {
+    pushAlerts: typeof p.pushAlerts === 'boolean' ? p.pushAlerts : DEFAULT_PREFS.pushAlerts,
+    emailUpdates: typeof p.emailUpdates === 'boolean' ? p.emailUpdates : DEFAULT_PREFS.emailUpdates,
+    investmentAlerts: typeof p.investmentAlerts === 'boolean' ? p.investmentAlerts : DEFAULT_PREFS.investmentAlerts,
   }
-}
-
-function withPrefsCookie(res: NextResponse, prefs: Preferences) {
-  res.cookies.set('notif_prefs', JSON.stringify(prefs), {
-    httpOnly: false,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 365,
-    path: '/',
-  })
 }
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId(req)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  return NextResponse.json({ preferences: readPrefsCookie(req), hasSubscription: false, degraded: true })
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { pushSubscription: true } })
+  const preferences = normalizePrefs(user?.pushSubscription)
+  return NextResponse.json({
+    preferences,
+    hasSubscription: true,
+    provider: 'pusher-beams',
+  })
 }
 
 export async function POST(req: NextRequest) {
   const userId = await getUserId(req)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  await req.json().catch(() => null)
-  const next = { ...readPrefsCookie(req), pushAlerts: true }
-  const res = NextResponse.json({ success: true, preferences: next, degraded: true })
-  withPrefsCookie(res, next)
-  return res
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { pushSubscription: true } })
+  const current = normalizePrefs(user?.pushSubscription)
+  const next: Preferences = { ...current, pushAlerts: true }
+
+  await prisma.user.update({ where: { id: userId }, data: { pushSubscription: next } })
+  return NextResponse.json({ success: true, preferences: next, provider: 'pusher-beams' })
 }
 
 export async function PATCH(req: NextRequest) {
   const userId = await getUserId(req)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const body = await req.json().catch(() => ({}))
-  const current = readPrefsCookie(req)
+
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { pushSubscription: true } })
+  const current = normalizePrefs(user?.pushSubscription)
+
   const next: Preferences = {
     pushAlerts: typeof body.pushAlerts === 'boolean' ? body.pushAlerts : current.pushAlerts,
     emailUpdates: typeof body.emailUpdates === 'boolean' ? body.emailUpdates : current.emailUpdates,
     investmentAlerts: typeof body.investmentAlerts === 'boolean' ? body.investmentAlerts : current.investmentAlerts,
   }
-  const res = NextResponse.json({ success: true, preferences: next, degraded: true })
-  withPrefsCookie(res, next)
-  return res
+
+  await prisma.user.update({ where: { id: userId }, data: { pushSubscription: next } })
+  return NextResponse.json({ success: true, preferences: next, provider: 'pusher-beams' })
 }

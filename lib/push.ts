@@ -4,7 +4,6 @@ import { sendNotificationEmail } from './email'
 
 const instanceId = process.env.PUSHER_BEAMS_INSTANCE_ID || ''
 const secretKey = process.env.PUSHER_BEAMS_SECRET_KEY || ''
-
 const beamsClient =
   instanceId && secretKey
     ? new PushNotifications({ instanceId, secretKey })
@@ -16,8 +15,8 @@ type PreferenceSet = {
   investmentAlerts: boolean
 }
 
-function userPreferences(raw: any): PreferenceSet {
-  const p = raw?.preferences || raw || {}
+function userPreferences(raw: unknown): PreferenceSet {
+  const p = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
   return {
     pushAlerts: typeof p.pushAlerts === 'boolean' ? p.pushAlerts : false,
     emailUpdates: typeof p.emailUpdates === 'boolean' ? p.emailUpdates : true,
@@ -60,7 +59,6 @@ export async function notifyUser(
 
   const target = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true, pushSubscription: true } })
   const prefs = userPreferences(target?.pushSubscription)
-
   const investmentAllowed = category !== 'investment' || prefs.investmentAlerts
 
   if (prefs.emailUpdates && investmentAllowed) {

@@ -1,9 +1,16 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
+
+type PendingCounts = {
+  deposits: number
+  kyc: number
+  withdrawals: number
+  chat: number
+}
 
 const NAV_ITEMS = [
   { href:'/admin/dashboard', label:'Overview', icon:(a:boolean)=>(<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={a?'#F2BA0E':'#555'} strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>)},
@@ -21,7 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [collapsed, setCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [pendingCounts, setPendingCounts] = useState({ deposits: 0, kyc: 0, chat: 0 })
+  const [pendingCounts, setPendingCounts] = useState<PendingCounts>({ deposits: 0, kyc: 0, withdrawals: 0, chat: 0 })
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024)
@@ -36,7 +43,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (r.status === 401) { router.push('/admin/login'); return null }
       return r.json()
     }).then(d => {
-      if (d?.stats) setPendingCounts({ deposits: d.stats.pendingDeposits || 0, kyc: d.stats.pendingKyc || 0, chat: 0 })
+      if (d?.stats) setPendingCounts({
+        deposits: d.stats.pendingDeposits || 0,
+        kyc: d.stats.pendingKyc || 0,
+        withdrawals: d.stats.pendingWithdrawals || 0,
+        chat: 0,
+      })
     }).catch(() => router.push('/admin/login'))
   }, [pathname, router])
 
@@ -49,20 +61,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const channel = pusher.subscribe('private-admin')
     channel.bind('admin:new_deposit', () => setPendingCounts(c => ({ ...c, deposits: c.deposits + 1 })))
     channel.bind('admin:kyc_submitted', () => setPendingCounts(c => ({ ...c, kyc: c.kyc + 1 })))
-    return () => {
-      channel.unbind_all()
-      pusher.unsubscribe('private-admin')
-      pusher.disconnect()
-    }
+    return () => { channel.unbind_all(); pusher.unsubscribe('private-admin'); pusher.disconnect() }
   }, [pathname])
 
-  if (pathname === '/admin/login') return <>{children}</>
+  const badges = useMemo(
+    () => ({
+      '/admin/deposits': pendingCounts.deposits,
+      '/admin/kyc': pendingCounts.kyc,
+      '/admin/withdrawals': pendingCounts.withdrawals,
+      '/admin/chat': pendingCounts.chat,
+    }),
+    [pendingCounts]
+  )
 
-  const BADGE: Record<string, number> = {
-    '/admin/deposits': pendingCounts.deposits,
-    '/admin/kyc': pendingCounts.kyc,
-    '/admin/chat': pendingCounts.chat,
-  }
+  if (pathname === '/admin/login') return <>{children}</>
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#080808', fontFamily: 'Inter,-apple-system,sans-serif', color: '#fff' }}>
@@ -90,7 +102,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 4, flex: 1, overflowY: 'auto' }}>
           {NAV_ITEMS.map(({ href, label, icon }) => {
             const active = pathname.startsWith(href)
-            const badge = BADGE[href] || 0
+            const badge = badges[href as keyof typeof badges] ?? 0
             return (
               <Link key={href} href={href} onClick={() => isMobile && setMobileMenuOpen(false)} style={{ textDecoration: 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: collapsed ? '11px 0' : '11px 12px', borderRadius: 10, cursor: 'pointer', background: active ? 'rgba(242,186,14,0.08)' : 'transparent', borderLeft: active ? '2px solid #F2BA0E' : '2px solid transparent', justifyContent: collapsed ? 'center' : 'flex-start', transition: 'all .15s', position: 'relative' }}>

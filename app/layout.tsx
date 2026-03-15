@@ -44,6 +44,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Altaris" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.OneSignalDeferred = window.OneSignalDeferred || [];
+          OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
+              appId: "d7beb41e-012b-4216-bfe5-ff35456f37f4",
+              safari_web_id: "web.onesignal.auto.4d1813bb-fb28-4cd6-9039-144582b81585",
+              notifyButton: { enable: true },
+              allowLocalhostAsSecureOrigin: true,
+            });
+          });
+        `}} />
       </head>
       <body style={{ background: 'var(--bg-primary)' }}>
         <script dangerouslySetInnerHTML={{ __html: `document.documentElement.setAttribute('data-theme','dark');` }} />

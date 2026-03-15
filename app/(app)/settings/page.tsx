@@ -45,14 +45,6 @@ function SectionCard({ children }: { children:React.ReactNode }) {
   )
 }
 
-function base64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i)
-  return outputArray
-}
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -114,38 +106,14 @@ export default function SettingsPage() {
         return
       }
 
-      const reg = await navigator.serviceWorker.ready
-      const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-      if (!vapid) {
-        setMsg({ type: 'error', text: 'Missing VAPID public key configuration.' })
-        return
-      }
-
-      let subscription = await reg.pushManager.getSubscription()
-      if (!subscription) {
-        subscription = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: base64ToUint8Array(vapid),
-        })
-      }
-
-      await fetch('/api/user/push-subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscription),
-      })
-
-      await fetch('/api/user/push-subscribe', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pushAlerts: true }),
-      })
+      await fetch('/api/user/push-subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
       setNotifPush(true)
-      setMsg({ type: 'success', text: 'Push alerts enabled.' })
+      setMsg({ type: 'success', text: 'Push alerts enabled. This device will receive notifications.' })
     } catch {
-      setMsg({ type: 'error', text: 'Unable to enable push alerts.' })
+      setMsg({ type: 'error', text: 'Unable to enable push alerts. Please allow browser notifications.' })
     }
   }
+
 
   function toggleEmail(next: boolean) {
     setNotifEmail(next)
