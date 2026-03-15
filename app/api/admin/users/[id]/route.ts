@@ -36,18 +36,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   switch (action) {
     case 'adjust_balance': {
-      const balance = await prisma.balance.findFirst({ where: { userId: params.id, currency: data.currency || 'USD' } })
+      const currency = (data.currency || 'USD').toString()
+      const delta = Number(data.amount ?? data.delta ?? 0)
+      const balance = await prisma.balance.findFirst({ where: { userId: params.id, currency } })
       if (!balance) return NextResponse.json({ error: 'Balance not found' }, { status: 404 })
-      const newAmount = Math.max(0, balance.amount + parseFloat(data.amount || data.delta || '0'))
+      const newAmount = Math.max(0, balance.amount + delta)
       await prisma.balance.update({ where: { id: balance.id }, data: { amount: newAmount } })
       await prisma.transaction.create({
         data: {
-          userId: params.id, type: 'ADJUSTMENT',
-          amount: Math.abs(parseFloat(data.amount || data.delta || '0')), currency: data.currency || 'USD',
-          status: 'SUCCESS', note: `Admin adjustment: ${data.note || ''}`,
+          userId: params.id,
+          type: 'ADJUSTMENT',
+          amount: Math.abs(delta),
+          currency,
+          status: 'SUCCESS',
+          note: (data.note || 'Admin adjustment').toString().slice(0, 500),
         },
       })
-      await trigger(userChannel(params.id), 'balance:update', { currency: data.currency || 'USD', amount: newAmount })
+      await trigger(userChannel(params.id), 'balance:update', { currency, amount: newAmount })
       break
     }
     case 'freeze':

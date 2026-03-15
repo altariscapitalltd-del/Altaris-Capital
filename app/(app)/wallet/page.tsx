@@ -128,115 +128,79 @@ export default function WalletPage() {
 
   const fiatWidgetUrl = process.env.NEXT_PUBLIC_MOONPAY_WIDGET_URL || 'https://buy.moonpay.com'
 
+  const IconDeposit = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  )
+  const IconWithdraw = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+  )
+  const IconRewards = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>
+  )
+  const IconCrypto = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83M19.07 4.93l-2.83 2.83M7.76 16.24l-2.83 2.83"/><circle cx="12" cy="12" r="4"/></svg>
+  )
+  const IconFiat = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+  )
+  const IconExternal = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+  )
+  const IconWarning = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  )
+
   return (
     <div style={{ padding: '0 0 24px' }}>
       <div style={{ padding: '12px 16px 0' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 14 }}>Wallet</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 16 }}>Wallet</h1>
 
-        {/* Single summary card */}
+        {/* Premium balance card — Bybit-style sharp, dark, clean */}
         <div
           style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: 16,
-            padding: 18,
-            marginBottom: 16,
+            background: 'linear-gradient(145deg, #0d0d0d 0%, #0a0a0a 100%)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 12,
+            padding: 20,
+            marginBottom: 18,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)',
           }}
         >
-          <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, marginBottom: 4 }}>Total Balance</div>
-          <div style={{ fontWeight: 900, fontSize: 28, marginBottom: 14 }}>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', marginBottom: 6, textTransform: 'uppercase' }}>Total Balance</div>
+          <div style={{ fontWeight: 800, fontSize: 32, letterSpacing: '-0.02em', marginBottom: 20, color: '#fff' }}>
             ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2 }}>Available</div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4 }}>Available</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2 }}>Invested</div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>${investedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4 }}>Invested</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>${investedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2 }}>Profit today</div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--success)' }}>+${profitToday.toFixed(2)}</div>
+              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4 }}>Profit today</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--success)' }}>+${profitToday.toFixed(2)}</div>
             </div>
             <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2 }}>Crypto</div>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>
+              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, letterSpacing: '0.05em', marginBottom: 4 }}>Crypto</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#fff' }}>
                 {(balances['BTC'] || 0).toFixed(4)} BTC, {(balances['ETH'] || 0).toFixed(4)} ETH
               </div>
             </div>
           </div>
         </div>
 
-        {/* Active investments list */}
-        {investments.length > 0 && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Active investments</h2>
-              <Link href="/invest" style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-primary)', textDecoration: 'none' }}>View all</Link>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <AnimatePresence>
-                {investments.map((inv, idx) => {
-                  const start = new Date(inv.startDate).getTime()
-                  const end = new Date(inv.endDate).getTime()
-                  const prog = Math.min(100, ((Date.now() - start) / (end - start)) * 100)
-                  const dailyEarn = inv.amount * (inv.dailyRoi || 0)
-                  const daysLeft = Math.max(0, Math.ceil((end - Date.now()) / 86400000))
-                  return (
-                    <motion.div
-                      key={inv.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05, duration: 0.25 }}
-                      style={{
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 14,
-                        padding: 14,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 8,
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{inv.planName || inv.planId}</span>
-                        <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--success)' }}>+${dailyEarn.toFixed(2)}/day</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-muted)' }}>
-                        <span>${inv.amount.toLocaleString()} invested</span>
-                        <span>{daysLeft}d left</span>
-                      </div>
-                      <div style={{ height: 4, background: 'var(--bg-elevated)', borderRadius: 2, overflow: 'hidden' }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: prog + '%' }}
-                          transition={{ duration: 0.5, delay: idx * 0.05 }}
-                          style={{ height: '100%', background: 'var(--brand-primary)', borderRadius: 2 }}
-                        />
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </AnimatePresence>
-            </div>
-          </div>
-        )}
-
-        {/* Action buttons: Deposit, Withdraw, Rewards */}
+        {/* Action buttons: Deposit, Withdraw, Rewards — SVG icons */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
           <button
-            onClick={() => {
-              setTab('deposit')
-              setDepositMode('select')
-              setMsg(null)
-            }}
+            onClick={() => { setTab('deposit'); setDepositMode('select'); setMsg(null) }}
             style={{
               padding: 14,
               borderRadius: 12,
-              border: '1px solid var(--border)',
-              background: tab === 'deposit' ? 'rgba(14,203,129,0.1)' : 'var(--bg-card)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: tab === 'deposit' ? 'rgba(14,203,129,0.12)' : '#111',
               color: tab === 'deposit' ? 'var(--success)' : 'var(--text-secondary)',
               fontWeight: 700,
               fontSize: 13,
@@ -245,22 +209,18 @@ export default function WalletPage() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 4,
+              gap: 6,
             }}
           >
-            <span style={{ fontSize: 18 }}>⬇</span> Deposit
+            <IconDeposit /> Deposit
           </button>
           <button
-            onClick={() => {
-              setTab('withdraw')
-              setDepositMode('select')
-              setMsg(null)
-            }}
+            onClick={() => { setTab('withdraw'); setDepositMode('select'); setMsg(null) }}
             style={{
               padding: 14,
               borderRadius: 12,
-              border: '1px solid var(--border)',
-              background: tab === 'withdraw' ? 'rgba(246,70,93,0.1)' : 'var(--bg-card)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: tab === 'withdraw' ? 'rgba(246,70,93,0.12)' : '#111',
               color: tab === 'withdraw' ? 'var(--danger)' : 'var(--text-secondary)',
               fontWeight: 700,
               fontSize: 13,
@@ -269,18 +229,18 @@ export default function WalletPage() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 4,
+              gap: 6,
             }}
           >
-            <span style={{ fontSize: 18 }}>⬆</span> Withdraw
+            <IconWithdraw /> Withdraw
           </button>
           <Link
             href="/home"
             style={{
               padding: 14,
               borderRadius: 12,
-              border: '1px solid var(--border)',
-              background: 'var(--bg-card)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: '#111',
               color: 'var(--brand-primary)',
               fontWeight: 700,
               fontSize: 13,
@@ -288,10 +248,10 @@ export default function WalletPage() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: 4,
+              gap: 6,
             }}
           >
-            <span style={{ fontSize: 18 }}>🎁</span> Rewards
+            <IconRewards /> Rewards
           </Link>
         </div>
       </div>
@@ -307,8 +267,8 @@ export default function WalletPage() {
                   style={{
                     padding: 18,
                     borderRadius: 14,
-                    border: '2px solid var(--border)',
-                    background: 'var(--bg-card)',
+                    border: '2px solid rgba(255,255,255,0.08)',
+                    background: '#111',
                     color: 'var(--text-primary)',
                     fontWeight: 700,
                     fontSize: 14,
@@ -321,15 +281,17 @@ export default function WalletPage() {
                   }}
                   className="pressable"
                 >
-                  <span style={{ fontSize: 24 }}>₿</span> Crypto
+                  <IconCrypto /> Crypto
                 </button>
-                <button
-                  onClick={() => setDepositMode('fiat')}
+                <a
+                  href={fiatWidgetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     padding: 18,
                     borderRadius: 14,
-                    border: '2px solid var(--border)',
-                    background: 'var(--bg-card)',
+                    border: '2px solid rgba(255,255,255,0.08)',
+                    background: '#111',
                     color: 'var(--text-primary)',
                     fontWeight: 700,
                     fontSize: 14,
@@ -339,64 +301,14 @@ export default function WalletPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8,
+                    textDecoration: 'none',
                   }}
                   className="pressable"
                 >
-                  <span style={{ fontSize: 24 }}>$</span> Fiat
-                </button>
+                  <IconFiat /> Fiat
+                </a>
               </div>
-            </div>
-          )}
-
-          {depositMode === 'fiat' && (
-            <div style={{ marginBottom: 16 }}>
-              <button
-                onClick={() => setDepositMode('select')}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', marginBottom: 10 }}
-              >
-                ← Back
-              </button>
-              {fiatWidgetUrl ? (
-                <div style={{ marginBottom: 12 }}>
-                  <a
-                    href={fiatWidgetUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      padding: 14,
-                      borderRadius: 14,
-                      border: '1px solid var(--border)',
-                      background: 'var(--bg-card)',
-                      color: 'var(--brand-primary)',
-                      fontWeight: 700,
-                      fontSize: 14,
-                      textDecoration: 'none',
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    <span style={{ fontSize: 18 }}>↗</span>
-                    Open buy page in browser
-                  </a>
-                  <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', minHeight: 400, marginTop: 12 }}>
-                    <iframe
-                      src={fiatWidgetUrl}
-                      title="Buy crypto"
-                      style={{ width: '100%', height: 460, border: 'none' }}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, textAlign: 'center' }}>
-                  <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Fiat onboarding is available via our partner. Use crypto deposit for now, or contact support.</p>
-                  <button onClick={() => setDepositMode('crypto')} className="btn-primary" style={{ marginTop: 14 }}>
-                    Deposit with Crypto
-                  </button>
-                </div>
-              )}
+              <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 10 }}>Fiat opens Moonpay in your browser to buy crypto.</p>
             </div>
           )}
 
@@ -509,9 +421,10 @@ export default function WalletPage() {
                 {loading ? 'Submitting...' : 'Confirm Deposit'}
               </button>
 
-              <div style={{ marginTop: 14, padding: 14, background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border)' }}>
-                <p style={{ color: 'var(--text-muted)', fontSize: 11, lineHeight: 1.7 }}>
-                  ⚠️ Only send <strong>{coin}</strong> to this address. Deposits are credited after admin confirmation (1–24 hours).
+              <div style={{ marginTop: 14, padding: 14, background: 'rgba(242,186,14,0.06)', borderRadius: 12, border: '1px solid rgba(242,186,14,0.2)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span style={{ color: 'var(--brand-primary)', flexShrink: 0, marginTop: 1 }}><IconWarning /></span>
+                <p style={{ color: 'var(--text-muted)', fontSize: 11, lineHeight: 1.7, margin: 0 }}>
+                  Only send <strong>{coin}</strong> to this address. Deposits are credited after admin confirmation (1–24 hours).
                 </p>
               </div>
             </>
@@ -614,8 +527,64 @@ export default function WalletPage() {
             {loading ? 'Processing...' : 'Request Withdrawal'}
           </button>
 
-          <div style={{ marginTop: 14, padding: 14, background: 'var(--bg-card)', borderRadius: 12, border: '1px solid rgba(246,70,93,0.15)' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: 11, lineHeight: 1.7 }}>⚠️ KYC verification required for withdrawals. Processing time: 1–3 business days.</p>
+          <div style={{ marginTop: 14, padding: 14, background: 'rgba(246,70,93,0.06)', borderRadius: 12, border: '1px solid rgba(246,70,93,0.2)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{ color: 'var(--danger)', flexShrink: 0, marginTop: 1 }}><IconWarning /></span>
+            <p style={{ color: 'var(--text-muted)', fontSize: 11, lineHeight: 1.7, margin: 0 }}>KYC verification required for withdrawals. Processing time: 1–3 business days.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Active investments — below deposit/withdraw flows */}
+      {investments.length > 0 && (
+        <div style={{ padding: '0 16px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Active investments</h2>
+            <Link href="/invest" style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-primary)', textDecoration: 'none' }}>View all</Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <AnimatePresence>
+              {investments.map((inv, idx) => {
+                const start = new Date(inv.startDate).getTime()
+                const end = new Date(inv.endDate).getTime()
+                const prog = Math.min(100, ((Date.now() - start) / (end - start)) * 100)
+                const dailyEarn = inv.amount * (inv.dailyRoi || 0)
+                const daysLeft = Math.max(0, Math.ceil((end - Date.now()) / 86400000))
+                return (
+                  <motion.div
+                    key={inv.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05, duration: 0.25 }}
+                    style={{
+                      background: '#111',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: 12,
+                      padding: 14,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{inv.planName || inv.planId}</span>
+                      <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--success)' }}>+${dailyEarn.toFixed(2)}/day</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+                      <span>${inv.amount.toLocaleString()} invested</span>
+                      <span>{daysLeft}d left</span>
+                    </div>
+                    <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: prog + '%' }}
+                        transition={{ duration: 0.5, delay: idx * 0.05 }}
+                        style={{ height: '100%', background: 'var(--brand-primary)', borderRadius: 2 }}
+                      />
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
           </div>
         </div>
       )}

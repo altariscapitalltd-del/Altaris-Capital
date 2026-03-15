@@ -7,13 +7,13 @@ export default function SupportPage() {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [conversationId, setConversationId] = useState<string|null>(null)
+  const [sessionEnded, setSessionEnded] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let pusher: any
     let channel: any
     async function init() {
-      // fetch profile to get user id for private channel
       try {
         const pr = await fetch('/api/user/profile')
         const pd = await pr.json().catch(()=>null)
@@ -24,11 +24,16 @@ export default function SupportPage() {
           channel.bind('chat:message', (msg:any) => {
             setMessages(m => [...m, { ...msg, isAdmin: msg.sender === 'admin' }])
           })
+          channel.bind('chat:ended', () => setSessionEnded(true))
         }
       } catch (e) {}
 
       fetch('/api/support').then(r=>r.json()).then(d => {
-        if(d.conversation) { setConversationId(d.conversation.id); setMessages(d.conversation.messages||[]) }
+        if (d.conversation) {
+          setConversationId(d.conversation.id)
+          setMessages(d.conversation.messages || [])
+          setSessionEnded(d.conversation.status === 'ended')
+        }
       })
     }
     init()
@@ -40,7 +45,7 @@ export default function SupportPage() {
   useEffect(() => { bottomRef.current?.scrollIntoView({behavior:'smooth'}) }, [messages])
 
   async function send() {
-    if(!input.trim()||sending) return
+    if(!input.trim()||sending||sessionEnded) return
     const text = input.trim(); setInput(''); setSending(true)
     const optimistic = { id:'temp', content:text, isAdmin:false, createdAt:new Date().toISOString() }
     setMessages(m=>[...m, optimistic])
@@ -61,11 +66,19 @@ export default function SupportPage() {
         </div>
       </div>
 
+      {/* Session ended banner */}
+      {sessionEnded && (
+        <div style={{padding:'10px 16px',background:'rgba(255,255,255,0.06)',borderBottom:'1px solid var(--border)',fontSize:12,color:'var(--text-muted)',display:'flex',alignItems:'center',gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Support has ended this chat. You can still read the conversation.
+        </div>
+      )}
+
       {/* Messages */}
       <div style={{flex:1,overflowY:'auto',padding:16,display:'flex',flexDirection:'column',gap:10}}>
         {messages.length===0&&(
           <div style={{textAlign:'center',padding:'40px 20px'}}>
-            <div style={{fontSize:40,marginBottom:12}}>💬</div>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" style={{marginBottom:12}}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             <div style={{fontWeight:700,fontSize:16,marginBottom:6}}>Chat with our team</div>
             <div style={{color:'var(--text-muted)',fontSize:13}}>Usually responds within minutes</div>
           </div>
@@ -84,11 +97,11 @@ export default function SupportPage() {
         <div ref={bottomRef}/>
       </div>
 
-      {/* Input */}
+      {/* Input — disabled when support ended session */}
       <div style={{padding:'10px 16px',borderTop:'1px solid var(--border)',display:'flex',gap:8,background:'var(--bg-page)',flexShrink:0}}>
-        <input className="input" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Type a message..." style={{flex:1,borderRadius:99,padding:'11px 16px',fontSize:14}}/>
-        <button onClick={send} disabled={sending||!input.trim()}
-          style={{width:44,height:44,borderRadius:'50%',background:'var(--brand-primary)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,opacity:sending||!input.trim()?0.4:1,transition:'opacity .15s'}}>
+        <input className="input" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!sessionEnded&&send()} placeholder={sessionEnded?'Chat ended by support' : 'Type a message...'} disabled={sessionEnded} style={{flex:1,borderRadius:99,padding:'11px 16px',fontSize:14,opacity:sessionEnded?0.6:1}}/>
+        <button onClick={send} disabled={sending||!input.trim()||sessionEnded}
+          style={{width:44,height:44,borderRadius:'50%',background:'var(--brand-primary)',border:'none',cursor:sessionEnded?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,opacity:sending||!input.trim()||sessionEnded?0.4:1,transition:'opacity .15s'}}>
           <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#000" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" strokeLinecap="round"/><polygon points="22 2 15 22 11 13 2 9 22 2" strokeLinejoin="round"/></svg>
         </button>
       </div>

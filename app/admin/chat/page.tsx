@@ -35,9 +35,18 @@ export default function AdminChatPage() {
   async function reply() {
     if(!input.trim()||!selected||sending) return
     const text=input.trim(); setInput(''); setSending(true)
-    const res = await fetch('/api/admin/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversationId:selected.id,message:text})})
+    const res = await fetch('/api/admin/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversationId:selected.id,content:text,userId:selected.user?.id})})
     const data = await res.json()
     if(res.ok) setMessages(m=>[...m,data.message])
+    setSending(false)
+  }
+
+  async function endSession() {
+    if(!selected||sending) return
+    if(!confirm('End this support session? The user will no longer be able to send messages.')) return
+    setSending(true)
+    const res = await fetch('/api/admin/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversationId:selected.id,action:'end_session'})})
+    if(res.ok) { setSelected((s: any)=>s ? { ...s, status: 'ended' } : null); fetch('/api/admin/chat').then(r=>r.json()).then(d=>setConversations(d.conversations||[])) }
     setSending(false)
   }
 
@@ -78,14 +87,22 @@ export default function AdminChatPage() {
       {selected ? (
         <div style={{flex:1,display:'flex',flexDirection:'column',minWidth:0}}>
           {/* Chat header */}
-          <div style={{padding:'12px 20px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',gap:12,background:'#0E0E0E',flexShrink:0}}>
-            <div style={{width:34,height:34,borderRadius:'50%',background:'linear-gradient(135deg,#F2BA0E,#FF9500)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14,color:'#000',flexShrink:0}}>
-              {selected.user?.name?.[0]?.toUpperCase()||'?'}
+          <div style={{padding:'12px 20px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,background:'#0E0E0E',flexShrink:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <div style={{width:34,height:34,borderRadius:'50%',background:'linear-gradient(135deg,#F2BA0E,#FF9500)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14,color:'#000',flexShrink:0}}>
+                {selected.user?.name?.[0]?.toUpperCase()||'?'}
+              </div>
+              <div>
+                <div style={{fontWeight:700,fontSize:14}}>{selected.user?.name}</div>
+                <div style={{color:'#444',fontSize:11}}>{selected.user?.email}</div>
+              </div>
             </div>
-            <div>
-              <div style={{fontWeight:700,fontSize:14}}>{selected.user?.name}</div>
-              <div style={{color:'#444',fontSize:11}}>{selected.user?.email}</div>
-            </div>
+            {selected.status !== 'ended' && (
+              <button onClick={endSession} disabled={sending} style={{padding:'8px 14px',borderRadius:8,border:'1px solid rgba(246,70,93,0.3)',background:'rgba(246,70,93,0.1)',color:'#F6465D',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                End session
+              </button>
+            )}
+            {selected.status === 'ended' && <span style={{color:'#444',fontSize:11}}>Session ended</span>}
           </div>
 
           {/* Messages */}
@@ -106,13 +123,14 @@ export default function AdminChatPage() {
             <div ref={bottomRef}/>
           </div>
 
-          {/* Input */}
+          {/* Input — disabled when session ended */}
           <div style={{padding:'12px 16px',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8,background:'#0E0E0E',flexShrink:0}}>
-            <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&reply()}
-              style={{flex:1,background:'#1A1A1A',color:'#fff',padding:'11px 14px',borderRadius:99,border:'1px solid rgba(255,255,255,0.07)',fontSize:13,fontFamily:'inherit',outline:'none'}}
-              placeholder={`Reply to ${selected.user?.name}…`}/>
-            <button onClick={reply} disabled={sending||!input.trim()}
-              style={{width:42,height:42,borderRadius:'50%',background:'#F2BA0E',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,opacity:sending||!input.trim()?0.4:1}}>
+            <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&selected?.status!=='ended'&&reply()}
+              disabled={selected?.status==='ended'}
+              style={{flex:1,background:'#1A1A1A',color:'#fff',padding:'11px 14px',borderRadius:99,border:'1px solid rgba(255,255,255,0.07)',fontSize:13,fontFamily:'inherit',outline:'none',opacity:selected?.status==='ended'?0.5:1}}
+              placeholder={selected?.status==='ended'?'Session ended' : `Reply to ${selected.user?.name}…`}/>
+            <button onClick={reply} disabled={sending||!input.trim()||selected?.status==='ended'}
+              style={{width:42,height:42,borderRadius:'50%',background:'#F2BA0E',border:'none',cursor:selected?.status==='ended'?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,opacity:sending||!input.trim()||selected?.status==='ended'?0.4:1}}>
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#000" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" strokeLinecap="round"/><polygon points="22 2 15 22 11 13 2 9 22 2" strokeLinejoin="round"/></svg>
             </button>
           </div>

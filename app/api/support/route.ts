@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   if (!conv) {
     conv = await prisma.conversation.create({
-      data: { userId: user.id },
+      data: { userId: user.id, status: 'active' },
       include: { messages: true },
     })
   }
