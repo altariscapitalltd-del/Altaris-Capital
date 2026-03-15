@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     user: {
       id: payload.userId,
       role: payload.role || 'USER',
-      name: 'Altaris User',
+      name: typeof payload.name === 'string' ? payload.name : 'User',
       email: '',
       kycStatus: 'NOT_SUBMITTED',
       bonusClaimed: false,

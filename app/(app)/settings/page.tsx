@@ -70,7 +70,7 @@ export default function SettingsPage() {
       if (cached) setUser(JSON.parse(cached))
     } catch {}
 
-    fetch('/api/auth/me').then(r=>r.json()).then(d=>{
+    fetch('/api/user/profile').then(r=>r.json()).then(d=>{
       setUser(d.user)
       try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(d.user)) } catch {}
     }).catch(() => {})
@@ -180,7 +180,7 @@ export default function SettingsPage() {
               {user?.profilePicture ? <img src={user.profilePicture} style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : user?.name?.[0]?.toUpperCase()||'A'}
             </div>
             <div style={{ flex:1 }}>
-              <div style={{ fontWeight:700, fontSize:16 }}>{user?.name || 'Altaris User'}</div>
+              <div style={{ fontWeight:700, fontSize:16 }}>{user?.name || 'User'}</div>
               <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{user?.email}</div>
               <div style={{ marginTop:6 }}>
                 <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background: user?.kycStatus==='APPROVED'?'var(--success-bg)':'var(--warning-bg)', color: user?.kycStatus==='APPROVED'?'var(--success)':'var(--warning)' }}>

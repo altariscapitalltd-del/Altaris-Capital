@@ -21,12 +21,12 @@ export default function ProfilePage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r=>r.json()).then(d => {
+    fetch('/api/user/profile').then(r=>r.json()).then(d => {
       setUser(d.user)
       setName(d.user?.name||'')
       setPhone(d.user?.phone||'')
       setAvatarPreview(d.user?.profilePicture || null)
-    })
+    }).catch(() => {})
   }, [])
 
   async function save() {
@@ -61,6 +61,7 @@ export default function ProfilePage() {
       }
 
       setUser(data.user)
+      try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(data.user)) } catch {}
       if (!avatarFile || res.ok) {
         setMsg((current) => current ?? { type: 'success', text: 'Profile updated successfully.' })
       }
