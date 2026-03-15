@@ -67,6 +67,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }).catch(() => router.push('/admin/login'))
   }, [pathname])
 
+
+  useEffect(() => {
+    const onResize = () => setCollapsed(window.innerWidth < 960)
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
   useEffect(() => {
     if (pathname === '/admin/login') return
 
