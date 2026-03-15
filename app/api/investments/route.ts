@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
+import { notifyUser } from '@/lib/push'
 
 export async function GET() {
   const token = (await cookies()).get('token')?.value
@@ -76,6 +77,16 @@ export async function POST(req: Request) {
       data: { balanceId: balance.id, amount: balance.amount - amount }
     }),
   ])
+
+
+  await notifyUser(
+    prisma,
+    payload.userId,
+    'Investment started',
+    `Your ${planName || 'Investment Plan'} order for $${Number(amount).toFixed(2)} is now active.`,
+    '/invest?tab=my',
+    'investment',
+  )
 
   return NextResponse.json({ investment })
 }

@@ -161,12 +161,12 @@ export default function WalletPage() {
 
   const fiatProviders = useMemo(
     () => [
-      { name: 'MoonPay', url: process.env.NEXT_PUBLIC_MOONPAY_WIDGET_URL || 'https://buy.moonpay.com' },
-      { name: 'Ramp', url: process.env.NEXT_PUBLIC_RAMP_WIDGET_URL || 'https://ramp.network/buy' },
-      { name: 'Transak', url: process.env.NEXT_PUBLIC_TRANSAK_WIDGET_URL || 'https://global.transak.com' },
-      { name: 'Alchemy Pay', url: process.env.NEXT_PUBLIC_ALCHEMY_PAY_WIDGET_URL || 'https://ramp.alchemypay.org' },
-      { name: 'Mercuryo', url: process.env.NEXT_PUBLIC_MERCURYO_WIDGET_URL || 'https://exchange.mercuryo.io' },
-      { name: 'Onramper', url: process.env.NEXT_PUBLIC_ONRAMPER_WIDGET_URL || 'https://buy.onramper.com' },
+      { name: 'MoonPay', logo: 'https://cdn.simpleicons.org/moonpay/FFFFFF', url: process.env.NEXT_PUBLIC_MOONPAY_WIDGET_URL || 'https://buy.moonpay.com' },
+      { name: 'Ramp', logo: 'https://cdn.simpleicons.org/ramp/FFFFFF', url: process.env.NEXT_PUBLIC_RAMP_WIDGET_URL || 'https://ramp.network/buy' },
+      { name: 'Transak', logo: 'https://cdn.simpleicons.org/transak/FFFFFF', url: process.env.NEXT_PUBLIC_TRANSAK_WIDGET_URL || 'https://global.transak.com' },
+      { name: 'Alchemy Pay', logo: 'https://cdn.simpleicons.org/alchemy/FFFFFF', url: process.env.NEXT_PUBLIC_ALCHEMY_PAY_WIDGET_URL || 'https://ramp.alchemypay.org' },
+      { name: 'Mercuryo', logo: 'https://cdn.simpleicons.org/mercurial/FFFFFF', url: process.env.NEXT_PUBLIC_MERCURYO_WIDGET_URL || 'https://exchange.mercuryo.io' },
+      { name: 'Onramper', logo: 'https://cdn.simpleicons.org/onstar/FFFFFF', url: process.env.NEXT_PUBLIC_ONRAMPER_WIDGET_URL || 'https://buy.onramper.com' },
     ],
     []
   )
@@ -358,7 +358,11 @@ export default function WalletPage() {
   )
 
   return (
-    <div style={{ padding: '6px 16px 22px' }}>
+    <div style={{ padding: '10px 16px 22px', position: 'relative', zIndex: 1 }}>
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-0.4px' }}>Wallet</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Your balances, deposit and withdrawal actions</div>
+      </div>
       <div style={{ marginBottom: 16 }}>
         <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
           TOTAL BALANCE
@@ -461,6 +465,9 @@ export default function WalletPage() {
                     className="pressable"
                     style={{ textDecoration: 'none', textAlign: 'center', padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 13 }}
                   >
+                    <div style={{ width: 20, height: 20, margin: '0 auto 6px', borderRadius: 6, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <img src={provider.logo} alt={provider.name} style={{ width: 14, height: 14, objectFit: 'contain' }} loading="lazy" />
+                    </div>
                     {provider.name}
                   </a>
                 ))}

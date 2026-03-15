@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Binance Candlestick (Lightweight Charts)</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      background: #090b10;
+      color: #e5e7eb;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    select {
+      border: 1px solid #232733;
+      border-radius: 10px;
+      background: #111827;
+      color: #fff;
+      padding: 10px 12px;
+      min-width: 140px;
+    }
+    .status { font-size: 12px; color: #0ECB81; margin-bottom: 10px; font-weight: 700; }
+    #chart {
+      width: 100%;
+      height: 70vh;
+      min-height: 420px;
+      border: 1px solid #232733;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>TradingView Lightweight Charts + Binance</h1>
+    <div class="toolbar">
+      <select id="symbol">
+        <option>BTCUSDT</option>
+        <option>ETHUSDT</option>
+        <option>BNBUSDT</option>
+        <option>SOLUSDT</option>
+      </select>
+      <select id="tf">
+        <option value="1m" selected>1m</option>
+        <option value="5m">5m</option>
+        <option value="15m">15m</option>
+      </select>
+    </div>
+    <div id="status" class="status">Connecting…</div>
+    <div id="chart"></div>
+  </div>
+
+  <script type="module">
+    import { createChart, ColorType } from 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.esm.production.js'
+
+    const chartEl = document.getElementById('chart')
+    const statusEl = document.getElementById('status')
+    const symbolEl = document.getElementById('symbol')
+    const tfEl = document.getElementById('tf')
+
+    const chart = createChart(chartEl, {
+      layout: { background: { type: ColorType.Solid, color: '#090b10' }, textColor: '#9ca3af' },
+      width: chartEl.clientWidth,
+      height: chartEl.clientHeight,
+      grid: {
+        vertLines: { color: 'rgba(255,255,255,0.04)' },
+        horzLines: { color: 'rgba(255,255,255,0.05)' },
+      },
+      rightPriceScale: { borderColor: 'rgba(255,255,255,0.12)' },
+      timeScale: { borderColor: 'rgba(255,255,255,0.12)', timeVisible: true },
+    })
+
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#0ECB81',
+      downColor: '#F6465D',
+      borderVisible: false,
+      wickUpColor: '#0ECB81',
+      wickDownColor: '#F6465D',
+    })
+
+    const toCandle = (row) => ({
+      time: Math.floor(Number(row[0]) / 1000),
+      open: Number(row[1]),
+      high: Number(row[2]),
+      low: Number(row[3]),
+      close: Number(row[4]),
+    })
+
+    let socket
+
+    async function load() {
+      const symbol = symbolEl.value
+      const interval = tfEl.value
+
+      statusEl.textContent = 'Loading candles…'
+      statusEl.style.color = '#9ca3af'
+
+      if (socket) socket.close()
+
+      const restUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=200`
+      const rows = await fetch(restUrl).then((r) => r.json())
+      candleSeries.setData(rows.map(toCandle))
+      chart.timeScale().fitContent()
+
+      const wsUrl = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`
+      socket = new WebSocket(wsUrl)
+      socket.onopen = () => {
+        statusEl.textContent = 'Live'
+        statusEl.style.color = '#0ECB81'
+      }
+      socket.onclose = () => {
+        statusEl.textContent = 'Disconnected'
+        statusEl.style.color = '#F6465D'
+      }
+      socket.onmessage = (event) => {
+        const payload = JSON.parse(event.data)
+        const k = payload?.k
+        if (!k) return
+
+        candleSeries.update({
+          time: Math.floor(Number(k.t) / 1000),
+          open: Number(k.o),
+          high: Number(k.h),
+          low: Number(k.l),
+          close: Number(k.c),
+        })
+      }
+    }
+
+    symbolEl.addEventListener('change', load)
+    tfEl.addEventListener('change', load)
+
+    new ResizeObserver(() => {
+      chart.applyOptions({ width: chartEl.clientWidth, height: chartEl.clientHeight })
+    }).observe(chartEl)
+
+    load()
+  </script>
+</body>
+</html>

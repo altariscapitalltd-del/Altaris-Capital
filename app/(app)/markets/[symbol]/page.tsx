@@ -1,322 +1,205 @@
 'use client'
-import { useEffect, useState, useRef, useMemo } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
 
-const TIMEFRAMES = [
-  { id: '1', label: '24H', days: 1 },
-  { id: '7', label: '7D', days: 7 },
-  { id: '30', label: '30D', days: 30 },
-  { id: '90', label: '90D', days: 90 },
-  { id: '180', label: '180D', days: 180 },
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
+
+declare global {
+  interface Window {
+    LightweightCharts?: any
+  }
+}
+
+const TIMEFRAME_OPTIONS = [
+  { id: '1m', label: '1m' },
+  { id: '5m', label: '5m' },
+  { id: '15m', label: '15m' },
 ]
 
-type OHLC = { times: number[]; values: number[]; open?: number[]; high?: number[]; low?: number[] }
+const SYMBOL_OPTIONS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT']
 
-function CandlestickChart({
-  data,
-  width,
-  height,
-  bullishColor,
-  bearishColor,
-}: {
-  data: OHLC
-  width: number
-  height: number
-  bullishColor: string
-  bearishColor: string
-}) {
-  if (!data.times?.length || !data.values?.length) return null
-  const opens = data.open ?? data.values
-  const highs = data.high ?? data.values
-  const lows = data.low ?? data.values
-  const closes = data.values
-  const padding = { top: 8, right: 8, bottom: 8, left: 8 }
-  const w = width - padding.left - padding.right
-  const h = height - padding.top - padding.bottom
-  const allPrices = highs.concat(lows).filter(Boolean)
-  const min = Math.min(...allPrices)
-  const max = Math.max(...allPrices)
-  const range = max - min || 1
-  const n = data.times.length
-  const barW = Math.max(2, (w / n) * 0.6)
-  const gap = w / n
+function ensureLightweightCharts() {
+  if (window.LightweightCharts) return Promise.resolve(window.LightweightCharts)
 
-  const candles = data.times.map((_, i) => {
-    const o = opens[i] ?? closes[i]
-    const hi = highs[i] ?? closes[i]
-    const lo = lows[i] ?? closes[i]
-    const c = closes[i]
-    const x = padding.left + (i + 0.5) * gap - barW / 2
-    const yHi = padding.top + h - ((hi - min) / range) * h
-    const yLo = padding.top + h - ((lo - min) / range) * h
-    const yO = padding.top + h - ((o - min) / range) * h
-    const yC = padding.top + h - ((c - min) / range) * h
-    const isUp = c >= o
-    const bodyTop = Math.min(yO, yC)
-    const bodyH = Math.abs(yC - yO) || 1
-    return {
-      x,
-      barW,
-      wickY: yHi,
-      wickH: yLo - yHi,
-      bodyY: bodyTop,
-      bodyH,
-      isUp,
-      isLast: i === n - 1,
+  return new Promise<any>((resolve, reject) => {
+    const existing = document.querySelector('script[data-lwc="1"]') as HTMLScriptElement | null
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.LightweightCharts))
+      existing.addEventListener('error', reject)
+      return
     }
-  })
 
-  return (
-    <svg width={width} height={height} style={{ display: 'block' }}>
-      <defs>
-        <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(14,203,129,0.16)" />
-          <stop offset="100%" stopColor="rgba(14,203,129,0.02)" />
-        </linearGradient>
-        <linearGradient id="scanlineGradient" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="rgba(242,186,14,0)" />
-          <stop offset="50%" stopColor="rgba(242,186,14,0.10)" />
-          <stop offset="100%" stopColor="rgba(242,186,14,0)" />
-        </linearGradient>
-      </defs>
-      <rect x={0} y={0} width={width} height={height} fill="url(#chartGlow)" opacity={0.45} />
-      <g opacity={0.22}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <line key={i} x1={padding.left} y1={padding.top + ((i + 1) * h) / 5} x2={width - padding.right} y2={padding.top + ((i + 1) * h) / 5} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-        ))}
-      </g>
-      {candles.map((c, i) => (
-        <g key={i}>
-          <line
-            x1={c.x + c.barW / 2}
-            y1={c.wickY}
-            x2={c.x + c.barW / 2}
-            y2={c.wickY + c.wickH}
-            stroke={c.isUp ? bullishColor : bearishColor}
-            strokeWidth="1.2"
-          />
-          <rect
-            x={c.x}
-            y={c.bodyY}
-            width={c.barW}
-            height={c.bodyH}
-            fill={c.isUp ? bullishColor : bearishColor}
-            stroke={c.isUp ? bullishColor : bearishColor}
-            strokeWidth={c.isLast ? 1.5 : 0}
-            opacity={c.isLast ? 1 : 0.9}
-            style={c.isLast ? { animation: 'candlePulse 1.1s ease-in-out infinite' } : undefined}
-          />
-        </g>
-      ))}
-      <rect x={-width} y={0} width={width * 0.7} height={height} fill="url(#scanlineGradient)" style={{ animation: 'chartScanline 2.8s linear infinite' }} />
-    </svg>
-  )
+    const script = document.createElement('script')
+    script.src = 'https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js'
+    script.async = true
+    script.dataset.lwc = '1'
+    script.onload = () => resolve(window.LightweightCharts)
+    script.onerror = reject
+    document.head.appendChild(script)
+  })
 }
 
 export default function MarketChartPage() {
   const params = useParams()
-  const router = useRouter()
-  const symbol = (params?.symbol as string) || ''
-  const [days, setDays] = useState(7)
-  const [chartData, setChartData] = useState<OHLC>({ times: [], values: [], open: [], high: [], low: [] })
-  const [price, setPrice] = useState<number | null>(null)
-  const [change24h, setChange24h] = useState<number | null>(null)
-  const [loading, setLoading] = useState(true)
-  const chartRef = useRef<HTMLDivElement>(null)
-  const [chartSize, setChartSize] = useState({ w: 340, h: 180 })
-  const [viewPoints, setViewPoints] = useState(60)
+  const initialPair = `${String(params?.symbol || 'btc').toUpperCase()}USDT`
+  const defaultSymbol = SYMBOL_OPTIONS.includes(initialPair) ? initialPair : 'BTCUSDT'
+
+  const [symbol, setSymbol] = useState(defaultSymbol)
+  const [interval, setIntervalValue] = useState('1m')
+  const [status, setStatus] = useState('Connecting…')
+
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const chartRef = useRef<any>(null)
+  const seriesRef = useRef<any>(null)
 
   useEffect(() => {
-    if (!symbol) return
-    setLoading(true)
-    fetch(`/api/market/chart?symbol=${encodeURIComponent(symbol)}&days=${days}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.times && d.values) {
-          setChartData({
-            times: d.times,
-            values: d.values,
-            open: d.open ?? d.values,
-            high: d.high ?? d.values,
-            low: d.low ?? d.values,
-          })
-        } else setChartData({ times: [], values: [], open: [], high: [], low: [] })
-      })
-      .catch(() => setChartData({ times: [], values: [], open: [], high: [], low: [] }))
-      .finally(() => setLoading(false))
-  }, [symbol, days])
+    let ro: ResizeObserver | null = null
+    let disposed = false
 
-  useEffect(() => {
-    if (!symbol) return
-    fetch('/api/market')
-      .then((r) => r.json())
-      .then((data) => {
-        const key = symbol.toUpperCase()
-        const info = data[key] || data[symbol.toLowerCase()]
-        if (info) {
-          setPrice(info.price)
-          setChange24h(info.change24h ?? null)
-        } else {
-          if (chartData.values.length) setPrice(chartData.values[chartData.values.length - 1])
-        }
-      })
-      .catch(() => {
-        if (chartData.values.length) setPrice(chartData.values[chartData.values.length - 1])
-      })
-  }, [symbol, chartData.values.length])
-
-  useEffect(() => {
-    if (!symbol) return
-    const stream = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}usdt@kline_1m`
-    const ws = new WebSocket(stream)
-    ws.addEventListener('message', (event) => {
+    ;(async () => {
       try {
-        const msg = JSON.parse(event.data)
-        const k = msg.k
-        if (!k) return
-        const close = parseFloat(k.c)
-        const open = parseFloat(k.o)
-        const high = parseFloat(k.h)
-        const low = parseFloat(k.l)
-        const time = k.t
-        setPrice(close)
-        setChartData((prev) => {
-          const times = [...prev.times, time]
-          const values = [...prev.values, close]
-          const opens = [...(prev.open ?? prev.values), open]
-          const highs = [...(prev.high ?? prev.values), high]
-          const lows = [...(prev.low ?? prev.values), low]
-          const max = 60
-          if (values.length > max) {
-            return {
-              times: times.slice(-max),
-              values: values.slice(-max),
-              open: opens.slice(-max),
-              high: highs.slice(-max),
-              low: lows.slice(-max),
-            }
-          }
-          return { times, values, open: opens, high: highs, low: lows }
-        })
-      } catch {
-        // ignore
-      }
-    })
-    return () => ws.close()
-  }, [symbol])
+        const LWC = await ensureLightweightCharts()
+        if (!containerRef.current || disposed) return
 
-  useEffect(() => {
-    const el = chartRef.current
-    if (!el) return
-    const ro = new ResizeObserver(() => {
-      const w = el.clientWidth || 340
-      setChartSize({ w, h: Math.min(200, w * 0.55) })
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
+        const chart = LWC.createChart(containerRef.current, {
+          layout: {
+            background: { type: LWC.ColorType.Solid, color: '#090b10' },
+            textColor: '#9ca3af',
+          },
+          width: containerRef.current.clientWidth,
+          height: 420,
+          grid: {
+            vertLines: { color: 'rgba(255,255,255,0.04)' },
+            horzLines: { color: 'rgba(255,255,255,0.05)' },
+          },
+          rightPriceScale: { borderColor: 'rgba(255,255,255,0.12)' },
+          timeScale: { borderColor: 'rgba(255,255,255,0.12)', timeVisible: true, secondsVisible: false },
+          crosshair: { mode: 1 },
+        })
+
+        const candleSeries = chart.addCandlestickSeries({
+          upColor: '#0ECB81',
+          downColor: '#F6465D',
+          borderVisible: false,
+          wickUpColor: '#0ECB81',
+          wickDownColor: '#F6465D',
+        })
+
+        chartRef.current = chart
+        seriesRef.current = candleSeries
+
+        ro = new ResizeObserver(() => {
+          if (!containerRef.current || !chartRef.current) return
+          chartRef.current.applyOptions({ width: containerRef.current.clientWidth })
+        })
+        ro.observe(containerRef.current)
+      } catch {
+        setStatus('Failed to load chart library')
+      }
+    })()
+
+    return () => {
+      disposed = true
+      ro?.disconnect()
+      if (chartRef.current) chartRef.current.remove()
+      chartRef.current = null
+      seriesRef.current = null
+    }
   }, [])
 
+  useEffect(() => {
+    let socket: WebSocket | null = null
+    let cancelled = false
 
-  const visibleData = useMemo(() => {
-    const size = Math.max(20, Math.min(viewPoints, chartData.values.length || viewPoints))
-    if ((chartData.values.length || 0) <= size) return chartData
-    return {
-      times: chartData.times.slice(-size),
-      values: chartData.values.slice(-size),
-      open: chartData.open?.slice(-size),
-      high: chartData.high?.slice(-size),
-      low: chartData.low?.slice(-size),
+    async function loadCandles() {
+      if (!seriesRef.current) return
+      setStatus('Loading candles…')
+      try {
+        const restUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=200`
+        const res = await fetch(restUrl)
+        if (!res.ok) throw new Error('Failed to load market history')
+
+        const rows = await res.json()
+        const candles = (rows as any[]).map((row: any[]) => ({
+          time: Math.floor(Number(row[0]) / 1000),
+          open: Number(row[1]),
+          high: Number(row[2]),
+          low: Number(row[3]),
+          close: Number(row[4]),
+        }))
+
+        if (!cancelled && seriesRef.current) {
+          seriesRef.current.setData(candles)
+          chartRef.current?.timeScale().fitContent()
+        }
+
+        const wsUrl = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`
+        socket = new WebSocket(wsUrl)
+
+        socket.onopen = () => !cancelled && setStatus('Live')
+        socket.onerror = () => !cancelled && setStatus('WebSocket error')
+        socket.onclose = () => !cancelled && setStatus('Disconnected')
+
+        socket.onmessage = (event) => {
+          const payload = JSON.parse(event.data)
+          const k = payload?.k
+          if (!k || !seriesRef.current) return
+
+          seriesRef.current.update({
+            time: Math.floor(Number(k.t) / 1000),
+            open: Number(k.o),
+            high: Number(k.h),
+            low: Number(k.l),
+            close: Number(k.c),
+          })
+        }
+      } catch {
+        if (!cancelled) setStatus('Unable to load chart data')
+      }
     }
-  }, [chartData, viewPoints])
 
-  const displayPrice = price != null ? (price < 0.01 ? price.toFixed(6) : price.toLocaleString('en-US', { minimumFractionDigits: price < 1 ? 4 : 2, maximumFractionDigits: 8 })) : '—'
-  const name = symbol.charAt(0).toUpperCase() + symbol.slice(1).toLowerCase()
-  const bullishColor = '#0ECB81'
-  const bearishColor = '#F6465D'
+    const timer = setInterval(() => {
+      if (seriesRef.current) {
+        clearInterval(timer)
+        loadCandles()
+      }
+    }, 80)
+
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+      socket?.close()
+    }
+  }, [symbol, interval])
+
+  const title = useMemo(() => `${symbol} · ${interval} · last 200 candles`, [symbol, interval])
 
   return (
-    <div style={{ padding: '16px', paddingBottom: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bg-elevated)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          aria-label="Back"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        </button>
+    <div style={{ padding: '10px 16px 24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800 }}>{symbol.toUpperCase()} / USD</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>{name}</p>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.06em' }}>MARKETS</div>
+          <h1 style={{ fontSize: 22, fontWeight: 800 }}>{title}</h1>
         </div>
+        <Link href="/markets" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: 13 }}>Back</Link>
       </div>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
-          <span style={{ fontSize: 28, fontWeight: 800 }}>${displayPrice}</span>
-          {change24h != null && (
-            <span style={{ fontSize: 14, fontWeight: 700, color: change24h >= 0 ? 'var(--success)' : 'var(--danger)', background: change24h >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)', padding: '2px 8px', borderRadius: 99 }}>
-              {(change24h >= 0 ? '+' : '') + change24h.toFixed(2)}%
-            </span>
-          )}
-        </div>
-        <div ref={chartRef} style={{ width: '100%', minHeight: 180 }} onWheel={(e) => { e.preventDefault(); const direction = e.deltaY > 0 ? 1 : -1; setViewPoints((prev) => Math.max(20, Math.min(240, prev + direction * 10))) }}>
-          {loading ? (
-            <div style={{ height: chartSize.h, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading chart...</div>
-          ) : (
-            <CandlestickChart
-              data={visibleData}
-              width={chartSize.w}
-              height={chartSize.h}
-              bullishColor={bullishColor}
-              bearishColor={bearishColor}
-            />
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 8 }}><div style={{ color: 'var(--text-muted)', fontSize: 11 }}>Zoom</div><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><button type="button" onClick={() => setViewPoints((p) => Math.min(240, p + 20))} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', cursor: 'pointer' }}>-</button><input type="range" min={20} max={240} step={10} value={viewPoints} onChange={(e) => setViewPoints(Number(e.target.value))} style={{ width: 120 }} /><button type="button" onClick={() => setViewPoints((p) => Math.max(20, p - 20))} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', cursor: 'pointer' }}>+</button></div></div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          {TIMEFRAMES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setDays(t.days)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 99,
-                border: days === t.days ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
-                background: days === t.days ? 'rgba(242,186,14,0.12)' : 'transparent',
-                color: days === t.days ? 'var(--brand-primary)' : 'var(--text-secondary)',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10, marginBottom: 10 }}>
+        <select className="input" value={symbol} onChange={(e) => setSymbol(e.target.value)}>
+          {SYMBOL_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select className="input" value={interval} onChange={(e) => setIntervalValue(e.target.value)}>
+          {TIMEFRAME_OPTIONS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+        </select>
       </div>
 
-      <Link
-        href="/invest"
-        style={{
-          display: 'block',
-          width: '100%',
-          padding: '14px',
-          background: 'var(--brand-primary)',
-          color: '#000',
-          borderRadius: 12,
-          fontWeight: 800,
-          fontSize: 15,
-          textAlign: 'center',
-          textDecoration: 'none',
-        }}
-        className="pressable"
-      >
-        Invest in {symbol.toUpperCase()}
-      </Link>
+      <div style={{ marginBottom: 10, color: status === 'Live' ? 'var(--success)' : 'var(--text-muted)', fontSize: 12, fontWeight: 700 }}>
+        {status}
+      </div>
+
+      <div style={{ border: '1px solid var(--border)', borderRadius: 14, background: '#090b10', overflow: 'hidden' }}>
+        <div ref={containerRef} style={{ width: '100%', minHeight: 420 }} />
+      </div>
     </div>
   )
 }

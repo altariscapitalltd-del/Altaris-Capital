@@ -377,9 +377,12 @@ export default function LandingPage() {
             <p style={{ color:'#555', fontSize:14 }}>A short product walkthrough optimized for first-time visitors.</p>
           </div>
           <div style={{ border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, overflow:'hidden', background:'#050505' }}>
-            <video controls playsInline preload="metadata" style={{ width:'100%', display:'block' }} poster="/icons/icon-512x512.png">
-              <source src="/videos/altaris-explainer.mp4" type="video/mp4" />
-            </video>
+            <div style={{ position:'relative', borderRadius:18, overflow:'hidden', background:'#070707', border:'1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ position:'absolute', inset:0, pointerEvents:'none', background:'linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.45))', zIndex:2 }} />
+              <video autoPlay muted loop playsInline preload="auto" style={{ width:'100%', display:'block' }} poster="/icons/icon-512x512.png">
+                <source src="/videos/altaris-explainer.mp4" type="video/mp4" />
+              </video>
+            </div>
           </div>
         </div>
       </section>
