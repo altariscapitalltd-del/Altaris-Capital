@@ -394,10 +394,10 @@ export default function HomePage() {
   )
 
   return (
-    <div style={{ padding:'0 0 12px' }}>
+    <div style={{ padding:'4px 0 16px' }}>
 
       {/* ── Portfolio Balance — floats on black, no card box ── */}
-      <div style={{ padding:'20px 20px 8px' }}>
+      <div style={{ margin:'8px 16px 0', padding:'20px 18px 14px', borderRadius:20, border:'1px solid rgba(242,186,14,0.2)', background:'linear-gradient(145deg, rgba(242,186,14,0.12) 0%, rgba(21,26,33,0.96) 35%, rgba(11,14,17,1) 100%)', boxShadow:'0 20px 45px rgba(0,0,0,0.35)' }}>
         <div style={{ color:'var(--text-muted)', fontSize:12, fontWeight:500, marginBottom:6, display:'flex', alignItems:'center', gap:6 }}>
           Total Portfolio Value
           <button onClick={()=>setBalanceHidden(h=>!h)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:0, lineHeight:1 }}>
@@ -417,6 +417,15 @@ export default function HomePage() {
           {todayProfit > 0 && <span style={{ background:'var(--success-bg)', color:'var(--success)', padding:'2px 7px', borderRadius:99, fontSize:11, fontWeight:700 }}>LIVE</span>}
         </div>
 
+        <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'var(--brand-primary)', background:'rgba(242,186,14,0.12)', border:'1px solid rgba(242,186,14,0.3)', borderRadius:999, padding:'5px 10px' }}>
+            {activeInvestments.length} Active plan{activeInvestments.length === 1 ? '' : 's'}
+          </span>
+          <span style={{ fontSize:11, fontWeight:700, color:'var(--text-secondary)', background:'rgba(255,255,255,0.05)', border:'1px solid var(--border)', borderRadius:999, padding:'5px 10px' }}>
+            KYC: {user?.kycStatus === 'APPROVED' ? 'Verified' : user?.kycStatus?.replace('_', ' ') || 'Pending'}
+          </span>
+        </div>
+
         {/* Quick actions */}
         <div style={{ display:'flex', gap:10, marginTop:20, alignItems: 'center' }}>
           {[
@@ -426,7 +435,7 @@ export default function HomePage() {
             { l:'History', Icon: History, href:'/transactions' },
           ].map(({ l, Icon, href })=>(
             <Link key={l} href={href} style={{ flex:1, textDecoration:'none' }}>
-              <div style={{ background:'var(--bg-card)', borderRadius:12, padding:'12px 8px', textAlign:'center', border:'1px solid var(--border)', transition:'all .15s', color:'var(--text-secondary)' }} className="pressable">
+              <div style={{ background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', borderRadius:14, padding:'12px 8px', textAlign:'center', border:'1px solid var(--border)', transition:'all .15s', color:'var(--text-secondary)', boxShadow:'0 10px 24px rgba(0,0,0,0.2)' }} className="pressable ui-upgrade-card">
                 <div style={{ display:'flex', justifyContent:'center', marginBottom:4 }}><Icon size={20} strokeWidth={2} /></div>
                 <div style={{ color:'var(--text-secondary)', fontSize:11, fontWeight:600 }}>{l}</div>
               </div>
@@ -618,7 +627,7 @@ export default function HomePage() {
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
           {MARKET_COINS.map(coin => (
-            <div key={coin.sym} style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:14 }} className="pressable">
+            <div key={coin.sym} style={{ background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border:'1px solid var(--border)', borderRadius:16, padding:14, boxShadow:'0 14px 28px rgba(0,0,0,0.22)' }} className="pressable ui-upgrade-card">
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
                 <div>
                   <div style={{ fontWeight:700, fontSize:14 }}>{coin.sym}</div>
@@ -639,7 +648,7 @@ export default function HomePage() {
 
       {/* ── KYC Prompt ── */}
       {user?.kycStatus !== 'APPROVED' && user?.kycStatus !== 'PENDING_REVIEW' && (
-        <Link href="/kyc" style={{ display:'block', margin:'18px 16px 0', background:'var(--bg-card)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:14, padding:16, textDecoration:'none' }}>
+        <Link href="/kyc" style={{ display:'block', margin:'20px 16px 0', background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border:'1px solid rgba(242,186,14,0.24)', borderRadius:16, padding:16, textDecoration:'none', boxShadow:'0 12px 30px rgba(0,0,0,0.2)' }} className="ui-upgrade-card">
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             <div style={{ width:42, height:42, borderRadius:11, background:'rgba(242,186,14,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'var(--brand-primary)' }}><UserCheck size={22} strokeWidth={2} /></div>
             <div style={{ flex:1 }}>

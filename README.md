@@ -115,3 +115,4 @@ Addresses are manageable from Admin → Settings.
 - Corrected balance snapshot creation to persist the exact post-update balance.
 - Added strict upload validation (type/extension/size) for profile avatars and KYC documents.
 - Removed hardcoded credential examples and improved secure setup guidance.
+- Refreshed the in-app Home dashboard UI with upgraded portfolio header, richer quick-action cards, and polished market/KYC surfaces for better mobile readability.
