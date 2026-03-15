@@ -121,5 +121,9 @@ Addresses are manageable from Admin → Settings.
 - iOS PWA header safe-area handling was tightened so content no longer leaks into the status-bar region.
 - Market chart endpoint now falls back to CoinGecko OHLC to keep candlestick charts visible when exchange pairs are unavailable.
 - Profile image uploads now accept modern iPhone formats (HEIC/HEIF) in addition to JPEG/PNG/WebP.
+- Wallet actions were refined for mobile: Deposit now reveals Crypto/Fiat only on click and auto-hides after 10s if untouched, while Withdraw and Rewards open as dedicated full-screen dashboards.
+- Wallet quick action label updated from “My Invest” to “Invested” for clearer navigation.
+- Profile avatar validation now supports iOS uploads that omit MIME type by securely validating extension fallback.
+- Candlestick chart visuals were upgraded with animated scanline/grid motion for a more live exchange-style feel.
 - Home crypto and top-mover sections now use live provider market data (not placeholder rows).
 - Improved chat message alignment and settings interactivity (push toggle wiring, notification preferences UX).

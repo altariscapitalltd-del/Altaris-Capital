@@ -42,13 +42,14 @@ export async function PUT(req: NextRequest) {
       if (file.size > MAX_AVATAR_BYTES) {
         return NextResponse.json({ error: 'Avatar file is too large (max 5MB)' }, { status: 400 })
       }
-      if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
-        return NextResponse.json({ error: 'Unsupported avatar format' }, { status: 400 })
-      }
-
       const ext = (path.extname(file.name) || '.jpg').toLowerCase()
       if (!ALLOWED_AVATAR_EXT.has(ext)) {
         return NextResponse.json({ error: 'Invalid avatar file extension' }, { status: 400 })
+      }
+
+      const hasMimeType = typeof file.type === 'string' && file.type.length > 0
+      if (hasMimeType && !ALLOWED_AVATAR_TYPES.has(file.type)) {
+        return NextResponse.json({ error: 'Unsupported avatar format' }, { status: 400 })
       }
 
       const filename = `avatars/${user.id}-${Date.now()}${ext}`

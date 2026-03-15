@@ -137,6 +137,14 @@ export default function WalletPage() {
   }, [])
 
   useEffect(() => {
+    if (tab !== 'deposit' || depositMode !== 'select') return
+    const timer = window.setTimeout(() => {
+      setTab((current) => (current === 'deposit' ? 'none' : current))
+    }, 10000)
+    return () => window.clearTimeout(timer)
+  }, [tab, depositMode])
+
+  useEffect(() => {
     const address = walletAddresses[coin]
     if (!address || tab !== 'deposit' || depositMode !== 'crypto') {
       setQrDataUrl(null)
@@ -273,6 +281,12 @@ export default function WalletPage() {
     setMsg({ type: 'success', text: 'Referral link copied to clipboard.' })
   }
 
+  function closeDashboard() {
+    setTab('none')
+    setDepositMode('select')
+    setMsg(null)
+  }
+
   const ActionButton = ({
     active,
     onClick,
@@ -361,7 +375,7 @@ export default function WalletPage() {
         <ActionButton
           active={false}
           onClick={() => (window.location.href = '/invest?tab=my')}
-          label="My Invest"
+          label="Invested"
           color="var(--brand-primary)"
           icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>}
         />
@@ -405,68 +419,6 @@ export default function WalletPage() {
         </div>
       )}
 
-      {tab === 'withdraw' && (
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 14 }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>
-            Withdraw from account balance (USD)
-          </div>
-          <div style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: 24, marginBottom: 12 }}>
-            ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-
-          <div style={{ display: 'grid', gap: 10 }}>
-            <div>
-              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Destination wallet address</label>
-              <input className="input" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="Enter wallet address" />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Amount (USD)</label>
-              <div style={{ position: 'relative' }}>
-                <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={{ paddingRight: 64 }} />
-                <button
-                  onClick={() => setAmount(String(usdBalance))}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 6, background: 'rgba(242,186,14,0.16)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: 11, padding: '4px 8px', cursor: 'pointer' }}
-                >
-                  MAX
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <button onClick={submitWithdraw} disabled={loading} className="btn-primary" style={{ width: '100%', marginTop: 14 }}>
-            {loading ? 'Processing...' : 'Request Withdrawal'}
-          </button>
-        </div>
-      )}
-
-      {tab === 'reward' && (
-        <div style={{ marginBottom: 14, background: 'linear-gradient(155deg, rgba(242,186,14,0.18), rgba(21,26,33,1) 38%, rgba(11,14,17,1))', border: '1px solid rgba(242,186,14,0.24)', borderRadius: 18, padding: 16 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Referral Rewards</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 14 }}>
-            Invite friends, earn commission on every qualified deposit and investment.
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
-            <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Your Code</div>
-              <div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>{refCode}</div>
-            </div>
-            <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Referral Rate</div>
-              <div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>Up to 30%</div>
-            </div>
-            <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Bonus Pool</div>
-              <div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>$100+</div>
-            </div>
-          </div>
-
-          <button onClick={shareReferral} className="btn-primary" style={{ width: '100%' }}>
-            Share referral link
-          </button>
-        </div>
-      )}
-
       {msg && (
         <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)', fontSize: 12, fontWeight: 700 }}>
           {msg.text}
@@ -502,6 +454,58 @@ export default function WalletPage() {
         )}
       </div>
 
+
+      {tab === 'withdraw' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>Withdraw</div>
+            <div style={{ width: 36 }} />
+          </div>
+
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>Withdraw from account balance (USD)</div>
+            <div style={{ color: 'var(--text-primary)', fontWeight: 800, fontSize: 24, marginBottom: 12 }}>${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Destination wallet address</label>
+                <input className="input" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="Enter wallet address" />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Amount (USD)</label>
+                <div style={{ position: 'relative' }}>
+                  <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={{ paddingRight: 64 }} />
+                  <button onClick={() => setAmount(String(usdBalance))} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 6, background: 'rgba(242,186,14,0.16)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: 11, padding: '4px 8px', cursor: 'pointer' }}>MAX</button>
+                </div>
+              </div>
+              <button onClick={submitWithdraw} disabled={loading} className="btn-primary" style={{ width: '100%', marginTop: 6 }}>
+                {loading ? 'Processing...' : 'Request Withdrawal'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'reward' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>Rewards</div>
+            <div style={{ width: 36 }} />
+          </div>
+
+          <div style={{ marginBottom: 14, background: 'linear-gradient(155deg, rgba(242,186,14,0.2), rgba(21,26,33,1) 38%, rgba(11,14,17,1))', border: '1px solid rgba(242,186,14,0.24)', borderRadius: 18, padding: 16 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Referral Rewards</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 14 }}>Invite friends and unlock bonus tiers. Earn recurring referral commission on qualifying deposits and investments.</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Your Code</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>{refCode}</div></div>
+              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Referral Rate</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>Up to 30%</div></div>
+              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Bonus Pool</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>$100+</div></div>
+            </div>
+            <button onClick={shareReferral} className="btn-primary" style={{ width: '100%' }}>Share referral link</button>
+          </div>
+        </div>
+      )}
       {/* Full-screen crypto receive dashboard */}
       {tab === 'deposit' && depositMode === 'crypto' && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
