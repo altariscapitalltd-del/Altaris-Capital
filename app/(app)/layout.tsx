@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import Pusher from 'pusher-js'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
@@ -125,6 +124,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     }).then(d => {
       if (d) {
         setUser(d.user)
+        try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(d.user)) } catch {}
         setBonusUnclaimed(!d.user?.bonusClaimed)
         setUnread(d.user?.notifications?.length || 0)
       }
@@ -201,31 +201,45 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user?.id) return
+    let disposed = false
+    let cleanup: (() => void) | null = null
 
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
-      authEndpoint: '/api/pusher/auth',
-    })
+    import('pusher-js').then(({ default: Pusher }) => {
+      if (disposed) return
 
-    const channel = pusher.subscribe(`private-user-${user.id}`)
+      const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
+        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
+        authEndpoint: '/api/pusher/auth',
+      })
 
-    channel.bind('notification:new', () => setUnread(n => n + 1))
-    channel.bind('balance:update', () => window.dispatchEvent(new Event('balance:refresh')))
+      const channel = pusher.subscribe(`private-user-${user.id}`)
+      channel.bind('notification:new', () => setUnread(n => n + 1))
+      channel.bind('balance:update', () => window.dispatchEvent(new Event('balance:refresh')))
+
+      cleanup = () => {
+        channel.unbind_all()
+        pusher.unsubscribe(`private-user-${user.id}`)
+        pusher.disconnect()
+      }
+    }).catch(() => {})
 
     return () => {
-      channel.unbind_all()
-      pusher.unsubscribe(`private-user-${user.id}`)
-      pusher.disconnect()
+      disposed = true
+      cleanup?.()
     }
   }, [user?.id])
 
-  // Pusher Beams: subscribe this device to push for the current user
+  // Pusher Beams: subscribe this device only when push alerts are enabled
   useEffect(() => {
     if (!user?.id || typeof window === 'undefined') return
     const instanceId = process.env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID
     if (!instanceId) return
     let cancelled = false
-    navigator.serviceWorker.ready.then((reg) => {
+
+    Promise.all([
+      navigator.serviceWorker.ready,
+      fetch('/api/user/push-subscribe').then((r) => r.json()).catch(() => null),
+    ]).then(([reg, pref]) => {
       if (cancelled) return
       return import('@pusher/push-notifications-web').then((PusherPushNotifications) => {
         if (cancelled) return
@@ -233,9 +247,14 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           instanceId,
           serviceWorkerRegistration: reg,
         })
-        return client.start().then(() => client.addDeviceInterest(`user-${user.id}`)).catch(() => {})
+        return client.start().then(async () => {
+          const interest = `user-${user.id}`
+          if (pref?.preferences?.pushAlerts) await client.addDeviceInterest(interest)
+          else await client.removeDeviceInterest(interest)
+        }).catch(() => {})
       })
     }).catch(() => {})
+
     return () => { cancelled = true }
   }, [user?.id])
 

@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import { notifyUser } from '@/lib/push'
-import { trigger, userChannel, adminChannel } from '@/lib/pusher'
+import { trigger, userChannel } from '@/lib/pusher'
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const admin = await getAdminUser(req)
@@ -52,7 +51,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           note: (data.note || 'Admin adjustment').toString().slice(0, 500),
         },
       })
-      await trigger(userChannel(params.id), 'balance:update', { currency, amount: newAmount })
       break
     }
     case 'freeze':
