@@ -264,6 +264,17 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     win.OneSignalDeferred.push(async (OneSignal: any) => {
       try {
         await OneSignal.login(String(user.id))
+
+        const details = {
+          oneSignalPlayerId: OneSignal?.User?.onesignalId || null,
+          oneSignalSubscriptionId: OneSignal?.User?.PushSubscription?.id || null,
+        }
+
+        await fetch('/api/user/push-subscribe', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(details),
+        }).catch(() => null)
       } catch {
         // keep app responsive if OneSignal is unavailable
       }

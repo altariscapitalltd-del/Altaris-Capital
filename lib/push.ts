@@ -33,7 +33,7 @@ export async function sendPushNotification(
     ? (payload.url.startsWith('http') ? payload.url : `${appUrl}${payload.url}`)
     : appUrl
 
-  await fetch('https://api.onesignal.com/notifications', {
+  const response = await fetch('https://api.onesignal.com/notifications', {
     method: 'POST',
     headers: {
       Authorization: `Key ${apiKey}`,
@@ -41,14 +41,20 @@ export async function sendPushNotification(
     },
     body: JSON.stringify({
       app_id: appId,
-      include_external_user_ids: [userId],
       target_channel: 'push',
+      include_aliases: { external_id: [userId] },
+      include_external_user_ids: [userId],
       headings: { en: payload.title },
       contents: { en: payload.body },
       ...(targetUrl ? { url: targetUrl } : {}),
       web_push_topic: `altaris-${userId}`,
     }),
   })
+
+  if (!response.ok) {
+    const msg = await response.text().catch(() => '')
+    throw new Error(`OneSignal push failed (${response.status}): ${msg}`)
+  }
 }
 
 export async function notifyUser(
