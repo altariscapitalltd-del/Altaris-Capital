@@ -3,66 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BTCUSDT 1m Candlestick</title>
+  <title>TradingView BTCUSDT Widget</title>
   <style>
-    html, body { margin:0; height:100%; background:#090b10; color:#cbd5e1; font-family: Inter, Arial, sans-serif; }
-    #chart { width:100vw; height:100vh; }
+    html, body { margin: 0; height: 100%; background: #090b10; color: #cbd5e1; font-family: Inter, Arial, sans-serif; }
+    .toolbar { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+    #chart { width: 100vw; height: calc(100vh - 42px); }
   </style>
 </head>
 <body>
+  <div class="toolbar">
+    <strong>BINANCE:BTCUSDT</strong>
+    <span>TradingView Free Widget</span>
+  </div>
   <div id="chart"></div>
 
-  <script type="module">
-    import { createChart, ColorType, CrosshairMode } from 'https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.production.mjs'
-
-    const PAIR = 'BTCUSDT'
-    const chartEl = document.getElementById('chart')
-
-    const chart = createChart(chartEl, {
-      width: chartEl.clientWidth,
-      height: chartEl.clientHeight,
-      layout: { background: { type: ColorType.Solid, color: '#090b10' }, textColor: '#94a3b8' },
-      grid: { vertLines: { color: 'rgba(255,255,255,0.06)' }, horzLines: { color: 'rgba(255,255,255,0.06)' } },
-      rightPriceScale: { borderColor: 'rgba(255,255,255,0.15)' },
-      timeScale: { borderColor: 'rgba(255,255,255,0.15)', timeVisible: true, secondsVisible: false },
-      crosshair: { mode: CrosshairMode.Normal },
+  <script src="https://s3.tradingview.com/tv.js"></script>
+  <script>
+    new TradingView.widget({
+      autosize: true,
+      symbol: 'BINANCE:BTCUSDT',
+      interval: '1',
+      timezone: 'Etc/UTC',
+      theme: 'dark',
+      style: '1',
+      locale: 'en',
+      withdateranges: true,
+      hide_legend: false,
+      allow_symbol_change: true,
+      container_id: 'chart',
     })
-
-    const candleSeries = chart.addCandlestickSeries({
-      upColor: '#0ECB81', downColor: '#F6465D',
-      borderUpColor: '#0ECB81', borderDownColor: '#F6465D',
-      wickUpColor: '#0ECB81', wickDownColor: '#F6465D',
-    })
-
-    const toCandle = (k) => ({
-      time: Math.floor(k[0] / 1000),
-      open: Number(k[1]),
-      high: Number(k[2]),
-      low: Number(k[3]),
-      close: Number(k[4]),
-    })
-
-    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${PAIR}&interval=1m&limit=200`)
-    const rows = await res.json()
-    candleSeries.setData(rows.map(toCandle))
-    chart.timeScale().fitContent()
-
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${PAIR.toLowerCase()}@kline_1m`)
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data)
-      const k = msg?.k
-      if (!k?.t) return
-      candleSeries.update({
-        time: Math.floor(k.t / 1000),
-        open: Number(k.o),
-        high: Number(k.h),
-        low: Number(k.l),
-        close: Number(k.c),
-      })
-    }
-
-    const onResize = () => chart.applyOptions({ width: chartEl.clientWidth, height: chartEl.clientHeight })
-    window.addEventListener('resize', onResize)
   </script>
 </body>
 </html>

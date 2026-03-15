@@ -65,7 +65,7 @@ export default function SettingsPage() {
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r=>r.json()).then(d=>setUser(d.user)).catch(() => {})
+    fetch('/api/user/profile').then(r=>r.json()).then(d=>setUser(d.user)).catch(() => setUser({ name: 'Account', email: '' }))
     fetch('/api/user/push-subscribe').then(r=>r.json()).then(d=>{
       if (d?.preferences) {
         setNotifPush(Boolean(d.preferences.pushAlerts))
@@ -172,7 +172,7 @@ export default function SettingsPage() {
               {user?.profilePicture ? <img src={user.profilePicture} style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : user?.name?.[0]?.toUpperCase()||'A'}
             </div>
             <div style={{ flex:1 }}>
-              <div style={{ fontWeight:700, fontSize:16 }}>{user?.name || 'Loading...'}</div>
+              <div style={{ fontWeight:700, fontSize:16 }}>{user?.name || 'Account'}</div>
               <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{user?.email}</div>
               <div style={{ marginTop:6 }}>
                 <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background: user?.kycStatus==='APPROVED'?'var(--success-bg)':'var(--warning-bg)', color: user?.kycStatus==='APPROVED'?'var(--success)':'var(--warning)' }}>
