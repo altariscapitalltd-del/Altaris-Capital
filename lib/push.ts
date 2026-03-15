@@ -1,48 +1,52 @@
-import webpush from 'web-push'
+import PushNotifications from '@pusher/push-notifications-server'
 import { trigger, userChannel } from './pusher'
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL || 'mailto:altariscapital.ltd@gmail.com',
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '',
-  process.env.VAPID_PRIVATE_KEY || ''
-)
+const instanceId = process.env.PUSHER_BEAMS_INSTANCE_ID || ''
+const secretKey = process.env.PUSHER_BEAMS_SECRET_KEY || ''
+
+const beamsClient =
+  instanceId && secretKey
+    ? new PushNotifications({ instanceId, secretKey })
+    : null
 
 export async function sendPushNotification(
-  subscription: webpush.PushSubscription,
+  userId: string,
   payload: { title: string; body: string; url?: string }
 ) {
-  try {
-    await webpush.sendNotification(subscription, JSON.stringify(payload))
-  } catch (err: any) {
-    if (err.statusCode === 410 || err.statusCode === 404) {
-      // Subscription expired — caller should delete it
-      throw new Error('SUBSCRIPTION_EXPIRED')
-    }
-  }
+  if (!beamsClient) return
+  const interest = `user-${userId}`
+  const deepLink = payload.url
+    ? (payload.url.startsWith('http') ? payload.url : `${process.env.NEXT_PUBLIC_APP_URL || ''}${payload.url}`).trim()
+    : undefined
+  await beamsClient.publishToInterests([interest], {
+    web: {
+      notification: {
+        title: payload.title,
+        body: payload.body,
+        ...(deepLink && { deep_link: deepLink }),
+      },
+    },
+  })
 }
 
-export async function notifyUser(prisma: any, userId: string, title: string, body: string, url = '/dashboard') {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { pushSubscription: true },
-  })
-
-  // Save to DB
+export async function notifyUser(
+  prisma: any,
+  userId: string,
+  title: string,
+  body: string,
+  url = '/dashboard'
+) {
   await prisma.notification.create({
     data: { userId, title, body, url },
   })
 
-  // Send push
-  if (user?.pushSubscription) {
+  if (beamsClient) {
     try {
-      await sendPushNotification(user.pushSubscription as any, { title, body, url })
-    } catch (e: any) {
-      if (e.message === 'SUBSCRIPTION_EXPIRED') {
-        await prisma.user.update({ where: { id: userId }, data: { pushSubscription: null } })
-      }
+      await sendPushNotification(userId, { title, body, url })
+    } catch (e) {
+      // Log but don't fail — in-app notification still works via Pusher
     }
   }
 
-  // Emit via Pusher
   await trigger(userChannel(userId), 'notification:new', { title, body, url })
 }

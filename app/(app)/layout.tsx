@@ -218,6 +218,26 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     }
   }, [user?.id])
 
+  // Pusher Beams: subscribe this device to push for the current user
+  useEffect(() => {
+    if (!user?.id || typeof window === 'undefined') return
+    const instanceId = process.env.NEXT_PUBLIC_PUSHER_BEAMS_INSTANCE_ID
+    if (!instanceId) return
+    let cancelled = false
+    navigator.serviceWorker.ready.then((reg) => {
+      if (cancelled) return
+      return import('@pusher/push-notifications-web').then((PusherPushNotifications) => {
+        if (cancelled) return
+        const client = new PusherPushNotifications.Client({
+          instanceId,
+          serviceWorkerRegistration: reg,
+        })
+        return client.start().then(() => client.addDeviceInterest(`user-${user.id}`)).catch(() => {})
+      })
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [user?.id])
+
   useEffect(() => {
     const t = setInterval(() => setTickerIdx(i => (i + 1) % TRENDING.length), 3000)
     return () => clearInterval(t)

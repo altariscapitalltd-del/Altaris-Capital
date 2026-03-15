@@ -1,3 +1,6 @@
+// Pusher Beams: handle push notifications (must be at top when using existing service worker)
+importScripts('https://js.pusher.com/beams/service-worker.js')
+
 // Only cache long-lived static assets; HTML/JS are network-first
 const STATIC_ASSETS = ['/icons/icon-192x192.png', '/icons/icon-512x512.png', '/manifest.json']
 
