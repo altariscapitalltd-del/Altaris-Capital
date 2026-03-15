@@ -20,10 +20,10 @@ export async function POST(req: NextRequest) {
       where: kycOnly ? { kycStatus: 'APPROVED' } : {},
       select: { id: true },
     })
-    recipients = users.map((u) => u.id)
+    recipients = users.map((u: { id: string }) => u.id)
   }
 
-  await Promise.all(recipients.map((uid) => notifyUser(prisma, uid, title, body, url || '/dashboard')))
+  await Promise.all(recipients.map((uid: string) => notifyUser(prisma, uid, title, body, url || '/dashboard')))
 
   await prisma.adminAuditLog.create({
     data: { adminId: admin.id, action: 'send_notification', details: { target, count: recipients.length, title } },
