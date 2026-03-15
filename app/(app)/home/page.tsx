@@ -193,18 +193,6 @@ function Countdown({ endsAt }: { endsAt: Date }) {
   )
 }
 
-const SPARK_BTC  = [42,41,44,43,46,45,48,47,50,49,51,53,52,55,58,57,60,62,61,65]
-const SPARK_ETH  = [30,32,31,33,35,34,36,38,37,39,38,40,42,41,40,43,42,44,43,42]
-const SPARK_BNB  = [50,52,51,50,53,52,54,53,55,54,56,55,57,56,55,54,56,55,57,56]
-const SPARK_SOL  = [20,22,24,23,26,28,27,30,32,31,34,36,35,38,40,42,41,45,47,48]
-
-const BYBIT_COINS = [
-  { sym: 'BTC', name: 'Bitcoin', spark: SPARK_BTC },
-  { sym: 'ETH', name: 'Ethereum', spark: SPARK_ETH },
-  { sym: 'BNB', name: 'BNB', spark: SPARK_BNB },
-  { sym: 'SOL', name: 'Solana', spark: SPARK_SOL },
-]
-
 const LATEST_EVENTS = [
   { title: 'Refer Friends — Get $30', date: '2025-03-10', icon: 'event' },
   { title: 'Seasonal Yield Boost +5%', date: '2025-03-08', icon: 'event' },
@@ -216,25 +204,25 @@ const LATEST_NEWS = [
   { title: 'KYC Verification Guide', date: '2025-03-04', icon: 'news' },
 ]
 
-function BybitSection({ prices }: { prices: Record<string, { price?: number; change24h?: number }> }) {
-  const [eventsTab, setEventsTab] = useState<'events' | 'news'>('events')
+type LiveCoin = { sym: string; name: string; price: number; change: number; spark: number[] }
 
-  const coins = BYBIT_COINS.map((c) => ({
-    ...c,
-    price: prices[c.sym]?.price ?? (c.sym === 'BTC' ? 65420 : c.sym === 'ETH' ? 3421 : c.sym === 'BNB' ? 562 : 148),
-    change: prices[c.sym]?.change24h ?? (c.sym === 'SOL' ? 3.21 : 2.34),
-  }))
+function BybitSection({ coins }: { coins: LiveCoin[] }) {
+  const [eventsTab, setEventsTab] = useState<'events' | 'news'>('events')
+  const fallbackCoins: LiveCoin[] = [
+    { sym: 'BTC', name: 'Bitcoin', price: 0, change: 0, spark: [1, 2, 1.8, 2.3, 2.2, 2.6, 2.8] },
+    { sym: 'ETH', name: 'Ethereum', price: 0, change: 0, spark: [1, 1.1, 1.2, 1.15, 1.3, 1.35, 1.4] },
+    { sym: 'BNB', name: 'BNB', price: 0, change: 0, spark: [1.4, 1.35, 1.36, 1.38, 1.4, 1.42, 1.45] },
+    { sym: 'SOL', name: 'Solana', price: 0, change: 0, spark: [0.8, 0.9, 0.85, 1, 1.05, 1.1, 1.15] },
+  ]
+  const list = coins.length ? coins : fallbackCoins
 
   return (
     <div style={{ marginTop: 18, padding: '0 16px' }}>
-
-
-      {/* Crypto list */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: 'var(--text-secondary)' }}>Crypto</div>
         <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
-          {coins.map((coin) => (
-            <Link key={coin.sym} href={`/markets/${coin.sym.toLowerCase()}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid var(--border)', gap: 12 }}>
+          {list.slice(0, 4).map((coin, index) => (
+            <Link key={coin.sym} href={`/markets/${coin.sym.toLowerCase()}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: index < 3 ? '1px solid var(--border)' : 'none', gap: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{coin.sym}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13 }}>{coin.name}</div>
@@ -252,12 +240,11 @@ function BybitSection({ prices }: { prices: Record<string, { price?: number; cha
         </div>
       </div>
 
-      {/* Crypto grid 2x2 */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: 'var(--text-secondary)' }}>Top movers</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {coins.slice(0, 4).map((coin) => (
-            <Link key={coin.sym} href={`/markets/${coin.sym.toLowerCase()}`} style={{ textDecoration: 'none' }}>
+          {list.slice(0, 4).map((coin) => (
+            <Link key={`${coin.sym}-top`} href={`/markets/${coin.sym.toLowerCase()}`} style={{ textDecoration: 'none' }}>
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }} className="pressable">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                   <span style={{ fontWeight: 700, fontSize: 12 }}>{coin.sym}</span>
@@ -271,7 +258,6 @@ function BybitSection({ prices }: { prices: Record<string, { price?: number; cha
         </div>
       </div>
 
-      {/* Latest Events / News */}
       <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
         <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
           <button onClick={() => setEventsTab('events')} style={{ flex: 1, padding: '12px', border: 'none', background: eventsTab === 'events' ? 'var(--bg-elevated)' : 'transparent', color: eventsTab === 'events' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Latest Events</button>
@@ -298,7 +284,7 @@ function BybitSection({ prices }: { prices: Record<string, { price?: number; cha
 
 export default function HomePage() {
   const [user, setUser] = useState<any>(null)
-  const [prices, setPrices] = useState<any>({})
+  const [coins, setCoins] = useState<LiveCoin[]>([])
   const [balanceHidden, setBalanceHidden] = useState(false)
   const [bonusClaiming, setBonusClaiming] = useState(false)
   const [bonusDone, setBonusDone] = useState(false)
@@ -307,13 +293,29 @@ export default function HomePage() {
 
   const load = useCallback(() => {
     fetch('/api/user/profile').then(r=>r.json()).then(d=>{ setUser(d.user); setLoading(false) })
-    fetch('/api/market').then(r=>r.json()).then(setPrices)
+    fetch('/api/markets/list?per_page=40')
+      .then(r=>r.json())
+      .then(d => {
+        const list = (d.list || [])
+          .filter((c: any) => c?.symbol && Array.isArray(c.spark) && c.spark.length > 1)
+          .map((c: any) => ({
+            sym: String(c.symbol).toUpperCase(),
+            name: c.name || String(c.symbol).toUpperCase(),
+            price: Number(c.price || 0),
+            change: Number(c.change24h || 0),
+            spark: c.spark.slice(-24),
+          }))
+        const featured = list.slice(0, 8)
+        const movers = [...featured].sort((a: LiveCoin, b: LiveCoin) => Math.abs(b.change) - Math.abs(a.change))
+        setCoins(movers)
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
     load()
     // Refresh market data more frequently
-    const t = setInterval(() => fetch('/api/market').then(r=>r.json()).then(setPrices), 8000)
+    const t = setInterval(() => { fetch('/api/markets/list?per_page=40').then(r=>r.json()).then(d=>{ const list=(d.list||[]).filter((c:any)=>c?.symbol&&Array.isArray(c.spark)&&c.spark.length>1).map((c:any)=>({ sym:String(c.symbol).toUpperCase(), name:c.name||String(c.symbol).toUpperCase(), price:Number(c.price||0), change:Number(c.change24h||0), spark:c.spark.slice(-24) })); const featured=list.slice(0,8); const movers=[...featured].sort((a:LiveCoin,b:LiveCoin)=>Math.abs(b.change)-Math.abs(a.change)); setCoins(movers) }).catch(()=>{}) }, 8000)
     window.addEventListener('balance:refresh', load)
     return () => { clearInterval(t); window.removeEventListener('balance:refresh', load) }
   }, [load])
@@ -379,13 +381,6 @@ export default function HomePage() {
     return () => clearInterval(interval)
   }, [showWelcomeCard, visibleBanners.length])
 
-  const MARKET_COINS = [
-    { sym:'BTC', name:'Bitcoin',  price: prices.BTC?.price||65420, change: prices.BTC?.change||2.34, spark:SPARK_BTC },
-    { sym:'ETH', name:'Ethereum', price: prices.ETH?.price||3421,  change: prices.ETH?.change||1.78, spark:SPARK_ETH },
-    { sym:'BNB', name:'BNB',      price: prices.BNB?.price||562,   change: prices.BNB?.change||-0.55, spark:SPARK_BNB },
-    { sym:'SOL', name:'Solana',   price: prices.SOL?.price||148,   change: prices.SOL?.change||3.21, spark:SPARK_SOL },
-  ]
-
   const FEATURED_PLAN = { name:'DeFi Accelerator', roi:'3.5%', dur:'7 days', spots:3, endsAt: new Date(Date.now()+2*86400000+14*3600000+33*60000) }
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'70vh' }}>
@@ -415,15 +410,6 @@ export default function HomePage() {
             {balanceHidden ? '••••' : `+$${todayProfit.toFixed(2)} today`}
           </span>
           {todayProfit > 0 && <span style={{ background:'var(--success-bg)', color:'var(--success)', padding:'2px 7px', borderRadius:99, fontSize:11, fontWeight:700 }}>LIVE</span>}
-        </div>
-
-        <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
-          <span style={{ fontSize:11, fontWeight:700, color:'var(--brand-primary)', background:'rgba(242,186,14,0.12)', border:'1px solid rgba(242,186,14,0.3)', borderRadius:999, padding:'5px 10px' }}>
-            {activeInvestments.length} Active plan{activeInvestments.length === 1 ? '' : 's'}
-          </span>
-          <span style={{ fontSize:11, fontWeight:700, color:'var(--text-secondary)', background:'rgba(255,255,255,0.05)', border:'1px solid var(--border)', borderRadius:999, padding:'5px 10px' }}>
-            KYC: {user?.kycStatus === 'APPROVED' ? 'Verified' : user?.kycStatus?.replace('_', ' ') || 'Pending'}
-          </span>
         </div>
 
         {/* Quick actions */}
@@ -561,7 +547,7 @@ export default function HomePage() {
       )}
 
       {/* ── Bybit-style: Events, Crypto list/grid, Latest Events/News ── */}
-      <BybitSection prices={prices} />
+      <BybitSection coins={coins} />
 
 
 
@@ -626,7 +612,7 @@ export default function HomePage() {
           <Link href="/markets" style={{ color:'var(--brand-primary)', fontSize:12, textDecoration:'none', fontWeight:600 }}>View All →</Link>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-          {MARKET_COINS.map(coin => (
+          {coins.slice(0, 4).map(coin => (
             <div key={coin.sym} style={{ background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border:'1px solid var(--border)', borderRadius:16, padding:14, boxShadow:'0 14px 28px rgba(0,0,0,0.22)' }} className="pressable ui-upgrade-card">
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
                 <div>

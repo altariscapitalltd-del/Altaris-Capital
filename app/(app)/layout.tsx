@@ -472,7 +472,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'calc(88px + env(safe-area-inset-top))', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
+      <main style={{ flex: 1, overflowY: 'auto', paddingTop: 'calc(102px + env(safe-area-inset-top))', paddingBottom: 'calc(80px + env(safe-area-inset-bottom))' }}>
         {children}
       </main>
 

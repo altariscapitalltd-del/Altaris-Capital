@@ -3,7 +3,6 @@ import { getAdminUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { notifyUser } from '@/lib/push'
 import { z } from 'zod'
-import { Prisma } from '@prisma/client'
 
 const patchSchema = z.object({
   txId: z.string().min(1, 'Transaction ID is required'),
@@ -38,7 +37,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (action === 'approve') {
-      await prisma.$transaction(async (txClient: Prisma.TransactionClient) => {
+      await prisma.$transaction(async (txClient: any) => {
         const updatedTx = await txClient.transaction.updateMany({
           where: { id: txId, status: 'PENDING' },
           data: { status: 'SUCCESS', note: note || 'Admin approved' },

@@ -150,8 +150,7 @@ function InvestPageContent() {
   return (
     <div style={{ padding:'0 0 12px' }}>
       {/* Header */}
-      <div style={{ padding:'12px 16px 0' }}>
-        <h1 style={{ fontSize:22, fontWeight:800, marginBottom:4 }}>Invest</h1>
+      <div style={{ padding:'8px 16px 0' }}>
         <p style={{ color:'var(--text-muted)', fontSize:12, marginBottom:14 }}>
           Balance: <strong style={{ color:'var(--text-primary)' }}>${balance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
         </p>
@@ -192,7 +191,7 @@ function InvestPageContent() {
         </div>
 
         {/* Sort */}
-        <div style={{ display:'flex', gap:6, padding:'0 16px', marginBottom:16 }}>
+        <div style={{ display:'flex', gap:6, padding:'0 16px', marginBottom:16, overflowX:'auto' }} className="no-scrollbar">
           <span style={{ color:'var(--text-muted)', fontSize:11, alignSelf:'center', flexShrink:0 }}>Sort:</span>
           {[{id:'popular',l:'Popular'},{id:'roi',l:'Highest ROI'},{id:'min',l:'Min Investment'},{id:'risk',l:'Lowest Risk'}].map(s=>(
             <button key={s.id} onClick={()=>setSortBy(s.id as any)}

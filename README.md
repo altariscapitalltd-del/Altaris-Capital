@@ -116,3 +116,6 @@ Addresses are manageable from Admin → Settings.
 - Added strict upload validation (type/extension/size) for profile avatars and KYC documents.
 - Removed hardcoded credential examples and improved secure setup guidance.
 - Refreshed the in-app Home dashboard UI with upgraded portfolio header, richer quick-action cards, and polished market/KYC surfaces for better mobile readability.
+- Reworked Wallet UX with a cleaner balance hero + mini trend chart, deposit-first crypto/fiat flow, branded QR receive card, and recent activity summaries.
+- Home crypto and top-mover sections now use live provider market data (not placeholder rows).
+- Improved chat message alignment and settings interactivity (push toggle wiring, notification preferences UX).
