@@ -1,242 +1,113 @@
 'use client'
-import { useEffect, useState, useRef, useMemo } from 'react'
+
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const TIMEFRAMES = [
-  { id: '1', label: '24H', days: 1 },
-  { id: '7', label: '7D', days: 7 },
-  { id: '30', label: '30D', days: 30 },
-  { id: '90', label: '90D', days: 90 },
-  { id: '180', label: '180D', days: 180 },
-]
+declare global {
+  interface Window {
+    TradingView?: any
+  }
+}
 
-type OHLC = { times: number[]; values: number[]; open?: number[]; high?: number[]; low?: number[] }
-
-function CandlestickChart({
-  data,
-  width,
-  height,
-  bullishColor,
-  bearishColor,
-}: {
-  data: OHLC
-  width: number
-  height: number
-  bullishColor: string
-  bearishColor: string
-}) {
-  if (!data.times?.length || !data.values?.length) return null
-  const opens = data.open ?? data.values
-  const highs = data.high ?? data.values
-  const lows = data.low ?? data.values
-  const closes = data.values
-  const padding = { top: 8, right: 8, bottom: 8, left: 8 }
-  const w = width - padding.left - padding.right
-  const h = height - padding.top - padding.bottom
-  const allPrices = highs.concat(lows).filter(Boolean)
-  const min = Math.min(...allPrices)
-  const max = Math.max(...allPrices)
-  const range = max - min || 1
-  const n = data.times.length
-  const barW = Math.max(2, (w / n) * 0.6)
-  const gap = w / n
-
-  const candles = data.times.map((_, i) => {
-    const o = opens[i] ?? closes[i]
-    const hi = highs[i] ?? closes[i]
-    const lo = lows[i] ?? closes[i]
-    const c = closes[i]
-    const x = padding.left + (i + 0.5) * gap - barW / 2
-    const yHi = padding.top + h - ((hi - min) / range) * h
-    const yLo = padding.top + h - ((lo - min) / range) * h
-    const yO = padding.top + h - ((o - min) / range) * h
-    const yC = padding.top + h - ((c - min) / range) * h
-    const isUp = c >= o
-    const bodyTop = Math.min(yO, yC)
-    const bodyH = Math.abs(yC - yO) || 1
-    return {
-      x,
-      barW,
-      wickY: yHi,
-      wickH: yLo - yHi,
-      bodyY: bodyTop,
-      bodyH,
-      isUp,
-      isLast: i === n - 1,
+function ensureTradingViewWidgetScript() {
+  return new Promise<void>((resolve, reject) => {
+    if (window.TradingView?.widget) return resolve()
+    const existing = document.querySelector('script[data-tv-widget="1"]') as HTMLScriptElement | null
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true })
+      existing.addEventListener('error', () => reject(new Error('TradingView widget failed to load')), { once: true })
+      return
     }
-  })
 
-  return (
-    <svg width={width} height={height} style={{ display: 'block' }}>
-      <defs>
-        <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(14,203,129,0.16)" />
-          <stop offset="100%" stopColor="rgba(14,203,129,0.02)" />
-        </linearGradient>
-        <linearGradient id="scanlineGradient" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="rgba(242,186,14,0)" />
-          <stop offset="50%" stopColor="rgba(242,186,14,0.10)" />
-          <stop offset="100%" stopColor="rgba(242,186,14,0)" />
-        </linearGradient>
-      </defs>
-      <rect x={0} y={0} width={width} height={height} fill="url(#chartGlow)" opacity={0.45} />
-      <g opacity={0.22}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <line key={i} x1={padding.left} y1={padding.top + ((i + 1) * h) / 5} x2={width - padding.right} y2={padding.top + ((i + 1) * h) / 5} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-        ))}
-      </g>
-      {candles.map((c, i) => (
-        <g key={i}>
-          <line
-            x1={c.x + c.barW / 2}
-            y1={c.wickY}
-            x2={c.x + c.barW / 2}
-            y2={c.wickY + c.wickH}
-            stroke={c.isUp ? bullishColor : bearishColor}
-            strokeWidth="1.2"
-          />
-          <rect
-            x={c.x}
-            y={c.bodyY}
-            width={c.barW}
-            height={c.bodyH}
-            fill={c.isUp ? bullishColor : bearishColor}
-            stroke={c.isUp ? bullishColor : bearishColor}
-            strokeWidth={c.isLast ? 1.5 : 0}
-            opacity={c.isLast ? 1 : 0.9}
-            style={c.isLast ? { animation: 'candlePulse 1.1s ease-in-out infinite' } : undefined}
-          />
-        </g>
-      ))}
-      <rect x={-width} y={0} width={width * 0.7} height={height} fill="url(#scanlineGradient)" style={{ animation: 'chartScanline 2.8s linear infinite' }} />
-    </svg>
-  )
+    const script = document.createElement('script')
+    script.src = 'https://s3.tradingview.com/tv.js'
+    script.async = true
+    script.dataset.tvWidget = '1'
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('TradingView widget failed to load'))
+    document.head.appendChild(script)
+  })
 }
 
 export default function MarketChartPage() {
   const params = useParams()
   const router = useRouter()
-  const symbol = (params?.symbol as string) || ''
-  const [days, setDays] = useState(7)
-  const [chartData, setChartData] = useState<OHLC>({ times: [], values: [], open: [], high: [], low: [] })
+  const symbol = ((params?.symbol as string) || 'btc').toUpperCase()
+  const pair = `${symbol}USDT`
+
   const [price, setPrice] = useState<number | null>(null)
   const [change24h, setChange24h] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
-  const chartRef = useRef<HTMLDivElement>(null)
-  const [chartSize, setChartSize] = useState({ w: 340, h: 180 })
-  const [viewPoints, setViewPoints] = useState(60)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!symbol) return
-    setLoading(true)
-    fetch(`/api/market/chart?symbol=${encodeURIComponent(symbol)}&days=${days}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.times && d.values) {
-          setChartData({
-            times: d.times,
-            values: d.values,
-            open: d.open ?? d.values,
-            high: d.high ?? d.values,
-            low: d.low ?? d.values,
-          })
-        } else setChartData({ times: [], values: [], open: [], high: [], low: [] })
-      })
-      .catch(() => setChartData({ times: [], values: [], open: [], high: [], low: [] }))
-      .finally(() => setLoading(false))
-  }, [symbol, days])
+    const mountId = `tv_chart_${pair.toLowerCase()}`
+    let cancelled = false
+
+    const mount = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        await ensureTradingViewWidgetScript()
+        if (cancelled || !window.TradingView?.widget) return
+
+        const host = document.getElementById(mountId)
+        if (host) host.innerHTML = ''
+
+        new window.TradingView.widget({
+          autosize: true,
+          symbol: `BINANCE:${pair}`,
+          interval: '1',
+          timezone: 'Etc/UTC',
+          theme: 'dark',
+          style: '1',
+          locale: 'en',
+          toolbar_bg: '#0b0d12',
+          hide_side_toolbar: false,
+          allow_symbol_change: true,
+          withdateranges: true,
+          details: false,
+          hotlist: false,
+          studies: ['STD;EMA'],
+          container_id: mountId,
+        })
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || 'Chart unavailable')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    mount()
+    return () => {
+      cancelled = true
+    }
+  }, [pair])
 
   useEffect(() => {
-    if (!symbol) return
     fetch('/api/market')
       .then((r) => r.json())
       .then((data) => {
-        const key = symbol.toUpperCase()
-        const info = data[key] || data[symbol.toLowerCase()]
-        if (info) {
-          setPrice(info.price)
-          setChange24h(info.change24h ?? null)
-        } else {
-          if (chartData.values.length) setPrice(chartData.values[chartData.values.length - 1])
-        }
+        const info = data[symbol]
+        if (!info) return
+        setPrice(info.price ?? null)
+        setChange24h(info.change24h ?? null)
       })
-      .catch(() => {
-        if (chartData.values.length) setPrice(chartData.values[chartData.values.length - 1])
-      })
-  }, [symbol, chartData.values.length])
-
-  useEffect(() => {
-    if (!symbol) return
-    const stream = `wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}usdt@kline_1m`
-    const ws = new WebSocket(stream)
-    ws.addEventListener('message', (event) => {
-      try {
-        const msg = JSON.parse(event.data)
-        const k = msg.k
-        if (!k) return
-        const close = parseFloat(k.c)
-        const open = parseFloat(k.o)
-        const high = parseFloat(k.h)
-        const low = parseFloat(k.l)
-        const time = k.t
-        setPrice(close)
-        setChartData((prev) => {
-          const times = [...prev.times, time]
-          const values = [...prev.values, close]
-          const opens = [...(prev.open ?? prev.values), open]
-          const highs = [...(prev.high ?? prev.values), high]
-          const lows = [...(prev.low ?? prev.values), low]
-          const max = 60
-          if (values.length > max) {
-            return {
-              times: times.slice(-max),
-              values: values.slice(-max),
-              open: opens.slice(-max),
-              high: highs.slice(-max),
-              low: lows.slice(-max),
-            }
-          }
-          return { times, values, open: opens, high: highs, low: lows }
-        })
-      } catch {
-        // ignore
-      }
-    })
-    return () => ws.close()
+      .catch(() => {})
   }, [symbol])
 
-  useEffect(() => {
-    const el = chartRef.current
-    if (!el) return
-    const ro = new ResizeObserver(() => {
-      const w = el.clientWidth || 340
-      setChartSize({ w, h: Math.min(200, w * 0.55) })
+  const displayPrice = useMemo(() => {
+    if (price == null) return '—'
+    return price.toLocaleString('en-US', {
+      minimumFractionDigits: price < 1 ? 4 : 2,
+      maximumFractionDigits: 8,
     })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
-
-  const visibleData = useMemo(() => {
-    const size = Math.max(20, Math.min(viewPoints, chartData.values.length || viewPoints))
-    if ((chartData.values.length || 0) <= size) return chartData
-    return {
-      times: chartData.times.slice(-size),
-      values: chartData.values.slice(-size),
-      open: chartData.open?.slice(-size),
-      high: chartData.high?.slice(-size),
-      low: chartData.low?.slice(-size),
-    }
-  }, [chartData, viewPoints])
-
-  const displayPrice = price != null ? (price < 0.01 ? price.toFixed(6) : price.toLocaleString('en-US', { minimumFractionDigits: price < 1 ? 4 : 2, maximumFractionDigits: 8 })) : '—'
-  const name = symbol.charAt(0).toUpperCase() + symbol.slice(1).toLowerCase()
-  const bullishColor = '#0ECB81'
-  const bearishColor = '#F6465D'
+  }, [price])
 
   return (
-    <div style={{ padding: '16px', paddingBottom: 24 }}>
+    <div style={{ padding: 16, paddingBottom: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
         <button
           type="button"
@@ -247,75 +118,29 @@ export default function MarketChartPage() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800 }}>{symbol.toUpperCase()} / USD</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>{name}</p>
+          <h1 style={{ fontSize: 20, fontWeight: 800 }}>{pair}</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>TradingView Widget · BINANCE live</p>
         </div>
       </div>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
-          <span style={{ fontSize: 28, fontWeight: 800 }}>${displayPrice}</span>
+      <div style={{ background: '#090b10', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 14, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
+          <span style={{ fontSize: 30, fontWeight: 800 }}>${displayPrice}</span>
           {change24h != null && (
-            <span style={{ fontSize: 14, fontWeight: 700, color: change24h >= 0 ? 'var(--success)' : 'var(--danger)', background: change24h >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)', padding: '2px 8px', borderRadius: 99 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: change24h >= 0 ? '#0ECB81' : '#F6465D', background: change24h >= 0 ? 'rgba(14,203,129,0.16)' : 'rgba(246,70,93,0.16)', padding: '2px 8px', borderRadius: 99 }}>
               {(change24h >= 0 ? '+' : '') + change24h.toFixed(2)}%
             </span>
           )}
         </div>
-        <div ref={chartRef} style={{ width: '100%', minHeight: 180 }} onWheel={(e) => { e.preventDefault(); const direction = e.deltaY > 0 ? 1 : -1; setViewPoints((prev) => Math.max(20, Math.min(240, prev + direction * 10))) }}>
-          {loading ? (
-            <div style={{ height: chartSize.h, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading chart...</div>
-          ) : (
-            <CandlestickChart
-              data={visibleData}
-              width={chartSize.w}
-              height={chartSize.h}
-              bullishColor={bullishColor}
-              bearishColor={bearishColor}
-            />
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 8 }}><div style={{ color: 'var(--text-muted)', fontSize: 11 }}>Zoom</div><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><button type="button" onClick={() => setViewPoints((p) => Math.min(240, p + 20))} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', cursor: 'pointer' }}>-</button><input type="range" min={20} max={240} step={10} value={viewPoints} onChange={(e) => setViewPoints(Number(e.target.value))} style={{ width: 120 }} /><button type="button" onClick={() => setViewPoints((p) => Math.max(20, p - 20))} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', cursor: 'pointer' }}>+</button></div></div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          {TIMEFRAMES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setDays(t.days)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 99,
-                border: days === t.days ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
-                background: days === t.days ? 'rgba(242,186,14,0.12)' : 'transparent',
-                color: days === t.days ? 'var(--brand-primary)' : 'var(--text-secondary)',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+
+        <div id={`tv_chart_${pair.toLowerCase()}`} style={{ width: '100%', height: 360, borderRadius: 12, overflow: 'hidden' }} />
+
+        {loading && <div style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12 }}>Loading TradingView chart…</div>}
+        {error && <div style={{ marginTop: 10, color: 'var(--danger)', fontSize: 12 }}>{error}</div>}
       </div>
 
-      <Link
-        href="/invest"
-        style={{
-          display: 'block',
-          width: '100%',
-          padding: '14px',
-          background: 'var(--brand-primary)',
-          color: '#000',
-          borderRadius: 12,
-          fontWeight: 800,
-          fontSize: 15,
-          textAlign: 'center',
-          textDecoration: 'none',
-        }}
-        className="pressable"
-      >
-        Invest in {symbol.toUpperCase()}
+      <Link href="/invest" style={{ display: 'block', width: '100%', padding: 14, background: 'var(--brand-primary)', color: '#000', borderRadius: 12, fontWeight: 800, fontSize: 15, textAlign: 'center', textDecoration: 'none' }} className="pressable">
+        Invest in {symbol}
       </Link>
     </div>
   )

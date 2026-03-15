@@ -70,7 +70,7 @@ export async function PUT(req: NextRequest) {
 
       if (process.env.BLOB_READ_WRITE_TOKEN) {
         const { put } = await import('@vercel/blob')
-        const blob = await put(filename, file, { access: 'public', addRandomSuffix: true })
+        const blob = await put(filename, file, { access: 'private', addRandomSuffix: true })
         profilePicture = blob.url
       } else {
         const bytes = await file.arrayBuffer()

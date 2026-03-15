@@ -1,6 +1,3 @@
-// Pusher Beams: handle push notifications (must be at top when using existing service worker)
-importScripts('https://js.pusher.com/beams/service-worker.js')
-
 // Only cache long-lived static assets; HTML/JS are network-first
 const STATIC_ASSETS = ['/icons/icon-192x192.png', '/icons/icon-512x512.png', '/manifest.json']
 
@@ -64,33 +61,6 @@ self.addEventListener('fetch', (event) => {
     fetch(event.request)
       .then((res) => res)
       .catch(() => caches.match(event.request))
-  )
-})
-
-self.addEventListener('push', (event) => {
-  if (!event.data) return
-  const data = event.data.json()
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'Altaris Capital', {
-      body: data.body || '',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-72x72.png',
-      data: { url: data.url || '/dashboard' },
-      vibrate: [200, 100, 200],
-    })
-  )
-})
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-  event.waitUntil(
-    clients.matchAll({ type: 'window' }).then((clientList) => {
-      const url = event.notification.data?.url || '/dashboard'
-      for (const client of clientList) {
-        if (client.url.includes(url) && 'focus' in client) return client.focus()
-      }
-      if (clients.openWindow) return clients.openWindow(url)
-    })
   )
 })
 
