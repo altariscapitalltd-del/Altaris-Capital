@@ -3,6 +3,12 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
+function StatIcon({ type }: { type: 'member' | 'kyc' | 'id' }) {
+  if (type === 'member') return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+  if (type === 'kyc') return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21V7a2 2 0 0 0-2-2h-3"/><path d="M4 21V7a2 2 0 0 1 2-2h3"/><path d="M9 12h6"/><path d="M9 16h6"/><path d="M9 8h6"/></svg>
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11h16"/><path d="M4 15h16"/><path d="M10 7h4"/><rect x="2" y="3" width="20" height="18" rx="2"/></svg>
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -24,24 +30,47 @@ export default function ProfilePage() {
   }, [])
 
   async function save() {
-    setSaving(true); setMsg(null)
+    setSaving(true)
+    setMsg(null)
 
-    const formData = new FormData()
-    formData.append('name', name)
-    formData.append('phone', phone)
-    if (avatarFile) formData.append('avatar', avatarFile)
+    try {
+      const formData = new FormData()
+      formData.append('name', name.trim())
+      formData.append('phone', phone.trim())
+      if (avatarFile) formData.append('avatar', avatarFile)
 
-    const res = await fetch('/api/user/profile', { method: 'PATCH', body: formData })
-    const data = await res.json()
-    if (res.ok) {
+      let res = await fetch('/api/user/profile', { method: 'PATCH', body: formData })
+      let data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        const fallbackRes = await fetch('/api/user/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
+        })
+        const fallbackData = await fallbackRes.json().catch(() => ({}))
+        if (!fallbackRes.ok) {
+          setMsg({ type: 'error', text: data.error || fallbackData.error || 'Failed to update profile. Please try another image format.' })
+          return
+        }
+        res = fallbackRes
+        data = fallbackData
+        if (avatarFile) {
+          setMsg({ type: 'success', text: 'Profile details updated. Avatar upload was skipped; please retry with JPG/PNG/WebP/HEIC.' })
+        }
+      }
+
       setUser(data.user)
-      setMsg({ type: 'success', text: 'Profile updated!' })
-      setAvatarPreview(data.user?.profilePicture || null)
+      if (!avatarFile || res.ok) {
+        setMsg((current) => current ?? { type: 'success', text: 'Profile updated successfully.' })
+      }
+      setAvatarPreview(data.user?.profilePicture || avatarPreview)
       setAvatarFile(null)
-    } else {
-      setMsg({ type: 'error', text: data.error })
+    } catch {
+      setMsg({ type: 'error', text: 'Network error while updating profile.' })
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   if (!user) return (
@@ -113,12 +142,12 @@ export default function ProfilePage() {
       {/* Account info */}
       <div style={{ marginTop:28, background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
         {[
-          { icon:'📅', label:'Member Since', value: new Date(user.createdAt||Date.now()).toLocaleDateString('en-US',{month:'long',year:'numeric'}) },
-          { icon:'🪪', label:'KYC Status', value: user.kycStatus==='APPROVED'?'✓ Verified':'Not verified' },
-          { icon:'🆔', label:'User ID', value: user.id?.slice(0,12)+'...' },
-        ].map(({icon,label,value}) => (
+          { type:'member', label:'Member Since', value: new Date(user.createdAt||Date.now()).toLocaleDateString('en-US',{month:'long',year:'numeric'}) },
+          { type:'kyc', label:'KYC Status', value: user.kycStatus==='APPROVED'?'Verified':'Not verified' },
+          { type:'id', label:'User ID', value: user.id?.slice(0,12)+'...' },
+        ].map(({type,label,value}) => (
           <div key={label} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderBottom:'1px solid var(--border)' }}>
-            <span style={{ fontSize:18 }}>{icon}</span>
+            <span style={{ color:'var(--brand-primary)', display:'inline-flex' }}><StatIcon type={type as any} /></span>
             <span style={{ color:'var(--text-muted)', fontSize:13, flex:1 }}>{label}</span>
             <span style={{ fontWeight:600, fontSize:13 }}>{value}</span>
           </div>

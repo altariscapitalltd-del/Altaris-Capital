@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ background: 'var(--bg-primary)' }}>
         <script dangerouslySetInnerHTML={{ __html: `document.documentElement.setAttribute('data-theme','dark');` }} />
         <ThemeProvider>
-          <div className="app-container">
+          <div className="root-shell">
             {children}
           </div>
         </ThemeProvider>

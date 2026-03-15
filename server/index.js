@@ -1,11 +1,12 @@
 require('dotenv').config()
+const os = require('os')
 const { createServer } = require('http')
 const { parse } = require('url')
 const next = require('next')
 const Pusher = require('pusher')
 
 const dev = process.env.NODE_ENV !== 'production'
-const hostname = 'localhost'
+const hostname = process.env.HOST || '0.0.0.0'
 const port = parseInt(process.env.PORT || '3000', 10)
 
 const pusher = new Pusher({
@@ -18,6 +19,19 @@ const pusher = new Pusher({
 
 const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
+
+function getLanAddress() {
+  const interfaces = os.networkInterfaces()
+  for (const iface of Object.values(interfaces)) {
+    if (!iface) continue
+    for (const details of iface) {
+      if (details.family === 'IPv4' && !details.internal) {
+        return details.address
+      }
+    }
+  }
+  return null
+}
 
 app.prepare().then(() => {
   const httpServer = createServer(async (req, res) => {
@@ -67,7 +81,11 @@ app.prepare().then(() => {
     }
   }, PRICE_INTERVAL_MS)
 
-  httpServer.listen(port, () => {
-    console.log(`> Altaris Capital running on http://${hostname}:${port}`)
+  httpServer.listen(port, hostname, () => {
+    const lanAddress = getLanAddress()
+    console.log(`> Altaris Capital running on http://localhost:${port}`)
+    if (lanAddress) {
+      console.log(`> LAN preview (phone/tablet): http://${lanAddress}:${port}`)
+    }
   })
 })

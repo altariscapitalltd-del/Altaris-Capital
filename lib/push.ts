@@ -1,5 +1,6 @@
 import PushNotifications from '@pusher/push-notifications-server'
 import { trigger, userChannel } from './pusher'
+import { sendNotificationEmail } from './email'
 
 const instanceId = process.env.PUSHER_BEAMS_INSTANCE_ID || ''
 const secretKey = process.env.PUSHER_BEAMS_SECRET_KEY || ''
@@ -39,6 +40,15 @@ export async function notifyUser(
   await prisma.notification.create({
     data: { userId, title, body, url },
   })
+
+  try {
+    const target = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } })
+    if (target?.email) {
+      await sendNotificationEmail(target.email, target.name || 'User', title, body)
+    }
+  } catch {
+    // keep notification flow resilient if email fails
+  }
 
   if (beamsClient) {
     try {

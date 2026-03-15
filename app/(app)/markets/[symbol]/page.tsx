@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -69,6 +69,23 @@ function CandlestickChart({
 
   return (
     <svg width={width} height={height} style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(14,203,129,0.16)" />
+          <stop offset="100%" stopColor="rgba(14,203,129,0.02)" />
+        </linearGradient>
+        <linearGradient id="scanlineGradient" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="rgba(242,186,14,0)" />
+          <stop offset="50%" stopColor="rgba(242,186,14,0.10)" />
+          <stop offset="100%" stopColor="rgba(242,186,14,0)" />
+        </linearGradient>
+      </defs>
+      <rect x={0} y={0} width={width} height={height} fill="url(#chartGlow)" opacity={0.45} />
+      <g opacity={0.22}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <line key={i} x1={padding.left} y1={padding.top + ((i + 1) * h) / 5} x2={width - padding.right} y2={padding.top + ((i + 1) * h) / 5} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+        ))}
+      </g>
       {candles.map((c, i) => (
         <g key={i}>
           <line
@@ -88,10 +105,11 @@ function CandlestickChart({
             stroke={c.isUp ? bullishColor : bearishColor}
             strokeWidth={c.isLast ? 1.5 : 0}
             opacity={c.isLast ? 1 : 0.9}
-            style={c.isLast ? { animation: 'candlePulse 1.5s ease-in-out infinite' } : undefined}
+            style={c.isLast ? { animation: 'candlePulse 1.1s ease-in-out infinite' } : undefined}
           />
         </g>
       ))}
+      <rect x={-width} y={0} width={width * 0.7} height={height} fill="url(#scanlineGradient)" style={{ animation: 'chartScanline 2.8s linear infinite' }} />
     </svg>
   )
 }
@@ -107,6 +125,7 @@ export default function MarketChartPage() {
   const [loading, setLoading] = useState(true)
   const chartRef = useRef<HTMLDivElement>(null)
   const [chartSize, setChartSize] = useState({ w: 340, h: 180 })
+  const [viewPoints, setViewPoints] = useState(60)
 
   useEffect(() => {
     if (!symbol) return
@@ -198,6 +217,19 @@ export default function MarketChartPage() {
     return () => ro.disconnect()
   }, [])
 
+
+  const visibleData = useMemo(() => {
+    const size = Math.max(20, Math.min(viewPoints, chartData.values.length || viewPoints))
+    if ((chartData.values.length || 0) <= size) return chartData
+    return {
+      times: chartData.times.slice(-size),
+      values: chartData.values.slice(-size),
+      open: chartData.open?.slice(-size),
+      high: chartData.high?.slice(-size),
+      low: chartData.low?.slice(-size),
+    }
+  }, [chartData, viewPoints])
+
   const displayPrice = price != null ? (price < 0.01 ? price.toFixed(6) : price.toLocaleString('en-US', { minimumFractionDigits: price < 1 ? 4 : 2, maximumFractionDigits: 8 })) : '—'
   const name = symbol.charAt(0).toUpperCase() + symbol.slice(1).toLowerCase()
   const bullishColor = '#0ECB81'
@@ -229,12 +261,12 @@ export default function MarketChartPage() {
             </span>
           )}
         </div>
-        <div ref={chartRef} style={{ width: '100%', minHeight: 180 }}>
+        <div ref={chartRef} style={{ width: '100%', minHeight: 180 }} onWheel={(e) => { e.preventDefault(); const direction = e.deltaY > 0 ? 1 : -1; setViewPoints((prev) => Math.max(20, Math.min(240, prev + direction * 10))) }}>
           {loading ? (
             <div style={{ height: chartSize.h, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading chart...</div>
           ) : (
             <CandlestickChart
-              data={chartData}
+              data={visibleData}
               width={chartSize.w}
               height={chartSize.h}
               bullishColor={bullishColor}
@@ -242,6 +274,7 @@ export default function MarketChartPage() {
             />
           )}
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, marginBottom: 8 }}><div style={{ color: 'var(--text-muted)', fontSize: 11 }}>Zoom</div><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><button type="button" onClick={() => setViewPoints((p) => Math.min(240, p + 20))} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', cursor: 'pointer' }}>-</button><input type="range" min={20} max={240} step={10} value={viewPoints} onChange={(e) => setViewPoints(Number(e.target.value))} style={{ width: 120 }} /><button type="button" onClick={() => setViewPoints((p) => Math.max(20, p - 20))} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', cursor: 'pointer' }}>+</button></div></div>
         <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
           {TIMEFRAMES.map((t) => (
             <button

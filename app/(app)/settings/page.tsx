@@ -1,4 +1,5 @@
 'use client'
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -44,17 +45,31 @@ function SectionCard({ children }: { children:React.ReactNode }) {
   )
 }
 
+function base64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i)
+  return outputArray
+}
+
 export default function SettingsPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
-  const [notifPush, setNotifPush] = useState(true)
+  const [notifPush, setNotifPush] = useState(false)
   const [notifEmail, setNotifEmail] = useState(true)
   const [notifInvest, setNotifInvest] = useState(true)
   const [biometric, setBiometric] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
-    fetch('/api/auth/me').then(r=>r.json()).then(d=>setUser(d.user))
+    fetch('/api/auth/me').then(r=>r.json()).then(d=>setUser(d.user)).catch(() => {})
+    setNotifPush(localStorage.getItem('altaris_notif_push') === '1')
+    setNotifEmail(localStorage.getItem('altaris_notif_email') !== '0')
+    setNotifInvest(localStorage.getItem('altaris_notif_invest') !== '0')
+    setBiometric(localStorage.getItem('altaris_biometric') === '1')
   }, [])
 
   async function logout() {
@@ -63,14 +78,73 @@ export default function SettingsPage() {
     router.push('/login')
   }
 
+  async function enablePush(enable: boolean) {
+    try {
+      if (!enable) {
+        setNotifPush(false)
+        localStorage.setItem('altaris_notif_push', '0')
+        setMsg({ type: 'success', text: 'Push alerts disabled on this device.' })
+        return
+      }
+
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        setMsg({ type: 'error', text: 'Push notifications are not supported on this device.' })
+        return
+      }
+
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        setMsg({ type: 'error', text: 'Notification permission not granted.' })
+        return
+      }
+
+      const reg = await navigator.serviceWorker.ready
+      const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      if (!vapid) {
+        setMsg({ type: 'error', text: 'Missing VAPID public key configuration.' })
+        return
+      }
+
+      let subscription = await reg.pushManager.getSubscription()
+      if (!subscription) {
+        subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: base64ToUint8Array(vapid),
+        })
+      }
+
+      await fetch('/api/user/push-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription),
+      })
+
+      setNotifPush(true)
+      localStorage.setItem('altaris_notif_push', '1')
+      setMsg({ type: 'success', text: 'Push alerts enabled.' })
+    } catch {
+      setMsg({ type: 'error', text: 'Unable to enable push alerts.' })
+    }
+  }
+
+  function toggleEmail(next: boolean) {
+    setNotifEmail(next)
+    localStorage.setItem('altaris_notif_email', next ? '1' : '0')
+    setMsg({ type: 'success', text: next ? 'Email updates enabled.' : 'Email updates disabled.' })
+  }
+
+  function toggleInvest(next: boolean) {
+    setNotifInvest(next)
+    localStorage.setItem('altaris_notif_invest', next ? '1' : '0')
+  }
+
+  function toggleBiometric(next: boolean) {
+    setBiometric(next)
+    localStorage.setItem('altaris_biometric', next ? '1' : '0')
+  }
+
   return (
     <div style={{ paddingBottom:24 }}>
-      {/* Header */}
-      <div style={{ padding:'12px 20px 20px' }}>
-        <h1 style={{ fontSize:22, fontWeight:800 }}>Settings</h1>
-      </div>
-
-      {/* Profile card */}
       <div style={{ margin:'0 16px 4px' }}>
         <Link href="/profile" style={{ textDecoration:'none' }}>
           <div style={{ background:'var(--bg-card)', borderRadius:16, border:'1px solid var(--border)', padding:16, display:'flex', alignItems:'center', gap:14 }} className="pressable">
@@ -82,7 +156,7 @@ export default function SettingsPage() {
               <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{user?.email}</div>
               <div style={{ marginTop:6 }}>
                 <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background: user?.kycStatus==='APPROVED'?'var(--success-bg)':'var(--warning-bg)', color: user?.kycStatus==='APPROVED'?'var(--success)':'var(--warning)' }}>
-                  {user?.kycStatus==='APPROVED' ? '✓ KYC Verified' : 'KYC Pending'}
+                  {user?.kycStatus==='APPROVED' ? 'Check KYC Verified' : 'KYC Pending'}
                 </span>
               </div>
             </div>
@@ -91,42 +165,43 @@ export default function SettingsPage() {
         </Link>
       </div>
 
-      {/* Account */}
+      {msg && (
+        <div style={{ margin: '12px 16px 0', padding: '10px 12px', borderRadius: 10, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)', fontSize: 12, fontWeight: 700 }}>
+          {msg.text}
+        </div>
+      )}
+
       <SectionLabel label="Account" />
       <SectionCard>
         <SettingRow icon={<User size={18} strokeWidth={2} />} label="Edit Profile" value="Name, photo, phone" href="/profile" />
-        <SettingRow icon={<Key size={18} strokeWidth={2} />} label="Change Password" href="/profile" />
+        <SettingRow icon={<Key size={18} strokeWidth={2} />} label="Change Password" href="/forgot-password" />
         <SettingRow icon={<UserCheck size={18} strokeWidth={2} />} label="KYC Verification" value={user?.kycStatus === 'APPROVED' ? 'Verified' : 'Pending'} href="/kyc" />
         <SettingRow icon={<Coins size={18} strokeWidth={2} />} label="Claim $100 Bonus" value={user?.bonusClaimed ? 'Already claimed' : 'Tap to claim!'} href="/home" />
       </SectionCard>
 
-      {/* Notifications */}
       <SectionLabel label="Notifications" />
       <SectionCard>
-        <SettingRow icon={<Bell size={18} strokeWidth={2} />} label="Push Alerts" toggle toggled={notifPush} onToggle={()=>setNotifPush(v=>!v)} />
-        <SettingRow icon={<Mail size={18} strokeWidth={2} />} label="Email Updates" toggle toggled={notifEmail} onToggle={()=>setNotifEmail(v=>!v)} />
-        <SettingRow icon={<TrendingUp size={18} strokeWidth={2} />} label="Investment Alerts" value="ROI credits, plan maturity" toggle toggled={notifInvest} onToggle={()=>setNotifInvest(v=>!v)} />
+        <SettingRow icon={<Bell size={18} strokeWidth={2} />} label="Push Alerts" toggle toggled={notifPush} onToggle={() => enablePush(!notifPush)} />
+        <SettingRow icon={<Mail size={18} strokeWidth={2} />} label="Email Updates" toggle toggled={notifEmail} onToggle={() => toggleEmail(!notifEmail)} />
+        <SettingRow icon={<TrendingUp size={18} strokeWidth={2} />} label="Investment Alerts" value="ROI credits, plan maturity" toggle toggled={notifInvest} onToggle={() => toggleInvest(!notifInvest)} />
       </SectionCard>
 
-      {/* Security */}
       <SectionLabel label="Security" />
       <SectionCard>
-        <SettingRow icon={<Fingerprint size={18} strokeWidth={2} />} label="Biometric Login" toggle toggled={biometric} onToggle={()=>setBiometric(v=>!v)} />
-        <SettingRow icon={<Shield size={18} strokeWidth={2} />} label="Two-Factor Auth" value="Recommended" href="/profile" />
-        <SettingRow icon={<Smartphone size={18} strokeWidth={2} />} label="Active Sessions" href="/profile" />
+        <SettingRow icon={<Fingerprint size={18} strokeWidth={2} />} label="Biometric Login" toggle toggled={biometric} onToggle={() => toggleBiometric(!biometric)} />
+        <SettingRow icon={<Shield size={18} strokeWidth={2} />} label="Two-Factor Auth" value="Use OTP on login" href="/settings" />
+        <SettingRow icon={<Smartphone size={18} strokeWidth={2} />} label="Active Sessions" value="Current device" href="/profile" />
       </SectionCard>
 
-      {/* Support */}
       <SectionLabel label="Support & Legal" />
       <SectionCard>
         <SettingRow icon={<MessageCircle size={18} strokeWidth={2} />} label="Live Chat" href="/support" />
         <SettingRow icon={<HelpCircle size={18} strokeWidth={2} />} label="FAQ & Help Center" href="/support" />
-        <SettingRow icon={<FileText size={18} strokeWidth={2} />} label="Terms of Service" href="/support" />
-        <SettingRow icon={<Lock size={18} strokeWidth={2} />} label="Privacy Policy" href="/support" />
+        <SettingRow icon={<FileText size={18} strokeWidth={2} />} label="Terms of Service" href="https://altaris-capital.com/terms" />
+        <SettingRow icon={<Lock size={18} strokeWidth={2} />} label="Privacy Policy" href="https://altaris-capital.com/privacy" />
         <SettingRow icon={<Info size={18} strokeWidth={2} />} label="About Altaris Capital" value="v1.0.0" href="/support" />
       </SectionCard>
 
-      {/* Logout */}
       <div style={{ margin:'24px 16px 0' }}>
         <button onClick={logout} disabled={loggingOut}
           style={{ width:'100%', padding:'15px', borderRadius:14, background:'rgba(246,70,93,0.08)', border:'1px solid rgba(246,70,93,0.2)', color:'#F6465D', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'inherit', transition:'all .15s', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>

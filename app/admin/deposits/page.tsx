@@ -130,11 +130,11 @@ export default function AdminDepositsPage() {
               </button>
               <button onClick={()=>handleAction(actionTx.id,'reject')} disabled={loading}
                 style={{padding:'11px',borderRadius:9,border:'1px solid rgba(246,70,93,0.2)',background:'rgba(246,70,93,0.08)',color:'#F6465D',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
-                {loading?'…':'✗ Reject'}
+                {loading?'…':'Rejected Reject'}
               </button>
               <button onClick={()=>handleAction(actionTx.id,'approve')} disabled={loading}
                 style={{padding:'11px',borderRadius:9,border:'none',background:'#F2BA0E',color:'#000',fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
-                {loading?'…':'✓ Approve'}
+                {loading?'…':'Check Approve'}
               </button>
             </div>
           </div>

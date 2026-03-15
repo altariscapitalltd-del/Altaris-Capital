@@ -3,10 +3,10 @@ import { useEffect, useState, useRef } from 'react'
 import { COUNTRIES } from '@/lib/countries'
 
 const STEPS = [
-  { id:'personal', icon:'👤', label:'Personal Info' },
-  { id:'document', icon:'🪪', label:'ID Document' },
-  { id:'selfie',   icon:'🤳', label:'Selfie' },
-  { id:'review',   icon:'✅', label:'Review' },
+  { id:'personal', icon:'', label:'Personal Info' },
+  { id:'document', icon:'', label:'ID Document' },
+  { id:'selfie',   icon:'', label:'Selfie' },
+  { id:'review',   icon:'Verified', label:'Review' },
 ]
 
 export default function KYCPage() {
@@ -46,7 +46,7 @@ export default function KYCPage() {
 
   if(status==='APPROVED') return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'70vh',padding:24,textAlign:'center'}}>
-      <div style={{width:80,height:80,borderRadius:'50%',background:'var(--success-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,marginBottom:20,border:'2px solid var(--success)'}}>✓</div>
+      <div style={{width:80,height:80,borderRadius:'50%',background:'var(--success-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,marginBottom:20,border:'2px solid var(--success)'}}>Check</div>
       <h2 style={{fontWeight:800,fontSize:22,marginBottom:10}}>KYC Verified!</h2>
       <p style={{color:'var(--text-muted)',fontSize:14,maxWidth:280,lineHeight:1.7}}>Your identity has been verified. You can now make withdrawals and claim your $100 bonus.</p>
     </div>
@@ -54,7 +54,7 @@ export default function KYCPage() {
 
   if(status==='PENDING_REVIEW') return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'70vh',padding:24,textAlign:'center'}}>
-      <div style={{width:80,height:80,borderRadius:'50%',background:'var(--warning-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,marginBottom:20}}>⏳</div>
+      <div style={{width:80,height:80,borderRadius:'50%',background:'var(--warning-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,marginBottom:20}}><svg width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'><path d='M6 2h12M6 22h12M8 2v6l4 4 4-4V2M8 22v-6l4-4 4 4v6'/></svg></div>
       <h2 style={{fontWeight:800,fontSize:22,marginBottom:10}}>Under Review</h2>
       <p style={{color:'var(--text-muted)',fontSize:14,maxWidth:280,lineHeight:1.7}}>Your documents are being reviewed. This typically takes 1–2 business days.</p>
     </div>
@@ -62,7 +62,7 @@ export default function KYCPage() {
 
   if(status==='REJECTED') return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'70vh',padding:24,textAlign:'center'}}>
-      <div style={{width:80,height:80,borderRadius:'50%',background:'var(--danger-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,marginBottom:20}}>✗</div>
+      <div style={{width:80,height:80,borderRadius:'50%',background:'var(--danger-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,marginBottom:20}}>Rejected</div>
       <h2 style={{fontWeight:800,fontSize:22,marginBottom:10}}>Verification Rejected</h2>
       <p style={{color:'var(--text-muted)',fontSize:14,maxWidth:280,lineHeight:1.7,marginBottom:20}}>Your submission was rejected. Please re-submit with clearer documents.</p>
       <button onClick={()=>setStatus(null)} className="btn-primary" style={{padding:'13px 32px'}}>Re-submit KYC</button>
@@ -83,7 +83,7 @@ export default function KYCPage() {
             <div style={{display:'flex',alignItems:'center',width:'100%'}}>
               {i>0&&<div style={{flex:1,height:2,background:i<=step?'var(--brand-primary)':'var(--bg-elevated)',transition:'background .3s'}}/>}
               <div style={{width:32,height:32,borderRadius:'50%',background:i<step?'var(--success)':i===step?'var(--brand-primary)':'var(--bg-elevated)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:i<step?16:14,flexShrink:0,transition:'all .3s',border:i===step?'none':'2px solid var(--border)'}}>
-                {i<step?'✓':s.icon}
+                {i<step?'Check':s.icon}
               </div>
               {i<STEPS.length-1&&<div style={{flex:1,height:2,background:i<step?'var(--brand-primary)':'var(--bg-elevated)',transition:'background .3s'}}/>}
             </div>
@@ -117,7 +117,7 @@ export default function KYCPage() {
           <div>
             <label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:10}}>Document Type</label>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
-              {[{id:'passport',l:'🛂 Passport'},{id:'drivers_license',l:"🪪 Driver's License"},{id:'national_id',l:'🆔 National ID'}].map(d=>(
+              {[{id:'passport',l:'Passport'},{id:'drivers_license',l:"Driver's License"},{id:'national_id',l:'National ID'}].map(d=>(
                 <button key={d.id} onClick={()=>setForm(f=>({...f,docType:d.id}))}
                   style={{padding:'10px 6px',borderRadius:11,border:`2px solid ${form.docType===d.id?'var(--brand-primary)':'var(--border)'}`,background:form.docType===d.id?'rgba(242,186,14,0.08)':'var(--bg-card)',cursor:'pointer',fontFamily:'inherit',fontSize:11,fontWeight:600,color:form.docType===d.id?'var(--brand-primary)':'var(--text-secondary)'}}>
                   {d.l}
@@ -129,7 +129,7 @@ export default function KYCPage() {
           <div>
             <label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Upload Document Photo</label>
             <div onClick={()=>docRef.current?.click()} style={{border:'2px dashed var(--border)',borderRadius:12,padding:28,textAlign:'center',cursor:'pointer',transition:'border-color .2s',background:docFile?'var(--success-bg)':'transparent'}} onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--brand-primary)')} onMouseLeave={e=>(e.currentTarget.style.borderColor='var(--border)')}>
-              <div style={{fontSize:32,marginBottom:8}}>{docFile?'✅':'📷'}</div>
+              <div style={{fontSize:32,marginBottom:8}}>{docFile?'Verified':''}</div>
               <div style={{fontWeight:600,fontSize:13,color:docFile?'var(--success)':'var(--text-secondary)'}}>{docFile?docFile.name:'Tap to upload'}</div>
               <div style={{color:'var(--text-muted)',fontSize:11,marginTop:4}}>JPG, PNG or PDF • Max 10MB</div>
             </div>
@@ -146,16 +146,16 @@ export default function KYCPage() {
       {step===2&&(
         <div style={{display:'flex',flexDirection:'column',gap:14}}>
           <div style={{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:14,padding:16}}>
-            <div style={{fontWeight:700,marginBottom:8}}>📸 Selfie Requirements</div>
+            <div style={{fontWeight:700,marginBottom:8}}> Selfie Requirements</div>
             {['Hold your ID document next to your face','Ensure good lighting — face clearly visible','No glasses or hats','Photo must match your document'].map(t=>(
               <div key={t} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid var(--border)'}}>
-                <span style={{color:'var(--success)',fontWeight:700}}>✓</span>
+                <span style={{color:'var(--success)',fontWeight:700}}>Check</span>
                 <span style={{color:'var(--text-secondary)',fontSize:13}}>{t}</span>
               </div>
             ))}
           </div>
           <div onClick={()=>selfieRef.current?.click()} style={{border:'2px dashed var(--border)',borderRadius:12,padding:36,textAlign:'center',cursor:'pointer',transition:'border-color .2s',background:selfieFile?'var(--success-bg)':'transparent'}} onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--brand-primary)')} onMouseLeave={e=>(e.currentTarget.style.borderColor='var(--border)')}>
-            <div style={{fontSize:40,marginBottom:8}}>{selfieFile?'✅':'🤳'}</div>
+            <div style={{fontSize:40,marginBottom:8}}>{selfieFile?'Verified':''}</div>
             <div style={{fontWeight:600,fontSize:13,color:selfieFile?'var(--success)':'var(--text-secondary)'}}>{selfieFile?selfieFile.name:'Take or upload selfie'}</div>
           </div>
           <input ref={selfieRef} type="file" accept="image/*" capture="user" style={{display:'none'}} onChange={e=>setSelfieFile(e.target.files?.[0]||null)}/>
@@ -187,7 +187,7 @@ export default function KYCPage() {
           {msg&&<div style={{padding:'10px 14px',borderRadius:9,marginBottom:14,fontSize:13,fontWeight:600,background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)',color:msg.type==='success'?'var(--success)':'var(--danger)'}}>{msg.text}</div>}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
             <button onClick={()=>setStep(2)} className="btn-ghost">← Back</button>
-            <button onClick={submit} disabled={submitting} className="btn-primary">{submitting?'Submitting...':'Submit KYC ✓'}</button>
+            <button onClick={submit} disabled={submitting} className="btn-primary">{submitting?'Submitting...':'Submit KYC Check'}</button>
           </div>
         </div>
       )}
