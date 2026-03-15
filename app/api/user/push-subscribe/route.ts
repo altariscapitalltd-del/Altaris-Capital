@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { jwtVerify } from 'jose'
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'altaris-secret-change-this')
 
 type Preferences = {
   pushAlerts: boolean
@@ -14,72 +15,69 @@ const DEFAULT_PREFS: Preferences = {
   investmentAlerts: true,
 }
 
-function extractPrefs(raw: any): Preferences {
-  const p = raw?.preferences || raw || {}
-  return {
-    pushAlerts: typeof p.pushAlerts === 'boolean' ? p.pushAlerts : DEFAULT_PREFS.pushAlerts,
-    emailUpdates: typeof p.emailUpdates === 'boolean' ? p.emailUpdates : DEFAULT_PREFS.emailUpdates,
-    investmentAlerts: typeof p.investmentAlerts === 'boolean' ? p.investmentAlerts : DEFAULT_PREFS.investmentAlerts,
+async function getUserId(req: NextRequest) {
+  const token = req.cookies.get('token')?.value
+  if (!token) return null
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET)
+    return (payload.userId as string) || null
+  } catch {
+    return null
   }
 }
 
-export async function GET(req: NextRequest) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+function readPrefsCookie(req: NextRequest): Preferences {
+  const raw = req.cookies.get('notif_prefs')?.value
+  if (!raw) return DEFAULT_PREFS
+  try {
+    const parsed = JSON.parse(raw)
+    return {
+      pushAlerts: typeof parsed.pushAlerts === 'boolean' ? parsed.pushAlerts : DEFAULT_PREFS.pushAlerts,
+      emailUpdates: typeof parsed.emailUpdates === 'boolean' ? parsed.emailUpdates : DEFAULT_PREFS.emailUpdates,
+      investmentAlerts: typeof parsed.investmentAlerts === 'boolean' ? parsed.investmentAlerts : DEFAULT_PREFS.investmentAlerts,
+    }
+  } catch {
+    return DEFAULT_PREFS
+  }
+}
 
-  const target = await prisma.user.findUnique({ where: { id: user.id }, select: { pushSubscription: true } })
-  const prefs = extractPrefs(target?.pushSubscription)
-
-  return NextResponse.json({
-    preferences: prefs,
-    hasSubscription: Boolean((target?.pushSubscription as any)?.subscription),
+function withPrefsCookie(res: NextResponse, prefs: Preferences) {
+  res.cookies.set('notif_prefs', JSON.stringify(prefs), {
+    httpOnly: false,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24 * 365,
+    path: '/',
   })
+}
+
+export async function GET(req: NextRequest) {
+  const userId = await getUserId(req)
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  return NextResponse.json({ preferences: readPrefsCookie(req), hasSubscription: false, degraded: true })
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const subscription = await req.json().catch(() => null)
-  const existing = await prisma.user.findUnique({ where: { id: user.id }, select: { pushSubscription: true } })
-  const prefs = { ...extractPrefs(existing?.pushSubscription), pushAlerts: true }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      pushSubscription: {
-        subscription,
-        preferences: prefs,
-      },
-    },
-  })
-
-  return NextResponse.json({ success: true, preferences: prefs })
+  const userId = await getUserId(req)
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  await req.json().catch(() => null)
+  const next = { ...readPrefsCookie(req), pushAlerts: true }
+  const res = NextResponse.json({ success: true, preferences: next, degraded: true })
+  withPrefsCookie(res, next)
+  return res
 }
 
 export async function PATCH(req: NextRequest) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+  const userId = await getUserId(req)
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
-  const existing = await prisma.user.findUnique({ where: { id: user.id }, select: { pushSubscription: true } })
-  const current = extractPrefs(existing?.pushSubscription)
-
+  const current = readPrefsCookie(req)
   const next: Preferences = {
     pushAlerts: typeof body.pushAlerts === 'boolean' ? body.pushAlerts : current.pushAlerts,
     emailUpdates: typeof body.emailUpdates === 'boolean' ? body.emailUpdates : current.emailUpdates,
     investmentAlerts: typeof body.investmentAlerts === 'boolean' ? body.investmentAlerts : current.investmentAlerts,
   }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      pushSubscription: {
-        ...(existing?.pushSubscription as object || {}),
-        preferences: next,
-      },
-    },
-  })
-
-  return NextResponse.json({ success: true, preferences: next })
+  const res = NextResponse.json({ success: true, preferences: next, degraded: true })
+  withPrefsCookie(res, next)
+  return res
 }

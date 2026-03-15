@@ -118,22 +118,50 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const headerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
-    fetch('/api/user/profile').then(r => {
-      if (!r.ok) { router.push('/login'); return null }
-      return r.json()
-    }).then(d => {
-      if (d) {
-        setUser(d.user)
-        try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(d.user)) } catch {}
-        setBonusUnclaimed(!d.user?.bonusClaimed)
-        setUnread(d.user?.notifications?.length || 0)
+    let cancelled = false
+
+    try {
+      const cached = window.localStorage.getItem('altaris_user_cache')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        setUser(parsed)
+        setBonusUnclaimed(!parsed?.bonusClaimed)
       }
-      setSplashVisible(false)
-    }).catch(() => {
-      router.push('/login')
-      setSplashVisible(false)
-    })
-  }, [])
+    } catch {}
+
+    const run = async () => {
+      try {
+        const meRes = await fetch('/api/auth/me')
+        if (!meRes.ok) {
+          router.push('/login')
+          return
+        }
+        const meData = await meRes.json().catch(() => ({}))
+        if (cancelled) return
+        if (meData?.user) {
+          setUser((prev: any) => {
+            const merged = { ...(prev || {}), ...meData.user }
+            try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(merged)) } catch {}
+            return merged
+          })
+        }
+
+        const profileRes = await fetch('/api/user/profile').catch(() => null)
+        if (!profileRes || !profileRes.ok) return
+        const profileData = await profileRes.json().catch(() => null)
+        if (cancelled || !profileData?.user) return
+        setUser(profileData.user)
+        setBonusUnclaimed(!profileData.user?.bonusClaimed)
+        setUnread(profileData.user?.notifications?.length || 0)
+        try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(profileData.user)) } catch {}
+      } finally {
+        if (!cancelled) setSplashVisible(false)
+      }
+    }
+
+    run()
+    return () => { cancelled = true }
+  }, [router])
 
   useEffect(() => {
     // Capture PWA install prompt event for later (Android / Chrome)
