@@ -386,7 +386,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         left: 0,
         right: 0,
         zIndex: 60,
-        background: '#0a0a0a',
+        background: '#000000',
         display: 'flex',
         flexDirection: 'column',
         boxShadow: 'none',

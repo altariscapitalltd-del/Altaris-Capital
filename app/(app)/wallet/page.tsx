@@ -512,7 +512,7 @@ export default function WalletPage() {
 
 
       {tab === 'withdraw' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 130, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
             <div style={{ fontSize: 20, fontWeight: 800 }}>Withdraw</div>
@@ -543,7 +543,7 @@ export default function WalletPage() {
       )}
 
       {tab === 'reward' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 130, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
             <div style={{ fontSize: 20, fontWeight: 800 }}>Rewards</div>
@@ -564,7 +564,7 @@ export default function WalletPage() {
       )}
       {/* Full-screen crypto receive dashboard */}
       {tab === 'deposit' && depositMode === 'crypto' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'rgba(7,9,12,0.96)', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 130, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <button onClick={() => setDepositMode('select')} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
             <div style={{ fontSize: 20, fontWeight: 800 }}>Receive</div>

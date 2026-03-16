@@ -40,6 +40,7 @@ export default function MarketChartPage() {
   const [change24h, setChange24h] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
     const mountId = `tv_chart_${pair.toLowerCase()}`
@@ -87,6 +88,12 @@ export default function MarketChartPage() {
   }, [pair])
 
   useEffect(() => {
+    const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener('fullscreenchange', onFsChange)
+    return () => document.removeEventListener('fullscreenchange', onFsChange)
+  }, [])
+
+  useEffect(() => {
     fetch('/api/market')
       .then((r) => r.json())
       .then((data) => {
@@ -97,6 +104,22 @@ export default function MarketChartPage() {
       })
       .catch(() => {})
   }, [symbol])
+
+
+  async function openChartFullscreen() {
+    const host = document.getElementById(`tv_chart_${pair.toLowerCase()}`)
+    if (!host) return
+    try {
+      const el = host.parentElement || host
+      if (el.requestFullscreen) await el.requestFullscreen()
+      const orientation = (screen.orientation as any)
+      if (orientation?.lock) {
+        await orientation.lock('landscape').catch(() => {})
+      }
+    } catch {
+      // ignore fullscreen failures on unsupported browsers
+    }
+  }
 
   const displayPrice = useMemo(() => {
     if (price == null) return '—'
@@ -131,6 +154,16 @@ export default function MarketChartPage() {
               {(change24h >= 0 ? '+' : '') + change24h.toFixed(2)}%
             </span>
           )}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={openChartFullscreen}
+            style={{ border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderRadius: 10, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+          >
+            {isFullscreen ? 'Fullscreen active' : 'Fullscreen landscape'}
+          </button>
         </div>
 
         <div id={`tv_chart_${pair.toLowerCase()}`} style={{ width: '100%', height: 360, borderRadius: 12, overflow: 'hidden' }} />

@@ -166,7 +166,7 @@ export default function SettingsPage() {
               <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{user?.email}</div>
               <div style={{ marginTop:6 }}>
                 <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background: user?.kycStatus==='APPROVED'?'var(--success-bg)':'var(--warning-bg)', color: user?.kycStatus==='APPROVED'?'var(--success)':'var(--warning)' }}>
-                  {user?.kycStatus==='APPROVED' ? 'Check KYC Verified' : 'KYC Pending'}
+                  {user?.kycStatus==='APPROVED' ? 'Verified' : 'KYC Pending'}
                 </span>
               </div>
             </div>
