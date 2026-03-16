@@ -382,14 +382,16 @@ function InvestPageContent() {
               </div>
             )}
 
-            {msg && <div style={{ padding:'10px 14px', borderRadius:9, marginBottom:14, fontSize:13, fontWeight:600, background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)', color:msg.type==='success'?'var(--success)':'var(--danger)' }}>{msg.text}</div>}
+            <div style={{ position:'sticky', bottom:0, margin:'0 -24px -24px', padding:'12px 24px calc(env(safe-area-inset-bottom) + 14px)', background:'linear-gradient(180deg, rgba(16,18,24,0) 0%, var(--bg-card) 26%)' }}>
+              {msg && <div style={{ padding:'10px 14px', borderRadius:9, marginBottom:14, fontSize:13, fontWeight:600, background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)', color:msg.type==='success'?'var(--success)':'var(--danger)' }}>{msg.text}</div>}
 
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:10 }}>
-              <button onClick={()=>setSelected(null)} className="btn-ghost">Cancel</button>
-              <button onClick={invest} disabled={loading||!amount||parseFloat(amount)<selected.min}
-                style={{ padding:'14px', background:'#F2BA0E', color:'#000', border:'none', borderRadius:10, fontWeight:800, fontSize:15, cursor:'pointer', opacity:loading?0.7:1, fontFamily:'inherit' }} className="pressable">
-                {loading ? 'Investing...' : `Invest $${parseFloat(amount||'0').toLocaleString()}`}
-              </button>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:10 }}>
+                <button onClick={()=>setSelected(null)} className="btn-ghost">Cancel</button>
+                <button onClick={invest} disabled={loading||!amount||parseFloat(amount)<selected.min}
+                  style={{ padding:'14px', background:'#F2BA0E', color:'#000', border:'none', borderRadius:10, fontWeight:800, fontSize:15, cursor:'pointer', opacity:loading?0.7:1, fontFamily:'inherit' }} className="pressable">
+                  {loading ? 'Investing...' : `Invest $${parseFloat(amount||'0').toLocaleString()}`}
+                </button>
+              </div>
             </div>
           </div>
         </div>

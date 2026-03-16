@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   User, Key, UserCheck, Coins, Bell, Mail, TrendingUp, Fingerprint, Shield, Smartphone,
   MessageCircle, HelpCircle, FileText, Lock, Info, LogOut,
@@ -56,7 +55,6 @@ export default function SettingsPage() {
   const [notifInvest, setNotifInvest] = useState(true)
   const [biometric, setBiometric] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     try {
@@ -93,24 +91,23 @@ export default function SettingsPage() {
           body: JSON.stringify({ pushAlerts: false }),
         })
         setNotifPush(false)
-        setMsg({ type: 'success', text: 'Push alerts disabled.' })
         return
       }
 
-      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-        setMsg({ type: 'error', text: 'Push notifications are not supported on this device.' })
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
+      if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window) || (isIos && !isStandalone)) {
+        setNotifPush(false)
         return
       }
 
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') {
-        setMsg({ type: 'error', text: 'Notification permission not granted.' })
         return
       }
 
       const token = await getFirebaseMessagingToken()
       if (!token) {
-        setMsg({ type: 'error', text: 'Unable to register this device for push notifications.' })
         return
       }
 
@@ -120,9 +117,7 @@ export default function SettingsPage() {
         body: JSON.stringify({ token }),
       })
       setNotifPush(true)
-      setMsg({ type: 'success', text: 'Push alerts enabled. This device will receive notifications.' })
     } catch {
-      setMsg({ type: 'error', text: 'Unable to enable push alerts. Please allow browser notifications.' })
     }
   }
 
@@ -134,7 +129,6 @@ export default function SettingsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ emailUpdates: next }),
     }).catch(() => {})
-    setMsg({ type: 'success', text: next ? 'Email updates enabled.' : 'Email updates disabled.' })
   }
 
   function toggleInvest(next: boolean) {
@@ -158,13 +152,10 @@ export default function SettingsPage() {
           <div style={{ background:'var(--bg-card)', borderRadius:16, border:'1px solid var(--border)', padding:16, display:'flex', alignItems:'center', gap:14 }} className="pressable">
             <div style={{ width:54, height:54, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'2px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:22, color:'#000', flexShrink:0, overflow:'hidden', position:'relative' }}>
               {user?.profilePicture ? (
-                <Image
+                <img
                   src={user.profilePicture}
                   alt=""
-                  fill
-                  sizes="54px"
-                  priority
-                  style={{ objectFit:'cover' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
                 user?.name?.[0]?.toUpperCase()||'A'
@@ -175,7 +166,7 @@ export default function SettingsPage() {
               <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{user?.email}</div>
               <div style={{ marginTop:6 }}>
                 <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background: user?.kycStatus==='APPROVED'?'var(--success-bg)':'var(--warning-bg)', color: user?.kycStatus==='APPROVED'?'var(--success)':'var(--warning)' }}>
-                  {user?.kycStatus==='APPROVED' ? 'Check KYC Verified' : 'KYC Pending'}
+                  {user?.kycStatus==='APPROVED' ? 'Verified' : 'KYC Pending'}
                 </span>
               </div>
             </div>
@@ -183,12 +174,6 @@ export default function SettingsPage() {
           </div>
         </Link>
       </div>
-
-      {msg && (
-        <div style={{ margin: '12px 16px 0', padding: '10px 12px', borderRadius: 10, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)', fontSize: 12, fontWeight: 700 }}>
-          {msg.text}
-        </div>
-      )}
 
       <SectionLabel label="Account" />
       <SectionCard>

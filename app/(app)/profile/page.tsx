@@ -1,8 +1,6 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 
 function StatIcon({ type }: { type: 'member' | 'kyc' | 'id' }) {
   if (type === 'member') return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -11,12 +9,10 @@ function StatIcon({ type }: { type: 'member' | 'kyc' | 'id' }) {
 }
 
 export default function ProfilePage() {
-  const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState<{type:'success'|'error';text:string}|null>(null)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -32,7 +28,6 @@ export default function ProfilePage() {
 
   async function save() {
     setSaving(true)
-    setMsg(null)
 
     try {
       const formData = new FormData()
@@ -51,25 +46,17 @@ export default function ProfilePage() {
         })
         const fallbackData = await fallbackRes.json().catch(() => ({}))
         if (!fallbackRes.ok) {
-          setMsg({ type: 'error', text: data.error || fallbackData.error || 'Failed to update profile. Please try another image format.' })
           return
         }
         res = fallbackRes
         data = fallbackData
-        if (avatarFile) {
-          setMsg({ type: 'success', text: 'Profile details updated. Avatar upload was skipped; please retry with JPG/PNG/WebP/HEIC.' })
-        }
       }
 
       setUser(data.user)
       try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(data.user)) } catch {}
-      if (!avatarFile || res.ok) {
-        setMsg((current) => current ?? { type: 'success', text: 'Profile updated successfully.' })
-      }
       setAvatarPreview(data.user?.profilePicture || avatarPreview)
       setAvatarFile(null)
     } catch {
-      setMsg({ type: 'error', text: 'Network error while updating profile.' })
     } finally {
       setSaving(false)
     }
@@ -95,13 +82,10 @@ export default function ProfilePage() {
         <div style={{ position:'relative', cursor:'pointer' }} onClick={()=>fileRef.current?.click()}>
           <div style={{ width:84, height:84, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'3px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:32, color:'#000', overflow:'hidden', position:'relative' }}>
             {avatarPreview ? (
-              <Image
+              <img
                 src={avatarPreview}
                 alt=""
-                fill
-                sizes="84px"
-                priority
-                style={{ objectFit:'cover' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : (
               user.name?.[0]?.toUpperCase()||'A'
@@ -142,11 +126,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {msg && (
-        <div style={{ marginTop:14, padding:'11px 14px', borderRadius:10, background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)', color:msg.type==='success'?'var(--success)':'var(--danger)', fontSize:13, fontWeight:600 }}>
-          {msg.text}
-        </div>
-      )}
+
 
       <button onClick={save} disabled={saving} className="btn-primary" style={{ width:'100%', marginTop:20 }}>
         {saving ? 'Saving...' : 'Save Changes'}
