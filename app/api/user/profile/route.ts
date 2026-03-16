@@ -17,6 +17,16 @@ function isVercelBlobUrl(url: string) {
   }
 }
 
+function normalizeProfilePicture<T extends { profilePicture: string | null }>(record: T) {
+  if (record.profilePicture && isVercelBlobUrl(record.profilePicture)) {
+    return {
+      ...record,
+      profilePicture: `/api/user/avatar/blob?src=${encodeURIComponent(record.profilePicture)}`
+    }
+  }
+  return record
+}
+
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -29,11 +39,7 @@ export async function GET(req: NextRequest) {
       notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
     },
   })
-  if (full && full.profilePicture && isVercelBlobUrl(full.profilePicture)) {
-    full.profilePicture = `/api/user/avatar/blob?src=${encodeURIComponent(full.profilePicture)}`
-  }
-
-  return NextResponse.json({ user: full })
+  return NextResponse.json({ user: full ? normalizeProfilePicture(full) : null })
 }
 
 export async function PUT(req: NextRequest) {
@@ -101,7 +107,7 @@ export async function PUT(req: NextRequest) {
       data: { name, phone, ...(profilePicture && { profilePicture }) },
     })
 
-    return NextResponse.json({ success: true, user: updated })
+    return NextResponse.json({ success: true, user: normalizeProfilePicture(updated) })
   } catch {
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
   }
