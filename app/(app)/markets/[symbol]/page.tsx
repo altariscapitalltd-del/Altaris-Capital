@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -40,6 +40,25 @@ export default function MarketChartPage() {
   const [change24h, setChange24h] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const chartWrapRef = useRef<HTMLDivElement | null>(null)
+
+  const openChartFullscreen = async () => {
+    const el = chartWrapRef.current
+    if (!el) return
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+        return
+      }
+      const orientation = (screen as any)?.orientation
+      if (orientation?.lock) {
+        await orientation.lock('landscape').catch(() => {})
+      }
+      await el.requestFullscreen()
+    } catch {
+    }
+  }
 
   useEffect(() => {
     const mountId = `tv_chart_${pair.toLowerCase()}`
@@ -123,14 +142,17 @@ export default function MarketChartPage() {
         </div>
       </div>
 
-      <div style={{ background: '#090b10', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 14, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
-          <span style={{ fontSize: 30, fontWeight: 800 }}>${displayPrice}</span>
-          {change24h != null && (
-            <span style={{ fontSize: 13, fontWeight: 700, color: change24h >= 0 ? '#0ECB81' : '#F6465D', background: change24h >= 0 ? 'rgba(14,203,129,0.16)' : 'rgba(246,70,93,0.16)', padding: '2px 8px', borderRadius: 99 }}>
-              {(change24h >= 0 ? '+' : '') + change24h.toFixed(2)}%
-            </span>
-          )}
+      <div ref={chartWrapRef} style={{ background: '#090b10', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 14, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <span style={{ fontSize: 30, fontWeight: 800 }}>${displayPrice}</span>
+            {change24h != null && (
+              <span style={{ fontSize: 13, fontWeight: 700, color: change24h >= 0 ? '#0ECB81' : '#F6465D', background: change24h >= 0 ? 'rgba(14,203,129,0.16)' : 'rgba(246,70,93,0.16)', padding: '2px 8px', borderRadius: 99 }}>
+                {(change24h >= 0 ? '+' : '') + change24h.toFixed(2)}%
+              </span>
+            )}
+          </div>
+          <button type="button" onClick={openChartFullscreen} aria-label="Fullscreen chart" style={{ width: 34, height: 34, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 900, fontSize: 18, lineHeight: '18px', cursor: 'pointer' }}>#</button>
         </div>
 
         <div id={`tv_chart_${pair.toLowerCase()}`} style={{ width: '100%', height: 360, borderRadius: 12, overflow: 'hidden' }} />
