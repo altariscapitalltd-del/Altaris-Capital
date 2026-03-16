@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
 function Sparkline({ data, color, width=80, height=32 }: { data:number[], color:string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -164,15 +163,19 @@ function InvestPageContent() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{type:'success'|'error';text:string}|null>(null)
 
-  useBodyScrollLock(!!selected)
-
   useEffect(() => {
     if (!selected) return
-    const originalOverflow = document.body.style.overflow
+
+    const originalBodyOverflow = document.body.style.overflow
+    const originalHtmlOverflow = document.documentElement.style.overflow
+
     document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
     requestAnimationFrame(() => setSheetOpen(true))
+
     return () => {
-      document.body.style.overflow = originalOverflow
+      document.body.style.overflow = originalBodyOverflow
+      document.documentElement.style.overflow = originalHtmlOverflow
       setSheetOpen(false)
     }
   }, [selected])
