@@ -115,7 +115,6 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installModalVisible, setInstallModalVisible] = useState(false)
   const [installModalType, setInstallModalType] = useState<'android'|'ios'|null>(null)
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
-  const [installShownThisSession, setInstallShownThisSession] = useState(false)
   const [splashVisible, setSplashVisible] = useState(true)
   const headerRef = useRef<HTMLElement | null>(null)
 
@@ -170,7 +169,6 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     const handler = (e: any) => {
       e.preventDefault()
       setDeferredInstallPrompt(e)
-      window.localStorage.setItem('altaris_install_prompt_available', '1')
     }
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
@@ -179,55 +177,34 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
     if (isStandalone) return
 
-    const dismissedAt = Number(localStorage.getItem('altaris_install_dismissed') || '0')
-    if (Date.now() - dismissedAt < 24 * 60 * 60 * 1000) return
-    if (localStorage.getItem('altaris_install_accepted')) return
+    const installPromptShown = sessionStorage.getItem('installPromptShown') === 'true'
+    if (installPromptShown) return
 
-    const shouldShow = localStorage.getItem('altaris_install_pending') === '1'
+    const dismissedAt = Number(localStorage.getItem('installBannerDismissed') || '0')
+    if (dismissedAt && Date.now() - dismissedAt < 24 * 60 * 60 * 1000) return
+
+    const shouldShow = sessionStorage.getItem('altaris_post_signup_install') === '1'
     if (!shouldShow) return
 
     const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
     if (isIos) {
       setInstallModalType('ios')
       setInstallModalVisible(true)
-      setInstallShownThisSession(true)
-      localStorage.setItem('altaris_install_shown', '1')
+      sessionStorage.setItem('installPromptShown', 'true')
+      sessionStorage.removeItem('altaris_post_signup_install')
       return
     }
 
     if (deferredInstallPrompt) {
       setInstallModalType('android')
       setInstallModalVisible(true)
-      setInstallShownThisSession(true)
-      localStorage.setItem('altaris_install_shown', '1')
+      sessionStorage.setItem('installPromptShown', 'true')
+      sessionStorage.removeItem('altaris_post_signup_install')
     }
-  }, [deferredInstallPrompt, installModalVisible, installBannerVisible, installShownThisSession])
-
-  useEffect(() => {
-    function onShowInstall() {
-      if (installModalVisible) return
-      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
-      if (isIos) {
-        setInstallModalType('ios')
-        setInstallModalVisible(true)
-        setInstallShownThisSession(true)
-        localStorage.setItem('altaris_install_shown', '1')
-        return
-      }
-      if (deferredInstallPrompt) {
-        setInstallModalType('android')
-        setInstallModalVisible(true)
-        setInstallShownThisSession(true)
-        localStorage.setItem('altaris_install_shown', '1')
-      }
-    }
-
-    window.addEventListener('altaris:show-install', onShowInstall)
-    return () => window.removeEventListener('altaris:show-install', onShowInstall)
-  }, [deferredInstallPrompt, installModalVisible])
+  }, [deferredInstallPrompt])
 
   useBodyScrollLock(installModalVisible)
 
@@ -278,14 +255,13 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
   function closeInstallBanner() {
     setInstallBannerVisible(false)
-    localStorage.setItem('altaris_install_dismissed', String(Date.now()))
+    localStorage.setItem('installBannerDismissed', String(Date.now()))
   }
 
   function cancelInstallPrompt() {
     setInstallModalVisible(false)
     setInstallBannerVisible(true)
-    localStorage.setItem('altaris_install_dismissed', String(Date.now()))
-    localStorage.removeItem('altaris_install_pending')
+    localStorage.setItem('installBannerDismissed', String(Date.now()))
   }
 
   async function acceptInstallPrompt() {
@@ -295,15 +271,31 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       deferredInstallPrompt.prompt()
       const choice = await deferredInstallPrompt.userChoice
       if (choice.outcome === 'accepted') {
-        localStorage.setItem('altaris_install_accepted', '1')
-        localStorage.removeItem('altaris_install_pending')
+        // installed; no further prompts needed
       } else {
         setInstallBannerVisible(true)
-        localStorage.setItem('altaris_install_dismissed', String(Date.now()))
+        localStorage.setItem('installBannerDismissed', String(Date.now()))
       }
     } catch {
       setInstallBannerVisible(true)
-      localStorage.setItem('altaris_install_dismissed', String(Date.now()))
+      localStorage.setItem('installBannerDismissed', String(Date.now()))
+    }
+  }
+
+  function openInstallFromBanner() {
+    if (typeof window === 'undefined') return
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    if (isStandalone) return
+
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
+    if (isIos) {
+      setInstallModalType('ios')
+      setInstallModalVisible(true)
+      return
+    }
+    if (deferredInstallPrompt) {
+      setInstallModalType('android')
+      setInstallModalVisible(true)
     }
   }
 
@@ -424,14 +416,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             <span
               role="button"
               tabIndex={0}
-              onClick={() => {
-                const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
-                if (isIos) {
-                  setInstallBannerVisible(false)
-                  setInstallModalType('ios')
-                  setInstallModalVisible(true)
-                }
-              }}
+              onClick={() => { openInstallFromBanner() }}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e.target as HTMLElement).click() } }}
               style={{ flex: 1, cursor: 'pointer' }}
             >
@@ -608,7 +593,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         borderRadius: '20px 20px 0 0',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
-        boxShadow: '0 -4px 30px rgba(0,0,0,0.5)',
+        boxShadow: '0 -2px 18px rgba(0,0,0,0.35)',
+        overflow: 'hidden',
       }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 62 }}>
           {NAV.map(({ href, label, icon }) => {

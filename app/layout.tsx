@@ -93,10 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               })
             }
           }
-          window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            window.__pwaPrompt = e;
-          });
+          // Install prompt is handled in app layout after signup.
         `}} />
       </body>
     </html>

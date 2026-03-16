@@ -328,7 +328,7 @@ function InvestPageContent() {
       {selected && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end', zIndex:60, backdropFilter:'blur(8px)' }}
           onClick={e=>{if(e.target===e.currentTarget)setSelected(null)}}>
-          <div style={{ background:'var(--bg-card)', borderRadius:'22px 22px 0 0', padding:24, width:'100%', maxWidth:480, margin:'0 auto', border:'1px solid var(--border)', borderBottom:'none', maxHeight:'90vh', overflowY:'auto' }}>
+          <div style={{ background:'var(--bg-card)', borderRadius:'22px 22px 0 0', padding:24, width:'100%', maxWidth:480, margin:'0 auto', border:'1px solid var(--border)', borderBottom:'none', maxHeight:'90vh', overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-y' }}>
             <div style={{ width:40, height:4, background:'var(--bg-elevated)', borderRadius:2, margin:'0 auto 20px' }}/>
 
             <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:20 }}>

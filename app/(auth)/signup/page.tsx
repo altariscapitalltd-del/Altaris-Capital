@@ -66,7 +66,7 @@ export default function SignupPage() {
       }
 
       if (typeof window !== 'undefined') {
-        localStorage.setItem('altaris_install_pending', '1')
+        sessionStorage.setItem('altaris_post_signup_install', '1')
       }
       router.push('/home')
     } catch { setError('Verification failed. Please try again.') }
