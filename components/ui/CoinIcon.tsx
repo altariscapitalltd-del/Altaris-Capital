@@ -189,6 +189,12 @@ export default function CoinIcon({
         <path d="M12 20h16M20 12v16M14 14l6 6 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       </g>
     ),
+    SHP: (
+      <g>
+        <circle cx="20" cy="20" r="20" fill="#12161F" />
+        <image href="/logos/sharp.svg" x="6" y="6" width="28" height="28" preserveAspectRatio="xMidYMid meet" />
+      </g>
+    ),
     WEB3: (
       <g>
         <circle cx="20" cy="20" r="20" fill="#10B981" />

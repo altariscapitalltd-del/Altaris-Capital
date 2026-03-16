@@ -1,8 +1,6 @@
 'use client'
-import { useEffect, useState, useRef, Suspense } from 'react'
+import { useEffect, useMemo, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import CoinIcon from '@/components/ui/CoinIcon'
-import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
 function Sparkline({ data, color, width=80, height=32 }: { data:number[], color:string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -31,6 +29,31 @@ function RiskBar({ level }: { level: number }) {
       ))}
     </div>
   )
+}
+
+
+type PlanType = {
+  id: string
+  name: string
+  class: string
+  icon: string
+  iconBg: string
+  daily: number
+  roi: string
+  dur: number
+  min: number
+  risk: number
+  investors: number
+  spots: number | null
+  badge: string | null
+  spark: number[]
+  image?: string
+}
+
+function createPlanImage(seed: string, title: string, color: string) {
+  const initials = title.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='${color}'/><stop offset='100%' stop-color='#12161F'/></linearGradient></defs><rect width='120' height='120' rx='24' fill='url(#g)'/><rect x='22' y='22' width='76' height='76' rx='18' fill='rgba(0,0,0,0.22)'/><text x='60' y='68' text-anchor='middle' font-size='34' font-weight='700' fill='#fff' font-family='Arial, sans-serif'>${initials || seed.slice(0,2).toUpperCase()}</text></svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 }
 
 // 30 investment plans across all asset classes
@@ -91,6 +114,33 @@ const CATEGORY_COLORS: Record<string,string> = {
   'Bonds':'#1D4ED8','Fixed Income':'#059669','Commodities':'#D97706','Forex':'#2563EB','ETF':'#16A34A','Hedge':'#DC2626',
 }
 
+const PLANS_WITH_SHARP: PlanType[] = PLANS.map((plan) => ({ ...plan, icon: 'SHP', iconBg: '#F2BA0E', image: createPlanImage(plan.id, plan.name, plan.iconBg) }))
+
+const EXTRA_PLANS = Array.from({ length: 70 }, (_, idx) => {
+  const source = PLANS_WITH_SHARP[idx % PLANS_WITH_SHARP.length]
+  const n = idx + 1
+  const daily = Number((Math.max(0.25, source.daily + ((idx % 6) - 2) * 0.07)).toFixed(2))
+  const dur = source.dur + (idx % 5) * 15
+  const investors = source.investors + 300 + idx * 61
+  const min = Math.max(100, source.min + (idx % 4) * 100)
+  return {
+    ...source,
+    id: `${source.id}-hot-${n}`,
+    name: `${source.name} Hot`,
+    badge: idx % 3 === 0 ? 'Hot' : source.badge,
+    daily,
+    roi: `${Math.round(daily * dur * 2.6)}%`,
+    dur,
+    min,
+    investors,
+    spots: idx % 11 === 0 ? 12 - (idx % 6) : null,
+    spark: source.spark.map((v, pointIdx) => v + ((idx + pointIdx) % 5) - 2),
+    image: createPlanImage(`${source.id}-${n}`, source.name, source.iconBg),
+  }
+})
+
+const ALL_PLANS = [...PLANS_WITH_SHARP, ...EXTRA_PLANS]
+
 export default function InvestPage() {
   return (
     <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>}>
@@ -105,14 +155,38 @@ function InvestPageContent() {
   const [category, setCategory] = useState('All')
   const [q, setQ] = useState('')
   const [sortBy, setSortBy] = useState<'roi'|'popular'|'min'|'risk'>('popular')
-  const [selected, setSelected] = useState<any>(null)
+  const [selected, setSelected] = useState<PlanType | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [amount, setAmount] = useState('')
   const [userInvestments, setUserInvestments] = useState<any[]>([])
   const [balance, setBalance] = useState(0)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{type:'success'|'error';text:string}|null>(null)
 
-  useBodyScrollLock(!!selected)
+  useEffect(() => {
+    if (!selected) return
+
+    const originalBodyOverflow = document.body.style.overflow
+    const originalHtmlOverflow = document.documentElement.style.overflow
+
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    requestAnimationFrame(() => setSheetOpen(true))
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow
+      document.documentElement.style.overflow = originalHtmlOverflow
+      setSheetOpen(false)
+    }
+  }, [selected])
+
+  const openInvestSheet = (plan: PlanType) => {
+    setSelected(plan)
+    setAmount(String(plan.min))
+    setMsg(null)
+  }
+
+  const closeInvestSheet = () => setSelected(null)
 
   useEffect(() => {
     fetch('/api/user/profile').then(r=>r.json()).then(d=>{
@@ -122,7 +196,7 @@ function InvestPageContent() {
     fetch('/api/investments').then(r=>r.json()).then(d=>setUserInvestments(d.investments||[]))
   }, [])
 
-  const filtered = PLANS
+  const filtered = ALL_PLANS
     .filter(p => category==='All' || p.class===category)
     .filter(p => q ? p.name.toLowerCase().includes(q.toLowerCase()) : true)
     .sort((a,b)=>{
@@ -132,7 +206,10 @@ function InvestPageContent() {
       return b.investors-a.investors
     })
 
+  const hotPlans = useMemo(() => ALL_PLANS.filter(plan => plan.badge === 'Hot').slice(0, 18), [])
+
   async function invest() {
+    if (!selected) return
     const amt = parseFloat(amount)
     if (!amt || amt < selected.min) { setMsg({type:'error',text:`Minimum investment is $${selected.min}`}); return }
     if (amt > balance) { setMsg({type:'error',text:'Insufficient balance'}); return }
@@ -204,6 +281,25 @@ function InvestPageContent() {
           ))}
         </div>
 
+
+        <div style={{ padding:'0 16px', marginBottom:14 }}>
+          <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:8, fontWeight:700, letterSpacing:'0.06em' }}>HOT</div>
+          <div style={{ display:'flex', gap:10, overflowX:'auto' }} className="no-scrollbar">
+            {hotPlans.map(plan => (
+              <button key={plan.id} onClick={()=>openInvestSheet(plan)}
+                style={{ minWidth:220, textAlign:'left', background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:12, color:'var(--text-primary)', fontFamily:'inherit' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                  <img src={plan.image} alt={plan.name} style={{ width:30, height:30, borderRadius:8, objectFit:'cover', border:'1px solid rgba(255,255,255,0.16)' }} />
+                  <div style={{ fontWeight:700, fontSize:12, lineHeight:1.2 }}>{plan.name}</div>
+                </div>
+                <div style={{ fontSize:18, fontWeight:900, color:'var(--brand-primary)' }}>{plan.daily}%</div>
+                <div style={{ color:'var(--text-muted)', fontSize:10, marginBottom:8 }}>daily · min ${plan.min.toLocaleString()}</div>
+                <Sparkline data={plan.spark} color={CATEGORY_COLORS[plan.class] || '#F2BA0E'} width={190} height={34} />
+              </button>
+            ))}
+          </div>
+        </div>
+
         {msg && (
           <div style={{ margin:'0 16px 12px', padding:'11px 14px', borderRadius:10, background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)', color:msg.type==='success'?'var(--success)':'var(--danger)', fontSize:13, fontWeight:600 }}>
             {msg.text}
@@ -217,14 +313,12 @@ function InvestPageContent() {
             return (
               <div key={plan.id} style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, padding:16, cursor:'pointer', transition:'all .15s' }}
                 role="button" tabIndex={0}
-                onClick={()=>{setSelected(plan);setAmount(String(plan.min));setMsg(null)}}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(plan); setAmount(String(plan.min)); setMsg(null) } }}
+                onClick={()=>openInvestSheet(plan)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openInvestSheet(plan) } }}
                 className="pressable">
                 <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
                   {/* Icon */}
-                  <div style={{ width:46, height:46, borderRadius:13, background:plan.iconBg+'22', border:`1px solid ${plan.iconBg}33`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <CoinIcon symbol={plan.icon} bg={plan.iconBg} size={36} />
-                  </div>
+                  <img src={plan.image} alt={plan.name} style={{ width:54, height:54, borderRadius:14, objectFit:'cover', border:'1px solid rgba(255,255,255,0.16)', flexShrink:0 }} />
 
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:5 }}>
@@ -277,7 +371,7 @@ function InvestPageContent() {
                   </div>
                 </div>
 
-                <button style={{ width:'100%', marginTop:14, padding:'11px', background:'rgba(242,186,14,0.1)', color:'var(--brand-primary)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:10, fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'inherit' }}>
+                <button onClick={(e)=>{e.stopPropagation(); openInvestSheet(plan)}} style={{ width:'100%', marginTop:14, padding:'11px', background:'rgba(242,186,14,0.1)', color:'var(--brand-primary)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:10, fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'inherit' }}>
                   Invest Now
                 </button>
               </div>
@@ -326,13 +420,13 @@ function InvestPageContent() {
 
       {/* ── Invest Modal ── */}
       {selected && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end', zIndex:60, backdropFilter:'blur(8px)' }}
-          onClick={e=>{if(e.target===e.currentTarget)setSelected(null)}}>
-          <div style={{ background:'var(--bg-card)', borderRadius:'22px 22px 0 0', padding:24, width:'100%', maxWidth:480, margin:'0 auto', border:'1px solid var(--border)', borderBottom:'none', maxHeight:'90vh', overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-y' }}>
-            <div style={{ width:40, height:4, background:'var(--bg-elevated)', borderRadius:2, margin:'0 auto 20px' }}/>
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:80, transition:'opacity .25s ease', opacity: sheetOpen ? 1 : 0 }}
+          onClick={e=>{if(e.target===e.currentTarget)closeInvestSheet()}}>
+          <div style={{ position:'fixed', left:'50%', transform:`translate(-50%, ${sheetOpen ? '0%' : '100%'})`, transition:'transform .25s ease', bottom:'calc(64px + env(safe-area-inset-bottom))', background:'var(--bg-card)', borderRadius:'22px 22px 18px 18px', width:'calc(100% - 20px)', maxWidth:480, border:'1px solid var(--border)', maxHeight:'calc(100dvh - 140px)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+            <div style={{ padding:'20px 24px 0' }}><div style={{ width:40, height:4, background:'var(--bg-elevated)', borderRadius:2, margin:'0 auto 20px' }}/></div><div style={{ padding:'0 24px', overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-y' }}>
 
             <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:20 }}>
-              <div style={{ width:48, height:48, borderRadius:14, background:(CATEGORY_COLORS[selected.class]||'#F2BA0E')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{selected.icon}</div>
+              <img src={selected.image} alt={selected.name} style={{ width:48, height:48, borderRadius:14, objectFit:'cover', border:'1px solid rgba(255,255,255,0.16)' }} />
               <div>
                 <div style={{ fontWeight:800, fontSize:18 }}>{selected.name}</div>
                 <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{selected.class} · {selected.dur} days · {selected.daily}% daily</div>
@@ -382,11 +476,13 @@ function InvestPageContent() {
               </div>
             )}
 
-            <div style={{ position:'sticky', bottom:0, margin:'0 -24px -24px', padding:'12px 24px calc(env(safe-area-inset-bottom) + 14px)', background:'linear-gradient(180deg, rgba(16,18,24,0) 0%, var(--bg-card) 26%)' }}>
+            </div>
+
+            <div style={{ padding:'12px 24px calc(env(safe-area-inset-bottom) + 14px)', borderTop:'1px solid var(--border)', background:'var(--bg-card)' }}>
               {msg && <div style={{ padding:'10px 14px', borderRadius:9, marginBottom:14, fontSize:13, fontWeight:600, background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)', color:msg.type==='success'?'var(--success)':'var(--danger)' }}>{msg.text}</div>}
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:10 }}>
-                <button onClick={()=>setSelected(null)} className="btn-ghost">Cancel</button>
+                <button onClick={closeInvestSheet} className="btn-ghost">Cancel</button>
                 <button onClick={invest} disabled={loading||!amount||parseFloat(amount)<selected.min}
                   style={{ padding:'14px', background:'#F2BA0E', color:'#000', border:'none', borderRadius:10, fontWeight:800, fontSize:15, cursor:'pointer', opacity:loading?0.7:1, fontFamily:'inherit' }} className="pressable">
                   {loading ? 'Investing...' : `Invest $${parseFloat(amount||'0').toLocaleString()}`}
