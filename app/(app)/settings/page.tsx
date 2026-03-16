@@ -7,6 +7,7 @@ import {
   User, Key, UserCheck, Coins, Bell, Mail, TrendingUp, Fingerprint, Shield, Smartphone,
   MessageCircle, HelpCircle, FileText, Lock, Info, LogOut,
 } from 'lucide-react'
+import { getFirebaseMessagingToken } from '@/lib/firebaseClient'
 
 function SettingRow({ icon, label, value, href, onClick, danger, toggle, toggled, onToggle }:
   { icon: React.ReactNode; label: string; value?: string; href?: string; onClick?: () => void; danger?: boolean; toggle?: boolean; toggled?: boolean; onToggle?: () => void }) {
@@ -106,7 +107,17 @@ export default function SettingsPage() {
         return
       }
 
-      await fetch('/api/user/push-subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      const token = await getFirebaseMessagingToken()
+      if (!token) {
+        setMsg({ type: 'error', text: 'Unable to register this device for push notifications.' })
+        return
+      }
+
+      await fetch('/api/user/push-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      })
       setNotifPush(true)
       setMsg({ type: 'success', text: 'Push alerts enabled. This device will receive notifications.' })
     } catch {

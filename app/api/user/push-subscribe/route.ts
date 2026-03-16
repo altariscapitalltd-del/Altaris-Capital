@@ -10,6 +10,10 @@ type Preferences = {
   investmentAlerts: boolean
 }
 
+type StoredSubscription = Preferences & {
+  token?: string | null
+}
+
 const DEFAULT_PREFS: Preferences = {
   pushAlerts: false,
   emailUpdates: true,
@@ -27,12 +31,13 @@ async function getUserId(req: NextRequest) {
   }
 }
 
-function normalizePrefs(raw: unknown): Preferences {
+function normalizeStored(raw: unknown): StoredSubscription {
   const p = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
   return {
     pushAlerts: typeof p.pushAlerts === 'boolean' ? p.pushAlerts : DEFAULT_PREFS.pushAlerts,
     emailUpdates: typeof p.emailUpdates === 'boolean' ? p.emailUpdates : DEFAULT_PREFS.emailUpdates,
     investmentAlerts: typeof p.investmentAlerts === 'boolean' ? p.investmentAlerts : DEFAULT_PREFS.investmentAlerts,
+    token: typeof p.token === 'string' ? p.token : null,
   }
 }
 
@@ -41,11 +46,12 @@ export async function GET(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { pushSubscription: true } })
-  const preferences = normalizePrefs(user?.pushSubscription)
+  const stored = normalizeStored(user?.pushSubscription)
+  const { token, ...preferences } = stored
   return NextResponse.json({
     preferences,
-    hasSubscription: true,
-    provider: 'pusher-beams',
+    hasSubscription: !!token,
+    provider: 'fcm',
   })
 }
 
@@ -53,12 +59,16 @@ export async function POST(req: NextRequest) {
   const userId = await getUserId(req)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>
+  const token = typeof body.token === 'string' ? body.token : null
+
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { pushSubscription: true } })
-  const current = normalizePrefs(user?.pushSubscription)
-  const next: Preferences = { ...current, pushAlerts: true }
+  const current = normalizeStored(user?.pushSubscription)
+  const next: StoredSubscription = { ...current, pushAlerts: true, token }
 
   await prisma.user.update({ where: { id: userId }, data: { pushSubscription: next } })
-  return NextResponse.json({ success: true, preferences: next, provider: 'pusher-beams' })
+  const { token: _, ...preferences } = next
+  return NextResponse.json({ success: true, preferences, provider: 'fcm' })
 }
 
 export async function PATCH(req: NextRequest) {
@@ -67,14 +77,16 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json().catch(() => ({})) as Record<string, unknown>
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { pushSubscription: true } })
-  const current = normalizePrefs(user?.pushSubscription)
+  const current = normalizeStored(user?.pushSubscription)
 
-  const next: Preferences = {
+  const next: StoredSubscription = {
     pushAlerts: typeof body.pushAlerts === 'boolean' ? body.pushAlerts : current.pushAlerts,
     emailUpdates: typeof body.emailUpdates === 'boolean' ? body.emailUpdates : current.emailUpdates,
     investmentAlerts: typeof body.investmentAlerts === 'boolean' ? body.investmentAlerts : current.investmentAlerts,
+    token: typeof body.token === 'string' ? body.token : current.token,
   }
 
   await prisma.user.update({ where: { id: userId }, data: { pushSubscription: next } })
-  return NextResponse.json({ success: true, preferences: next, provider: 'pusher-beams' })
+  const { token: _, ...preferences } = next
+  return NextResponse.json({ success: true, preferences, provider: 'fcm' })
 }
