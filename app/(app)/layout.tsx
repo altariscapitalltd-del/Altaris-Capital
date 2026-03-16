@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
-import Image from 'next/image'
 
 const TRENDING = ['BTC +2.34%', 'ETH +1.78%', 'SOL +5.12%', 'Smart Save 40%/yr', 'Claim $100 bonus']
 
@@ -390,7 +389,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         background: '#0a0a0a',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+        boxShadow: 'none',
       }}>
         <div style={{ paddingTop: 'calc(env(safe-area-inset-top) + 4px)', paddingRight: 14, paddingBottom: 8, paddingLeft: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <AnimatePresence>
@@ -430,19 +429,17 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           <Link href="/profile" style={{ flexShrink: 0, textDecoration: 'none' }}>
             <div style={{
               width: 34, height: 34, borderRadius: '50%',
-              background: 'linear-gradient(135deg,#F2BA0E,#FF9500)',
-              border: '2px solid rgba(242,186,14,0.5)',
+              background: '#1A1A1A',
+              border: '1px solid rgba(255,255,255,0.08)',
+              position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 800, fontSize: 14, color: '#000', overflow: 'hidden', flexShrink: 0,
             }}>
               {user?.profilePicture ? (
-                <Image
+                <img
                   src={user.profilePicture}
                   alt=""
-                  fill
-                  sizes="34px"
-                  priority
-                  style={{ objectFit: 'cover' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
                 user?.name?.[0]?.toUpperCase() || 'A'
@@ -459,7 +456,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              border: '1px solid rgba(255,255,255,0.07)',
+              border: '1px solid rgba(255,255,255,0.04)',
             }}>
               <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#4A4A4A" strokeWidth="2.5" style={{ flexShrink: 0 }}>
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/>
@@ -605,9 +602,12 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                 style={{
                   display: 'flex', flexDirection: 'column',
                   alignItems: 'center', justifyContent: 'center',
-                  gap: 4, textDecoration: 'none',
+                  gap: 3, textDecoration: 'none',
                   position: 'relative',
                   transition: 'opacity .1s',
+                  height: '100%',
+                  paddingTop: 4,
+                  paddingBottom: 4,
                 }}
               >
                 {/* Active top indicator dot — Bybit style */}
@@ -621,12 +621,13 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                 {icon(active)}
                 <span style={{
                   fontSize: 10,
-                  fontWeight: active ? 600 : 400,
+                  fontWeight: 600,
                   color: active
                     ? (href === '/invest' ? '#F2BA0E' : '#FFFFFF')
                     : '#4A4A4A',
                   transition: 'color .15s',
                   letterSpacing: '0.01em',
+                  lineHeight: '12px',
                 }}>
                   {label}
                 </span>
