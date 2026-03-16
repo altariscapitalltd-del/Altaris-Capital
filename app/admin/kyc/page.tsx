@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
 export default function AdminKYCPage() {
   const [submissions, setSubmissions] = useState<any[]>([])
@@ -9,6 +10,8 @@ export default function AdminKYCPage() {
   const [note, setNote]               = useState('')
   const [loading, setLoading]         = useState(false)
   const [msg, setMsg]                 = useState<{type:'success'|'error';text:string}|null>(null)
+
+  useBodyScrollLock(!!selected)
 
   function load() { fetch('/api/admin/kyc').then(r=>r.json()).then(d=>setSubmissions(d.submissions||[])) }
   useEffect(load,[])

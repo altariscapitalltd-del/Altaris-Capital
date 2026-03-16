@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   User, Key, UserCheck, Coins, Bell, Mail, TrendingUp, Fingerprint, Shield, Smartphone,
   MessageCircle, HelpCircle, FileText, Lock, Info, LogOut,
@@ -155,8 +156,19 @@ export default function SettingsPage() {
       <div style={{ margin:'0 16px 4px' }}>
         <Link href="/profile" style={{ textDecoration:'none' }}>
           <div style={{ background:'var(--bg-card)', borderRadius:16, border:'1px solid var(--border)', padding:16, display:'flex', alignItems:'center', gap:14 }} className="pressable">
-            <div style={{ width:54, height:54, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'2px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:22, color:'#000', flexShrink:0, overflow:'hidden' }}>
-              {user?.profilePicture ? <img src={user.profilePicture} style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : user?.name?.[0]?.toUpperCase()||'A'}
+            <div style={{ width:54, height:54, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'2px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:22, color:'#000', flexShrink:0, overflow:'hidden', position:'relative' }}>
+              {user?.profilePicture ? (
+                <Image
+                  src={user.profilePicture}
+                  alt=""
+                  fill
+                  sizes="54px"
+                  priority
+                  style={{ objectFit:'cover' }}
+                />
+              ) : (
+                user?.name?.[0]?.toUpperCase()||'A'
+              )}
             </div>
             <div style={{ flex:1 }}>
               <div style={{ fontWeight:700, fontSize:16 }}>{user?.name || 'User'}</div>

@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
+import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -123,6 +124,8 @@ export default function LandingPage() {
   const prices = useLivePrice()
   const [openFaq, setOpenFaq] = useState<number|null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useBodyScrollLock(mobileMenuOpen)
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {

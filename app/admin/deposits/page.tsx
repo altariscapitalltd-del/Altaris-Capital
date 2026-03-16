@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
 export default function AdminDepositsPage() {
   const [deposits, setDeposits] = useState<any[]>([])
@@ -8,6 +9,8 @@ export default function AdminDepositsPage() {
   const [note, setNote]         = useState('')
   const [loading, setLoading]   = useState(false)
   const [msg, setMsg]           = useState<{type:'success'|'error';text:string}|null>(null)
+
+  useBodyScrollLock(!!actionTx)
 
   function load() { fetch('/api/admin/deposits').then(r=>r.json()).then(d=>setDeposits(d.deposits||[])) }
   useEffect(load,[])

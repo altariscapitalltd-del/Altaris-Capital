@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import CoinIcon from '@/components/ui/CoinIcon'
+import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
 function Sparkline({ data, color, width=80, height=32 }: { data:number[], color:string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -110,6 +111,8 @@ function InvestPageContent() {
   const [balance, setBalance] = useState(0)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{type:'success'|'error';text:string}|null>(null)
+
+  useBodyScrollLock(!!selected)
 
   useEffect(() => {
     fetch('/api/user/profile').then(r=>r.json()).then(d=>{

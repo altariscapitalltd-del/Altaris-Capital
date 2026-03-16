@@ -4,6 +4,8 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
+import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
+import Image from 'next/image'
 
 const TRENDING = ['BTC +2.34%', 'ETH +1.78%', 'SOL +5.12%', 'Smart Save 40%/yr', 'Claim $100 bonus']
 
@@ -227,6 +229,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('altaris:show-install', onShowInstall)
   }, [deferredInstallPrompt, installModalVisible])
 
+  useBodyScrollLock(installModalVisible)
+
   useEffect(() => {
     if (!user?.id) return
     let disposed = false
@@ -446,9 +450,18 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 800, fontSize: 14, color: '#000', overflow: 'hidden', flexShrink: 0,
             }}>
-              {user?.profilePicture
-                ? <img src={user.profilePicture} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : (user?.name?.[0]?.toUpperCase() || 'A')}
+              {user?.profilePicture ? (
+                <Image
+                  src={user.profilePicture}
+                  alt=""
+                  fill
+                  sizes="34px"
+                  priority
+                  style={{ objectFit: 'cover' }}
+                />
+              ) : (
+                user?.name?.[0]?.toUpperCase() || 'A'
+              )}
             </div>
           </Link>
 
