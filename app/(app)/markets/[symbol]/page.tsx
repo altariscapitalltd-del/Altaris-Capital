@@ -107,6 +107,16 @@ export default function MarketChartPage() {
   }, [symbol])
 
 
+  async function rotateLandscape() {
+    try {
+      const orientation = (screen.orientation as any)
+      if (orientation?.lock) await orientation.lock('landscape')
+      setIsExpanded(true)
+    } catch {
+      setIsExpanded(true)
+    }
+  }
+
   async function openChartFullscreen() {
     const host = document.getElementById(`tv_chart_${pair.toLowerCase()}`)
     if (!host) return
@@ -148,7 +158,7 @@ export default function MarketChartPage() {
         </div>
       </div>
 
-      <div style={{ background: '#090b10', border: '1px solid rgba(255,255,255,0.08)', borderRadius: isExpanded ? 0 : 16, padding: 14, marginBottom: 16, position: isExpanded ? 'fixed' : 'relative', inset: isExpanded ? 0 : 'auto', zIndex: isExpanded ? 90 : 'auto' }}>
+      <div style={{ background: '#090b10', border: '1px solid rgba(255,255,255,0.08)', borderRadius: isExpanded ? 0 : 16, padding: 14, marginBottom: 16, position: isExpanded ? 'fixed' : 'relative', top: isExpanded ? 0 : 'auto', left: isExpanded ? 0 : 'auto', right: isExpanded ? 0 : 'auto', bottom: isExpanded ? 'calc(78px + env(safe-area-inset-bottom))' : 'auto', zIndex: isExpanded ? 90 : 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
           <span style={{ fontSize: 30, fontWeight: 800 }}>${displayPrice}</span>
           {change24h != null && (
@@ -158,7 +168,16 @@ export default function MarketChartPage() {
           )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
+
+          <button
+            type="button"
+            onClick={rotateLandscape}
+            style={{ border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderRadius: 10, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+          >
+            ⌗ Rotate landscape
+          </button>
+
           <button
             type="button"
             onClick={openChartFullscreen}
@@ -168,7 +187,7 @@ export default function MarketChartPage() {
           </button>
         </div>
 
-        <div id={`tv_chart_${pair.toLowerCase()}`} style={{ width: '100%', height: isExpanded ? 'calc(100dvh - 170px)' : 360, borderRadius: isExpanded ? 0 : 12, overflow: 'hidden' }} />
+        <div id={`tv_chart_${pair.toLowerCase()}`} style={{ width: '100%', height: isExpanded ? 'calc(100dvh - 250px - env(safe-area-inset-bottom))' : 360, borderRadius: isExpanded ? 0 : 12, overflow: 'hidden' }} />
 
         {isExpanded && (
           <button
