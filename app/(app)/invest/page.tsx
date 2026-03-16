@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef, Suspense } from 'react'
+import { useEffect, useMemo, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import CoinIcon from '@/components/ui/CoinIcon'
 import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
@@ -91,6 +91,32 @@ const CATEGORY_COLORS: Record<string,string> = {
   'Bonds':'#1D4ED8','Fixed Income':'#059669','Commodities':'#D97706','Forex':'#2563EB','ETF':'#16A34A','Hedge':'#DC2626',
 }
 
+const PLANS_WITH_SHARP = PLANS.map((plan) => ({ ...plan, icon: 'SHP', iconBg: '#F2BA0E' }))
+
+const EXTRA_PLANS = Array.from({ length: 70 }, (_, idx) => {
+  const source = PLANS_WITH_SHARP[idx % PLANS_WITH_SHARP.length]
+  const n = idx + 1
+  const daily = Number((Math.max(0.25, source.daily + ((idx % 6) - 2) * 0.07)).toFixed(2))
+  const dur = source.dur + (idx % 5) * 15
+  const investors = source.investors + 300 + idx * 61
+  const min = Math.max(100, source.min + (idx % 4) * 100)
+  return {
+    ...source,
+    id: `${source.id}-hot-${n}`,
+    name: `${source.name} Hot ${n}`,
+    badge: idx % 3 === 0 ? 'Hot' : source.badge,
+    daily,
+    roi: `${Math.round(daily * dur * 2.6)}%`,
+    dur,
+    min,
+    investors,
+    spots: idx % 11 === 0 ? 12 - (idx % 6) : null,
+    spark: source.spark.map((v, pointIdx) => v + ((idx + pointIdx) % 5) - 2),
+  }
+})
+
+const ALL_PLANS = [...PLANS_WITH_SHARP, ...EXTRA_PLANS]
+
 export default function InvestPage() {
   return (
     <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>}>
@@ -122,7 +148,7 @@ function InvestPageContent() {
     fetch('/api/investments').then(r=>r.json()).then(d=>setUserInvestments(d.investments||[]))
   }, [])
 
-  const filtered = PLANS
+  const filtered = ALL_PLANS
     .filter(p => category==='All' || p.class===category)
     .filter(p => q ? p.name.toLowerCase().includes(q.toLowerCase()) : true)
     .sort((a,b)=>{
@@ -131,6 +157,8 @@ function InvestPageContent() {
       if (sortBy==='risk') return a.risk-b.risk
       return b.investors-a.investors
     })
+
+  const hotPlans = useMemo(() => ALL_PLANS.filter(plan => plan.badge === 'Hot').slice(0, 18), [])
 
   async function invest() {
     const amt = parseFloat(amount)
@@ -202,6 +230,24 @@ function InvestPageContent() {
               {s.l}
             </button>
           ))}
+        </div>
+
+
+        <div style={{ padding:'0 16px', marginBottom:14 }}>
+          <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:8, fontWeight:700, letterSpacing:'0.06em' }}>HOT</div>
+          <div style={{ display:'flex', gap:10, overflowX:'auto' }} className="no-scrollbar">
+            {hotPlans.map(plan => (
+              <button key={plan.id} onClick={()=>{setSelected(plan);setAmount(String(plan.min));setMsg(null)}}
+                style={{ minWidth:170, textAlign:'left', background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:12, padding:10, color:'var(--text-primary)', fontFamily:'inherit' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                  <CoinIcon symbol={plan.icon} bg={plan.iconBg} size={24} />
+                  <div style={{ fontWeight:700, fontSize:12, lineHeight:1.2 }}>{plan.name}</div>
+                </div>
+                <div style={{ fontSize:18, fontWeight:900, color:'var(--brand-primary)' }}>{plan.daily}%</div>
+                <div style={{ color:'var(--text-muted)', fontSize:10 }}>daily · min ${plan.min.toLocaleString()}</div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {msg && (
@@ -328,11 +374,11 @@ function InvestPageContent() {
       {selected && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end', zIndex:60, backdropFilter:'blur(8px)' }}
           onClick={e=>{if(e.target===e.currentTarget)setSelected(null)}}>
-          <div style={{ background:'var(--bg-card)', borderRadius:'22px 22px 0 0', padding:24, width:'100%', maxWidth:480, margin:'0 auto', border:'1px solid var(--border)', borderBottom:'none', maxHeight:'90vh', overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-y' }}>
-            <div style={{ width:40, height:4, background:'var(--bg-elevated)', borderRadius:2, margin:'0 auto 20px' }}/>
+          <div style={{ background:'var(--bg-card)', borderRadius:'22px 22px 0 0', width:'100%', maxWidth:480, margin:'0 auto', border:'1px solid var(--border)', borderBottom:'none', maxHeight:'90vh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+            <div style={{ padding:'20px 24px 0' }}><div style={{ width:40, height:4, background:'var(--bg-elevated)', borderRadius:2, margin:'0 auto 20px' }}/></div><div style={{ padding:'0 24px', overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-y' }}>
 
             <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:20 }}>
-              <div style={{ width:48, height:48, borderRadius:14, background:(CATEGORY_COLORS[selected.class]||'#F2BA0E')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{selected.icon}</div>
+              <div style={{ width:48, height:48, borderRadius:14, background:(CATEGORY_COLORS[selected.class]||'#F2BA0E')+'22', display:'flex', alignItems:'center', justifyContent:'center' }}><CoinIcon symbol={selected.icon} bg={selected.iconBg} size={34} /></div>
               <div>
                 <div style={{ fontWeight:800, fontSize:18 }}>{selected.name}</div>
                 <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{selected.class} · {selected.dur} days · {selected.daily}% daily</div>
@@ -382,7 +428,9 @@ function InvestPageContent() {
               </div>
             )}
 
-            <div style={{ position:'sticky', bottom:0, margin:'0 -24px -24px', padding:'12px 24px calc(env(safe-area-inset-bottom) + 14px)', background:'linear-gradient(180deg, rgba(16,18,24,0) 0%, var(--bg-card) 26%)' }}>
+            </div>
+
+            <div style={{ padding:'12px 24px calc(env(safe-area-inset-bottom) + 14px)', borderTop:'1px solid var(--border)', background:'var(--bg-card)' }}>
               {msg && <div style={{ padding:'10px 14px', borderRadius:9, marginBottom:14, fontSize:13, fontWeight:600, background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)', color:msg.type==='success'?'var(--success)':'var(--danger)' }}>{msg.text}</div>}
 
               <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:10 }}>

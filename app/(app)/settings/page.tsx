@@ -13,7 +13,7 @@ function SettingRow({ icon, label, value, href, onClick, danger, toggle, toggled
   { icon: React.ReactNode; label: string; value?: string; href?: string; onClick?: () => void; danger?: boolean; toggle?: boolean; toggled?: boolean; onToggle?: () => void }) {
   const content = (
     <div className="row-item" style={{ background:'transparent', borderBottom:'1px solid var(--border)' }}
-      onClick={toggle ? onToggle : onClick}>
+      onClick={toggle ? undefined : onClick}>
       <div style={{ width:34, height:34, borderRadius:10, background: danger?'rgba(246,70,93,0.1)':'var(--bg-elevated)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color: danger ? 'var(--danger)' : 'var(--text-secondary)' }}>
         {icon}
       </div>
@@ -22,7 +22,7 @@ function SettingRow({ icon, label, value, href, onClick, danger, toggle, toggled
         {value && <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:1 }}>{value}</div>}
       </div>
       {toggle ? (
-        <div onClick={onToggle} style={{ width:44, height:26, borderRadius:99, background: toggled?'var(--brand-primary)':'var(--bg-elevated)', position:'relative', cursor:'pointer', transition:'background .2s', flexShrink:0 }}>
+        <div onClick={(e) => { e.stopPropagation(); onToggle?.() }} style={{ width:44, height:26, borderRadius:99, background: toggled?'var(--brand-primary)':'var(--bg-elevated)', position:'relative', cursor:'pointer', transition:'background .2s', flexShrink:0 }}>
           <div style={{ position:'absolute', top:3, left: toggled?22:3, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 1px 4px rgba(0,0,0,0.3)' }}/>
         </div>
       ) : (
@@ -107,15 +107,19 @@ export default function SettingsPage() {
       }
 
       const token = await getFirebaseMessagingToken()
-      if (!token) {
-        return
+      if (token) {
+        await fetch('/api/user/push-subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        })
+      } else {
+        await fetch('/api/user/push-subscribe', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pushAlerts: true }),
+        })
       }
-
-      await fetch('/api/user/push-subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      })
       setNotifPush(true)
     } catch {
     }
