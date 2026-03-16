@@ -83,6 +83,12 @@ const PLANS = [
   // ── Hedge ──
   { id:'global-macro', name:'Global Macro Strategy',  class:'Hedge',        icon:'HED',  iconBg:'#1D4ED8', daily:1.50, roi:'547%',  dur:30,  min:10000, risk:4, investors:128,  spots:8,     badge:'Platinum',  spark:[20,24,22,28,26,32,30,36,34,40,38,44,42,48,46,52,50,56,54,60] },
   { id:'longshort',    name:'Long/Short Equity',       class:'Hedge',        icon:'HED',  iconBg:'#7C3AED', daily:1.20, roi:'438%',  dur:30,  min:5000,  risk:4, investors:341,  spots:20,    badge:'Advanced',  spark:[22,26,24,30,28,34,32,38,36,42,40,46,44,50,48,54,52,58,56,62] },
+  { id:'arb-delta',    name:'Delta Neutral Arbitrage', class:'Hedge',        icon:'ARB',  iconBg:'#0EA5E9', daily:1.05, roi:'383%',  dur:35,  min:2500,  risk:3, investors:664,  spots:null,  badge:'Quant',     spark:[18,21,20,24,23,27,26,30,29,33,32,36,35,39,38,42,41,45,44,48] },
+  { id:'yield-ladder', name:'Yield Ladder Bonds',      class:'Bonds',        icon:'BND',  iconBg:'#1D4ED8', daily:0.52, roi:'190%',  dur:75,  min:300,   risk:1, investors:5320, spots:null,  badge:'Income',    spark:[28,29,28,30,29,31,30,32,31,33,32,34,33,35,34,36,35,37,36,38] },
+  { id:'token-index',  name:'Top 20 Token Index',      class:'Crypto',       icon:'IDX',  iconBg:'#14B8A6', daily:1.35, roi:'492%',  dur:28,  min:400,   risk:3, investors:2489, spots:null,  badge:'Balanced',  spark:[24,26,25,28,27,30,29,32,31,34,33,36,35,38,37,40,39,42,41,44] },
+  { id:'ai-private',   name:'AI Private Credit',       class:'Fixed Income', icon:'AIC',  iconBg:'#475569', daily:0.66, roi:'241%',  dur:55,  min:1200,  risk:2, investors:983,  spots:32,    badge:'New',       spark:[16,17,18,17,19,20,19,21,22,21,23,24,23,25,26,25,27,28,27,29] },
+  { id:'metals-plus',  name:'Metals Plus Basket',      class:'Commodities',  icon:'MTL',  iconBg:'#A16207', daily:0.58, roi:'212%',  dur:80,  min:350,   risk:2, investors:1789, spots:null,  badge:'Defensive', spark:[21,22,23,22,24,25,24,26,27,26,28,29,28,30,31,30,32,33,32,34] },
+  { id:'forex-grid',   name:'Forex Grid Engine',       class:'Forex',        icon:'FX',   iconBg:'#4338CA', daily:0.78, roi:'285%',  dur:40,  min:700,   risk:3, investors:1456, spots:40,    badge:'Active',    spark:[20,22,21,24,23,26,25,28,27,30,29,32,31,34,33,36,35,38,37,40] },
 ]
 
 const CATEGORIES = ['All','Crypto','DeFi','Stocks','Real Estate','Bonds','Fixed Income','Commodities','Forex','ETF','Hedge']
@@ -131,6 +137,10 @@ function InvestPageContent() {
       if (sortBy==='risk') return a.risk-b.risk
       return b.investors-a.investors
     })
+
+
+  const featuredHorizontal = filtered.slice(0, 8)
+  const fastActionPlans = filtered.filter(p => p.dur <= 30).slice(0, 6)
 
   async function invest() {
     const amt = parseFloat(amount)
@@ -207,6 +217,55 @@ function InvestPageContent() {
         {msg && (
           <div style={{ margin:'0 16px 12px', padding:'11px 14px', borderRadius:10, background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)', color:msg.type==='success'?'var(--success)':'var(--danger)', fontSize:13, fontWeight:600 }}>
             {msg.text}
+          </div>
+        )}
+
+
+        {/* Featured horizontal strip */}
+        {featuredHorizontal.length > 0 && (
+          <div style={{ padding:'0 16px', marginBottom:14 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+              <h3 style={{ fontSize:13, fontWeight:800, letterSpacing:'0.04em', textTransform:'uppercase', color:'var(--text-muted)' }}>Featured</h3>
+              <span style={{ color:'var(--text-muted)', fontSize:11 }}>Swipe →</span>
+            </div>
+            <div style={{ display:'flex', gap:10, overflowX:'auto', paddingBottom:2 }} className="no-scrollbar">
+              {featuredHorizontal.map(plan => (
+                <div key={`featured-${plan.id}`} role="button" tabIndex={0}
+                  onClick={()=>{setSelected(plan);setAmount(String(plan.min));setMsg(null)}}
+                  onKeyDown={(e)=>{ if (e.key==='Enter' || e.key===' ') { e.preventDefault(); setSelected(plan); setAmount(String(plan.min)); setMsg(null) } }}
+                  style={{ minWidth:228, background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:12, cursor:'pointer' }} className="pressable">
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+                    <CoinIcon symbol={plan.icon} bg={plan.iconBg} size={30} />
+                    <span style={{ fontWeight:800, color:'var(--brand-primary)', fontSize:14 }}>{plan.daily}%</span>
+                  </div>
+                  <div style={{ fontWeight:700, fontSize:13, marginBottom:4, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{plan.name}</div>
+                  <div style={{ color:'var(--text-muted)', fontSize:11, marginBottom:8 }}>${plan.min.toLocaleString()} min · {plan.dur}d</div>
+                  <Sparkline data={plan.spark} color={plan.iconBg} width={200} height={32} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Quick start vertical */}
+        {fastActionPlans.length > 0 && (
+          <div style={{ padding:'0 16px', marginBottom:14 }}>
+            <h3 style={{ fontSize:13, fontWeight:800, letterSpacing:'0.04em', textTransform:'uppercase', color:'var(--text-muted)', marginBottom:8 }}>Fast Start Plans</h3>
+            <div style={{ display:'grid', gap:8 }}>
+              {fastActionPlans.map(plan => (
+                <button key={`fast-${plan.id}`} onClick={()=>{setSelected(plan);setAmount(String(plan.min));setMsg(null)}}
+                  style={{ border:'1px solid var(--border)', background:'var(--bg-card)', borderRadius:12, padding:'10px 12px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', color:'var(--text-primary)', fontFamily:'inherit' }} className="pressable">
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <CoinIcon symbol={plan.icon} bg={plan.iconBg} size={24} />
+                    <div style={{ textAlign:'left' }}>
+                      <div style={{ fontWeight:700, fontSize:13 }}>{plan.name}</div>
+                      <div style={{ color:'var(--text-muted)', fontSize:11 }}>{plan.class} · ${plan.min.toLocaleString()} min</div>
+                    </div>
+                  </div>
+                  <div style={{ fontWeight:800, color:'var(--brand-primary)' }}>{plan.daily}%</div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -328,8 +387,8 @@ function InvestPageContent() {
       {selected && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'flex-end', zIndex:60, backdropFilter:'blur(8px)' }}
           onClick={e=>{if(e.target===e.currentTarget)setSelected(null)}}>
-          <div style={{ background:'var(--bg-card)', borderRadius:'22px 22px 0 0', padding:24, width:'100%', maxWidth:480, margin:'0 auto', border:'1px solid var(--border)', borderBottom:'none', maxHeight:'90vh', overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-y' }}>
-            <div style={{ width:40, height:4, background:'var(--bg-elevated)', borderRadius:2, margin:'0 auto 20px' }}/>
+          <div style={{ background:'var(--bg-card)', borderRadius:'22px 22px 0 0', padding:'18px 24px calc(env(safe-area-inset-bottom) + 18px)', width:'100%', maxWidth:480, margin:'0 auto', border:'1px solid var(--border)', borderBottom:'none', maxHeight:'calc(100svh - 16px)', overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-y', position:'relative' }}>
+            <div style={{ width:40, height:4, background:'var(--bg-elevated)', borderRadius:2, margin:'0 auto 20px' }}/><button type="button" onClick={()=>setSelected(null)} aria-label="Close" style={{ position:'absolute', top:14, right:16, width:30, height:30, borderRadius:8, border:'1px solid var(--border)', background:'var(--bg-elevated)', color:'var(--text-secondary)', cursor:'pointer' }}>×</button>
 
             <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:20 }}>
               <div style={{ width:48, height:48, borderRadius:14, background:(CATEGORY_COLORS[selected.class]||'#F2BA0E')+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>{selected.icon}</div>
