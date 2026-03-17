@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useMemo, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { createPortal } from 'react-dom'
+import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
 function Sparkline({ data, color, width=80, height=32 }: { data:number[], color:string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -50,11 +52,7 @@ type PlanType = {
   image?: string
 }
 
-function createPlanImage(seed: string, title: string, color: string) {
-  const initials = title.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='${color}'/><stop offset='100%' stop-color='#12161F'/></linearGradient></defs><rect width='120' height='120' rx='24' fill='url(#g)'/><rect x='22' y='22' width='76' height='76' rx='18' fill='rgba(0,0,0,0.22)'/><text x='60' y='68' text-anchor='middle' font-size='34' font-weight='700' fill='#fff' font-family='Arial, sans-serif'>${initials || seed.slice(0,2).toUpperCase()}</text></svg>`
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
-}
+const planImagePath = (planId: string) => `/invest-icons/plans/${planId}.svg`
 
 // 30 investment plans across all asset classes
 const PLANS = [
@@ -114,7 +112,7 @@ const CATEGORY_COLORS: Record<string,string> = {
   'Bonds':'#1D4ED8','Fixed Income':'#059669','Commodities':'#D97706','Forex':'#2563EB','ETF':'#16A34A','Hedge':'#DC2626',
 }
 
-const PLANS_WITH_SHARP: PlanType[] = PLANS.map((plan) => ({ ...plan, icon: 'SHP', iconBg: '#F2BA0E', image: createPlanImage(plan.id, plan.name, plan.iconBg) }))
+const PLANS_WITH_SHARP: PlanType[] = PLANS.map((plan) => ({ ...plan, icon: 'SHP', iconBg: '#F2BA0E', image: planImagePath(plan.id) }))
 
 const EXTRA_PLANS = Array.from({ length: 70 }, (_, idx) => {
   const source = PLANS_WITH_SHARP[idx % PLANS_WITH_SHARP.length]
@@ -135,7 +133,7 @@ const EXTRA_PLANS = Array.from({ length: 70 }, (_, idx) => {
     investors,
     spots: idx % 11 === 0 ? 12 - (idx % 6) : null,
     spark: source.spark.map((v, pointIdx) => v + ((idx + pointIdx) % 5) - 2),
-    image: createPlanImage(`${source.id}-${n}`, source.name, source.iconBg),
+    image: planImagePath(`${source.id}-hot-${n}`),
   }
 })
 
@@ -163,19 +161,12 @@ function InvestPageContent() {
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{type:'success'|'error';text:string}|null>(null)
 
+  useBodyScrollLock(!!selected)
+
   useEffect(() => {
     if (!selected) return
-
-    const originalBodyOverflow = document.body.style.overflow
-    const originalHtmlOverflow = document.documentElement.style.overflow
-
-    document.body.style.overflow = 'hidden'
-    document.documentElement.style.overflow = 'hidden'
     requestAnimationFrame(() => setSheetOpen(true))
-
     return () => {
-      document.body.style.overflow = originalBodyOverflow
-      document.documentElement.style.overflow = originalHtmlOverflow
       setSheetOpen(false)
     }
   }, [selected])
@@ -419,11 +410,32 @@ function InvestPageContent() {
       )}
 
       {/* ── Invest Modal ── */}
-      {selected && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'flex-end', justifyContent:'center', zIndex:80, transition:'opacity .25s ease', opacity: sheetOpen ? 1 : 0 }}
-          onClick={e=>{if(e.target===e.currentTarget)closeInvestSheet()}}>
-          <div style={{ position:'fixed', left:'50%', transform:`translate(-50%, ${sheetOpen ? '0%' : '100%'})`, transition:'transform .25s ease', bottom:'calc(64px + env(safe-area-inset-bottom))', background:'var(--bg-card)', borderRadius:'22px 22px 18px 18px', width:'calc(100% - 20px)', maxWidth:480, border:'1px solid var(--border)', maxHeight:'calc(100dvh - 140px)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
-            <div style={{ padding:'20px 24px 0' }}><div style={{ width:40, height:4, background:'var(--bg-elevated)', borderRadius:2, margin:'0 auto 20px' }}/></div><div style={{ padding:'0 24px', overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-y' }}>
+      {selected && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', zIndex:120, transition:'opacity .25s ease', opacity: sheetOpen ? 1 : 0 }}
+          onClick={e=>{if(e.target===e.currentTarget)closeInvestSheet()}}
+        >
+          <div
+            style={{
+              position:'fixed',
+              left:0,
+              right:0,
+              bottom:'calc(78px + env(safe-area-inset-bottom))',
+              margin:'0 auto',
+              transform:`translateY(${sheetOpen ? '0%' : '110%'})`,
+              transition:'transform .25s ease',
+              background:'var(--bg-card)',
+              borderRadius:'20px 20px 16px 16px',
+              width:'calc(100% - 16px)',
+              maxWidth:480,
+              border:'1px solid var(--border)',
+              maxHeight:'calc(100svh - 110px - env(safe-area-inset-bottom))',
+              display:'flex',
+              flexDirection:'column',
+              overflow:'hidden'
+            }}
+          >
+            <div style={{ padding:'14px 24px 0' }}><div style={{ width:40, height:4, background:'var(--bg-elevated)', borderRadius:2, margin:'0 auto 14px' }}/></div><div style={{ padding:'0 24px', overflowY:'auto', overscrollBehavior:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-y' }}>
 
             <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:20 }}>
               <img src={selected.image} alt={selected.name} style={{ width:48, height:48, borderRadius:14, objectFit:'cover', border:'1px solid rgba(255,255,255,0.16)' }} />
@@ -433,7 +445,6 @@ function InvestPageContent() {
               </div>
             </div>
 
-            {/* Stats */}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:20 }}>
               {[{l:'Daily ROI',v:`${selected.daily}%`,c:'var(--brand-primary)'},{l:'Annual ROI',v:selected.roi},{l:'Min',v:`$${selected.min}`}].map(({l,v,c})=>(
                 <div key={l} style={{ background:'var(--bg-elevated)', borderRadius:10, padding:12, textAlign:'center' }}>
@@ -451,7 +462,6 @@ function InvestPageContent() {
                 onFocus={e=>(e.target.style.borderColor='var(--brand-primary)')} onBlur={e=>(e.target.style.borderColor='var(--border)')}/>
             </div>
 
-            {/* Quick amounts */}
             <div style={{ display:'flex', gap:7, marginBottom:14 }}>
               {[selected.min, selected.min*2, selected.min*5, selected.min*10].map(v=>(
                 <button key={v} onClick={()=>setAmount(String(v))}
@@ -461,7 +471,6 @@ function InvestPageContent() {
               ))}
             </div>
 
-            {/* Profit calculator */}
             {amount && parseFloat(amount)>=selected.min && (
               <div style={{ background:'rgba(14,203,129,0.05)', border:'1px solid rgba(14,203,129,0.15)', borderRadius:12, padding:14, marginBottom:16 }}>
                 <div style={{ color:'var(--text-muted)', fontSize:11, marginBottom:8, fontWeight:600 }}>PROFIT ESTIMATE</div>
@@ -490,7 +499,8 @@ function InvestPageContent() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
