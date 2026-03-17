@@ -3,24 +3,31 @@ import { cookies } from 'next/headers'
 import { NextRequest } from 'next/server'
 import { prisma } from './db'
 
-const isProd = process.env.NODE_ENV === 'production'
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || (isProd ? (() => { throw new Error('JWT_SECRET is required in production') })() : 'altaris-secret-change-this')
-)
-const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || (isProd ? (() => { throw new Error('ADMIN_JWT_SECRET is required in production') })() : 'altaris-admin-secret-change-this')
-)
+const DEV_USER_SECRET = 'altaris-secret-change-this'
+const DEV_ADMIN_SECRET = 'altaris-admin-secret-change-this'
+
+function secretFor(admin = false) {
+  const key = admin ? process.env.ADMIN_JWT_SECRET : process.env.JWT_SECRET
+  if (key && key.length >= 16) return new TextEncoder().encode(key)
+  if (process.env.NODE_ENV === 'production') return null
+  return new TextEncoder().encode(admin ? DEV_ADMIN_SECRET : DEV_USER_SECRET)
+}
 
 export async function signToken(payload: Record<string, unknown>, admin = false) {
+  const secret = secretFor(admin)
+  if (!secret) throw new Error(`${admin ? 'ADMIN_JWT_SECRET' : 'JWT_SECRET'} is required in production`)
+
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
-    .sign(admin ? ADMIN_JWT_SECRET : JWT_SECRET)
+    .sign(secret)
 }
 
 export async function verifyToken(token: string, admin = false) {
   try {
-    const { payload } = await jwtVerify(token, admin ? ADMIN_JWT_SECRET : JWT_SECRET)
+    const secret = secretFor(admin)
+    if (!secret) return null
+    const { payload } = await jwtVerify(token, secret)
     return payload
   } catch {
     return null

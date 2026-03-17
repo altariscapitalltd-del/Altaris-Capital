@@ -1,7 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 function Logo() {
@@ -18,8 +18,14 @@ function Logo() {
 
 export default function SignupPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const referralCode = searchParams.get('ref') || ''
+  const [referralCode, setReferralCode] = useState('')
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      setReferralCode(params.get('ref') || '')
+    } catch {}
+  }, [])
   const [step, setStep] = useState<'form' | 'otp'>('form')
   const [userId, setUserId] = useState('')
   const [otp, setOtp] = useState('')
