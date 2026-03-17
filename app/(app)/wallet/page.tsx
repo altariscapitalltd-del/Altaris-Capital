@@ -83,6 +83,11 @@ export default function WalletPage() {
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
   const [refCode, setRefCode] = useState('')
+  const [rewardStats, setRewardStats] = useState<any>(null)
+  const [leaderboardPeriod, setLeaderboardPeriod] = useState<'weekly'|'monthly'>('monthly')
+  const [rewardLoading, setRewardLoading] = useState(false)
+  const [justUnlockedTier, setJustUnlockedTier] = useState('')
+  const [showReferralPrompt, setShowReferralPrompt] = useState(false)
 
   function loadProfile() {
     fetch('/api/user/profile')
@@ -98,7 +103,7 @@ export default function WalletPage() {
         setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
         setProfitToday(active.reduce((sum: number, i: any) => sum + i.amount * (i.dailyRoi || 0), 0))
 
-        const code = (d.user?.id || '').slice(-8).toUpperCase()
+        const code = d.user?.referralCode || (d.user?.id || '').slice(-8).toUpperCase()
         setRefCode(code || 'ALTARIS01')
       })
       .catch(() => {})
@@ -111,9 +116,29 @@ export default function WalletPage() {
       .catch(() => setTransactions([]))
   }
 
+  function loadRewards(period: 'weekly' | 'monthly' = leaderboardPeriod) {
+    setRewardLoading(true)
+    fetch(`/api/user/rewards?period=${period}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d?.error) {
+          setRewardStats(d)
+          if (d?.referralCode) setRefCode(d.referralCode)
+          const tierName = d?.stats?.currentTier?.referrals ? `${d.stats.currentTier.referrals}` : ''
+          if (tierName && sessionStorage.getItem('tier-unlocked') !== tierName) {
+            setJustUnlockedTier(tierName)
+            sessionStorage.setItem('tier-unlocked', tierName)
+            setTimeout(() => setJustUnlockedTier(''), 4200)
+          }
+        }
+      })
+      .finally(() => setRewardLoading(false))
+  }
+
   useEffect(() => {
     loadProfile()
     loadTransactions()
+    loadRewards('monthly')
 
     fetch('/api/wallet/addresses')
       .then((r) => r.json())
@@ -135,6 +160,11 @@ export default function WalletPage() {
     window.addEventListener('balance:refresh', handler)
     return () => window.removeEventListener('balance:refresh', handler)
   }, [])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => loadRewards(leaderboardPeriod), 15000)
+    return () => window.clearInterval(timer)
+  }, [leaderboardPeriod])
 
   useEffect(() => {
     if (tab !== 'deposit' || depositMode !== 'select') return
@@ -261,6 +291,7 @@ export default function WalletPage() {
         return
       }
       setMsg({ type: 'success', text: 'Withdrawal request submitted successfully' })
+      setShowReferralPrompt(true)
       setAmount('')
       setWithdrawAddress('')
       loadProfile()
@@ -299,8 +330,8 @@ export default function WalletPage() {
   }
 
   async function shareReferral() {
-    const referralUrl = `${window.location.origin}/signup?ref=${refCode}`
-    const text = `Join me on Altaris Capital and earn referral rewards: ${referralUrl}`
+    const referralUrl = rewardStats?.referralLink || `${window.location.origin}/signup?ref=${refCode}`
+    const text = `I’m using this investment app that manages investments for you. Join with my referral link and get a bonus when you start investing: ${referralUrl}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Join Altaris Capital', text, url: referralUrl })
@@ -309,6 +340,12 @@ export default function WalletPage() {
     }
     navigator.clipboard.writeText(referralUrl)
     setMsg({ type: 'success', text: 'Referral link copied to clipboard.' })
+  }
+
+  function copyReferralLink() {
+    const referralUrl = rewardStats?.referralLink || `${window.location.origin}/signup?ref=${refCode}`
+    navigator.clipboard.writeText(referralUrl)
+    setMsg({ type: 'success', text: 'Referral link copied.' })
   }
 
   function closeDashboard() {
@@ -550,18 +587,94 @@ export default function WalletPage() {
             <div style={{ width: 36 }} />
           </div>
 
+          {justUnlockedTier && <div style={{ background:'rgba(14,203,129,0.15)', border:'1px solid rgba(14,203,129,0.35)', color:'#0ECB81', borderRadius:12, padding:'10px 12px', marginBottom:12, fontWeight:700 }}>🎉 Congratulations! You unlocked referral tier {justUnlockedTier}.</div>}
+
           <div style={{ marginBottom: 14, background: 'linear-gradient(155deg, rgba(242,186,14,0.2), rgba(21,26,33,1) 38%, rgba(11,14,17,1))', border: '1px solid rgba(242,186,14,0.24)', borderRadius: 18, padding: 16 }}>
-            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Referral Rewards</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 14 }}>Invite friends and unlock bonus tiers. Earn recurring referral commission on qualifying deposits and investments.</div>
+            <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>Referral Growth Engine</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 14 }}>Invite, track progress, hit tiers, and earn from your referral network across 3 levels.</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
               <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Your Code</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>{refCode}</div></div>
-              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Referral Rate</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>Up to 30%</div></div>
-              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Bonus Pool</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>$100+</div></div>
+              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Reward Balance</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>${Number(rewardStats?.rewardBalance || 0).toFixed(2)}</div></div>
+              <div style={{ background: 'rgba(0,0,0,0.22)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Tier</div><div style={{ fontWeight: 800, fontSize: 13, marginTop: 2 }}>{rewardStats?.stats?.currentTier?.referrals ? `${rewardStats.stats.currentTier.referrals} referrals` : 'Starter'}</div></div>
             </div>
-            <button onClick={shareReferral} className="btn-primary" style={{ width: '100%' }}>Share referral link</button>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+              <button onClick={shareReferral} className="btn-primary" style={{ width: '100%' }}>Share referral link</button>
+              <button onClick={copyReferralLink} className="btn-ghost" style={{ width:'100%' }}>Copy link</button>
+            </div>
+          </div>
+
+          <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:14, marginBottom:12 }}>
+            <div style={{ fontWeight:800, marginBottom:10 }}>Referral statistics</div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8, fontSize:12 }}>
+              <div>Total invited: <strong>{rewardStats?.stats?.totalInvited || 0}</strong></div>
+              <div>Qualified: <strong>{rewardStats?.stats?.qualified || 0}</strong></div>
+              <div>Pending: <strong>{rewardStats?.stats?.pending || 0}</strong></div>
+              <div>Earnings: <strong>${Number(rewardStats?.stats?.totalReferralEarnings || 0).toFixed(2)}</strong></div>
+              <div>Level 1: <strong>{rewardStats?.stats?.level1 || 0}</strong></div>
+              <div>Level 2: <strong>{rewardStats?.stats?.level2 || 0}</strong></div>
+              <div>Level 3: <strong>{rewardStats?.stats?.level3 || 0}</strong></div>
+              <div>Network earnings: <strong>${Number(rewardStats?.stats?.totalNetworkEarnings || 0).toFixed(2)}</strong></div>
+            </div>
+          </div>
+
+          <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:14, marginBottom:12 }}>
+            <div style={{ fontWeight:800, marginBottom:8 }}>Progress to next tier</div>
+            <div style={{ color:'var(--text-muted)', fontSize:12, marginBottom:8 }}>Current referrals: {rewardStats?.stats?.qualified || 0} • Next reward tier: {rewardStats?.stats?.nextTier?.referrals || 50} referrals • Reward: {rewardStats?.stats?.nextTier?.vip ? 'VIP Investor' : `$${rewardStats?.stats?.nextTier?.reward || 0}`}</div>
+            <div style={{ height:10, borderRadius:999, background:'rgba(255,255,255,0.08)', overflow:'hidden' }}>
+              <div style={{ width:`${rewardStats?.stats?.nextTierProgress || 0}%`, height:'100%', background:'linear-gradient(90deg,#F2BA0E,#FFD86B)' }} />
+            </div>
+          </div>
+
+          <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:14, marginBottom:12 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+              <div style={{ fontWeight:800 }}>Top referrers leaderboard</div>
+              <div style={{ display:'flex', gap:6 }}>
+                <button className="btn-ghost" onClick={() => { setLeaderboardPeriod('weekly'); loadRewards('weekly') }} style={{ fontSize:11, padding:'6px 8px' }}>Weekly</button>
+                <button className="btn-ghost" onClick={() => { setLeaderboardPeriod('monthly'); loadRewards('monthly') }} style={{ fontSize:11, padding:'6px 8px' }}>Monthly</button>
+              </div>
+            </div>
+            {(rewardStats?.leaderboard || []).map((row: any) => (
+              <div key={row.rank} style={{ display:'grid', gridTemplateColumns:'40px 1fr auto', gap:8, padding:'8px 0', borderBottom:'1px solid var(--border)' }}>
+                <div style={{ color:'var(--text-muted)' }}>#{row.rank}</div>
+                <div>{row.user}</div>
+                <div style={{ fontWeight:700 }}>{row.totalReferrals}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:14, marginBottom:12 }}>
+            <div style={{ fontWeight:800, marginBottom:8 }}>Limited-time campaigns</div>
+            {(rewardStats?.campaignProgress || []).map((c: any) => (
+              <div key={c.id} style={{ padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
+                <div style={{ fontWeight:700, fontSize:13 }}>{c.title}</div>
+                <div style={{ color:'var(--text-muted)', fontSize:12 }}>{c.current}/{c.targetQualified} qualified • Reward ${c.rewardAmount} {c.completed ? '• Claimed' : ''}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:14, marginBottom:12 }}>
+            <div style={{ fontWeight:800, marginBottom:8 }}>VIP Investor benefits</div>
+            <div style={{ color:'var(--text-muted)', fontSize:12, display:'grid', gap:4 }}>
+              <span>• Free stock reward</span>
+              <span>• 90% cashback protection during first month of market dip</span>
+              <span>• Access to exclusive investment benefits</span>
+            </div>
+          </div>
+
+          {rewardLoading && <div style={{ color:'var(--text-muted)', fontSize:12, textAlign:'center' }}>Updating rewards...</div>}
+        </div>
+      )}
+      {showReferralPrompt && (
+        <div style={{ position:'fixed', left:16, right:16, bottom:24, zIndex:160, background:'rgba(11,14,17,0.96)', border:'1px solid rgba(242,186,14,0.3)', borderRadius:12, padding:12 }}>
+          <div style={{ fontWeight:700, fontSize:13, marginBottom:4 }}>You just completed a key account action 🎯</div>
+          <div style={{ color:'var(--text-muted)', fontSize:12, marginBottom:10 }}>Invite friends and earn referral bonuses for every investor you bring.</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            <button className="btn-primary" onClick={() => { setShowReferralPrompt(false); setTab('reward') }}>Share now</button>
+            <button className="btn-ghost" onClick={() => setShowReferralPrompt(false)}>Later</button>
           </div>
         </div>
       )}
+
       {/* Full-screen crypto receive dashboard */}
       {tab === 'deposit' && depositMode === 'crypto' && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 130, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
