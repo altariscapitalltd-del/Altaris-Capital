@@ -7,10 +7,17 @@ type KycStatus = 'NOT_SUBMITTED' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'
 
 const STEPS = [
   { id: 'personal', label: 'Personal Info' },
-  { id: 'document', label: 'ID Document' },
-  { id: 'selfie', label: 'Selfie Check' },
+  { id: 'selfie', label: 'Selfie Capture' },
   { id: 'review', label: 'Review & Submit' },
 ]
+
+function TickIcon({ muted = false }: { muted?: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path d="m3.5 8 3 3 6-6" stroke={muted ? 'var(--text-muted)' : '#000'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
 function StatusLogo({ status }: { status: KycStatus }) {
   const palette = status === 'APPROVED'
@@ -26,9 +33,7 @@ function StatusLogo({ status }: { status: KycStatus }) {
       <svg width="46" height="46" viewBox="0 0 64 64" fill="none" aria-hidden>
         <path d="M32 6 12 14v18c0 14 9 22 20 26 11-4 20-12 20-26V14L32 6Z" stroke={palette.stroke} strokeWidth="3.2" strokeLinejoin="round" />
         <path d="M22 31.5 29 38l13-13" stroke={status === 'REJECTED' ? 'transparent' : palette.stroke} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
-        {status === 'REJECTED' && (
-          <path d="m24 24 16 16m0-16-16 16" stroke={palette.stroke} strokeWidth="3.4" strokeLinecap="round" />
-        )}
+        {status === 'REJECTED' && <path d="m24 24 16 16m0-16-16 16" stroke={palette.stroke} strokeWidth="3.4" strokeLinecap="round" />}
       </svg>
     </div>
   )
@@ -40,11 +45,8 @@ export default function KYCPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [form, setForm] = useState({ firstName: '', lastName: '', dob: '', country: '', docType: 'passport', docNumber: '' })
-  const [docFile, setDocFile] = useState<File | null>(null)
+  const [form, setForm] = useState({ firstName: '', lastName: '', dob: '', country: '' })
   const [selfieFile, setSelfieFile] = useState<File | null>(null)
-
-  const docRef = useRef<HTMLInputElement>(null)
   const selfieRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -74,19 +76,19 @@ export default function KYCPage() {
   }, [status])
 
   async function submit() {
+    if (!selfieFile) return
     setSubmitting(true)
     setMsg(null)
     const fd = new FormData()
     Object.entries(form).forEach(([k, v]) => fd.append(k, v))
-    if (docFile) fd.append('documentFile', docFile)
-    if (selfieFile) fd.append('selfieFile', selfieFile)
+    fd.append('selfieFile', selfieFile)
 
     const res = await fetch('/api/user/kyc', { method: 'POST', body: fd })
     const data = await res.json()
     if (res.ok) {
       setStatus('PENDING_REVIEW')
       sessionStorage.removeItem('kyc-rejected-shown')
-      setMsg({ type: 'success', text: 'KYC submitted successfully. Our compliance team is reviewing your documents.' })
+      setMsg({ type: 'success', text: 'KYC submitted successfully. Our compliance team is reviewing your selfie.' })
     } else setMsg({ type: 'error', text: data.error || 'Failed to submit KYC.' })
     setSubmitting(false)
   }
@@ -100,12 +102,11 @@ export default function KYCPage() {
           <StatusLogo status={status} />
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase' }}>KYC status</p>
           <h2 style={{ margin: '6px 0 10px', fontSize: 26, fontWeight: 800 }}>{statusTitle}</h2>
-
           {status === 'APPROVED' && <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Your identity has been verified. You now have full account access.</p>}
-          {status === 'PENDING_REVIEW' && <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Documents received. Reviews usually complete in 1–2 business days.</p>}
+          {status === 'PENDING_REVIEW' && <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Selfie received. Reviews usually complete in 1–2 business days.</p>}
           {status === 'REJECTED' && (
             <>
-              <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Your previous verification was rejected. Please submit a new clear document set.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Your previous verification was rejected. Please submit a new selfie.</p>
               <button onClick={() => setStatus('NOT_SUBMITTED')} className="btn-primary" style={{ width: '100%', marginTop: 10 }}>Start New Verification</button>
             </>
           )}
@@ -118,20 +119,19 @@ export default function KYCPage() {
     <div style={{ padding: '0 16px 32px', maxWidth: 680, margin: '0 auto' }}>
       <div style={{ padding: '12px 0 18px' }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6 }}>Identity verification</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Not verified • Complete this flow to move your account to Pending, then Verified after approval.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Not verified • Submit your details and a live selfie for compliance review.</p>
       </div>
 
-      <div style={{ display: 'flex', marginBottom: 26 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 24 }}>
         {STEPS.map((s, i) => (
-          <div key={s.id} style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ margin: '0 auto 8px', width: 34, height: 34, borderRadius: '50%', border: `2px solid ${i <= step ? 'var(--brand-primary)' : 'var(--border)'}`, background: i < step ? 'var(--brand-primary)' : 'transparent', display: 'grid', placeItems: 'center' }}>
-              {i < step ? (
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="m3.5 8 3 3 6-6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              ) : (
-                <span style={{ fontSize: 12, fontWeight: 700, color: i === step ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{i + 1}</span>
-              )}
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', border: `2px solid ${i < step ? 'var(--brand-primary)' : i === step ? 'var(--brand-primary)' : 'var(--border)'}`, background: i < step ? 'var(--brand-primary)' : 'transparent', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              {i < step ? <TickIcon /> : <span style={{ fontWeight: 700, fontSize: 12, color: i === step ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{i + 1}</span>}
             </div>
-            <span style={{ fontSize: 11, color: i === step ? 'var(--text-primary)' : 'var(--text-muted)' }}>{s.label}</span>
+            <div style={{ marginLeft: 8, minWidth: 0 }}>
+              <div style={{ fontSize: 11, color: i === step ? 'var(--text-primary)' : 'var(--text-muted)' }}>{s.label}</div>
+            </div>
+            {i < STEPS.length - 1 && <div style={{ height: 2, flex: 1, margin: '0 8px', background: i < step ? 'var(--brand-primary)' : 'var(--border)', borderRadius: 99 }} />}
           </div>
         ))}
       </div>
@@ -151,39 +151,29 @@ export default function KYCPage() {
 
       {step === 1 && (
         <div style={{ display: 'grid', gap: 12 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-            {[{ id: 'passport', l: 'Passport' }, { id: 'drivers_license', l: 'License' }, { id: 'national_id', l: 'National ID' }].map((d) => (
-              <button key={d.id} onClick={() => setForm((f) => ({ ...f, docType: d.id }))} style={{ borderRadius: 10, border: `1px solid ${form.docType === d.id ? 'var(--brand-primary)' : 'var(--border)'}`, padding: 10, background: form.docType === d.id ? 'rgba(242,186,14,0.08)' : 'var(--bg-card)', color: 'var(--text-primary)' }}>{d.l}</button>
-            ))}
+          <div style={{ textAlign: 'center', padding: '8px 0 2px' }}>
+            <div style={{ width: 190, height: 190, margin: '0 auto', borderRadius: '50%', border: '3px dashed var(--brand-primary)', background: 'var(--bg-card)', display: 'grid', placeItems: 'center' }}>
+              <div>
+                <div style={{ width: 84, height: 84, borderRadius: '50%', margin: '0 auto 8px', background: 'rgba(242,186,14,0.15)', display: 'grid', placeItems: 'center' }}>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="1.7"><path d="M14.5 6h-5L8 8H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-3l-1.5-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Round selfie capture</div>
+              </div>
+            </div>
           </div>
-          <input className="input" value={form.docNumber} onChange={(e) => setForm((f) => ({ ...f, docNumber: e.target.value }))} placeholder="Document number" />
-          <button onClick={() => docRef.current?.click()} className="btn-ghost" style={{ border: '1px dashed var(--border)', minHeight: 58 }}>{docFile ? `Uploaded: ${docFile.name}` : 'Upload government ID'}</button>
-          <input ref={docRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
+          <button onClick={() => selfieRef.current?.click()} className="btn-ghost" style={{ border: '1px dashed var(--border)', minHeight: 58 }}>{selfieFile ? `Selfie uploaded: ${selfieFile.name}` : 'Take/upload selfie'}</button>
+          <input ref={selfieRef} type="file" accept="image/*" capture="user" style={{ display: 'none' }} onChange={(e) => setSelfieFile(e.target.files?.[0] || null)} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <button onClick={() => setStep(0)} className="btn-ghost">Back</button>
-            <button disabled={!docFile || !form.docNumber} onClick={() => setStep(2)} className="btn-primary">Continue</button>
+            <button disabled={!selfieFile} onClick={() => setStep(2)} className="btn-primary">Review</button>
           </div>
         </div>
       )}
 
       {step === 2 && (
         <div style={{ display: 'grid', gap: 12 }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 12, color: 'var(--text-muted)', fontSize: 13 }}>
-            Make sure your face is clear, no glare, and your ID is visible.
-          </div>
-          <button onClick={() => selfieRef.current?.click()} className="btn-ghost" style={{ border: '1px dashed var(--border)', minHeight: 58 }}>{selfieFile ? `Uploaded: ${selfieFile.name}` : 'Upload selfie with your ID'}</button>
-          <input ref={selfieRef} type="file" accept="image/*" capture="user" style={{ display: 'none' }} onChange={(e) => setSelfieFile(e.target.files?.[0] || null)} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <button onClick={() => setStep(1)} className="btn-ghost">Back</button>
-            <button disabled={!selfieFile} onClick={() => setStep(3)} className="btn-primary">Review</button>
-          </div>
-        </div>
-      )}
-
-      {step === 3 && (
-        <div style={{ display: 'grid', gap: 12 }}>
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
-            {[{ l: 'Full name', v: `${form.firstName} ${form.lastName}` }, { l: 'Date of birth', v: form.dob }, { l: 'Country', v: form.country }, { l: 'Document', v: `${form.docType.replace('_', ' ')} • ${form.docNumber}` }, { l: 'ID file', v: docFile?.name || '—' }, { l: 'Selfie', v: selfieFile?.name || '—' }].map((row) => (
+            {[{ l: 'Full name', v: `${form.firstName} ${form.lastName}` }, { l: 'Date of birth', v: form.dob }, { l: 'Country', v: form.country }, { l: 'Selfie', v: selfieFile?.name || '—' }].map((row) => (
               <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: '9px 0', fontSize: 13 }}>
                 <span style={{ color: 'var(--text-muted)' }}>{row.l}</span><span>{row.v}</span>
               </div>
@@ -191,8 +181,8 @@ export default function KYCPage() {
           </div>
           {msg && <div style={{ background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)', padding: 10, borderRadius: 10, fontSize: 13 }}>{msg.text}</div>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <button onClick={() => setStep(2)} className="btn-ghost">Back</button>
-            <button onClick={submit} disabled={submitting} className="btn-primary">{submitting ? 'Submitting...' : 'Submit verification'}</button>
+            <button onClick={() => setStep(1)} className="btn-ghost">Back</button>
+            <button onClick={submit} disabled={submitting || !selfieFile} className="btn-primary">{submitting ? 'Submitting...' : 'Submit verification'}</button>
           </div>
         </div>
       )}

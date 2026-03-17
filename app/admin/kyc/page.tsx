@@ -114,7 +114,7 @@ export default function AdminKYCPage() {
                 </div>
               ))}
             </div>
-            <a href={`/uploads/kyc/${selected.documentPath}`} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginBottom: 14, color: '#F2BA0E' }}>Open uploaded document</a>
+            <a href={`/api/admin/kyc/document?path=${encodeURIComponent(selected.documentPath)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginBottom: 14, color: '#F2BA0E' }}>Open uploaded document</a>
             <label style={{ display: 'block', color: '#444', fontSize: 11, fontWeight: 600, marginBottom: 7, letterSpacing: '0.06em' }}>REVIEW NOTE</label>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} style={{ width: '100%', background: '#1A1A1A', color: '#fff', padding: 12, borderRadius: 9, border: '1px solid rgba(255,255,255,0.07)', fontSize: 13, fontFamily: 'inherit', outline: 'none', resize: 'none', minHeight: 70, boxSizing: 'border-box', marginBottom: 16 }}
               placeholder="Approve or reject note…" />
