@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div style={{ display: 'grid', placeItems: 'center', minHeight: '55vh' }}>
-        <div className="animate-spin" style={{ width: 36, height: 36, border: '3px solid rgba(242,186,14,.2)', borderTopColor: '#f2ba0e', borderRadius: '999px' }} />
+        <div className="animate-spin" style={{ width: 40, height: 40, border: '3px solid rgba(99,102,241,.2)', borderTopColor: '#8b5cf6', borderRadius: '999px' }} />
       </div>
     )
   }
@@ -52,14 +52,16 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="admin-heading">
-        <div>
-          <h1>Admin Overview</h1>
-          <div className="admin-muted">Live metrics updated at {now}</div>
+      <div className="admin-panel" style={{ padding: 18, marginBottom: 16 }}>
+        <div className="admin-heading" style={{ marginBottom: 0 }}>
+          <div>
+            <h1>Executive Operations Hub</h1>
+            <div className="admin-muted">Live metrics updated at {now}</div>
+          </div>
+          <Link href="/admin/users" className="admin-nav-link" style={{ width: 'fit-content' }}>
+            <span>Manage users</span>
+          </Link>
         </div>
-        <Link href="/admin/users" className="admin-nav-link" style={{ width: 'fit-content' }}>
-          Manage users
-        </Link>
       </div>
 
       <section className="admin-grid">
@@ -82,35 +84,34 @@ export default function AdminDashboard() {
       </section>
 
       <section className="admin-panel" style={{ overflow: 'hidden' }}>
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,.06)', display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(148,163,184,.2)', display: 'flex', justifyContent: 'space-between' }}>
           <h2 style={{ fontSize: 15 }}>Recent Sign-ups</h2>
-          <Link href="/admin/users" style={{ color: '#f2ba0e', textDecoration: 'none', fontSize: 12 }}>
+          <Link href="/admin/users" style={{ color: '#c4b5fd', textDecoration: 'none', fontSize: 12 }}>
             View all
           </Link>
         </div>
-
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+          <table style={{ minWidth: 600 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+              <tr>
                 {['User', 'Email', 'KYC', 'Balance', 'Joined'].map((h) => (
-                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#666', fontSize: 11 }}>{h}</th>
+                  <th key={h}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {signups.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: 30, textAlign: 'center', color: '#666' }}>No recent signups</td>
+                  <td colSpan={5} style={{ padding: 30, textAlign: 'center', color: '#94a3b8' }}>No recent signups</td>
                 </tr>
               ) : (
                 signups.map((u: any) => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,.05)' }}>
-                    <td style={{ padding: '12px 14px' }}>{u.name || '—'}</td>
-                    <td style={{ padding: '12px 14px', color: '#8a8a8a' }}>{u.email}</td>
-                    <td style={{ padding: '12px 14px', color: '#f2ba0e' }}>{u.kycStatus === 'APPROVED' ? 'Verified' : 'Pending'}</td>
-                    <td style={{ padding: '12px 14px' }}>${(u.balances?.find((b: any) => b.currency === 'USD')?.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                    <td style={{ padding: '12px 14px', color: '#8a8a8a' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
+                  <tr key={u.id}>
+                    <td>{u.name || '—'}</td>
+                    <td style={{ color: '#cbd5e1' }}>{u.email}</td>
+                    <td style={{ color: '#c4b5fd' }}>{u.kycStatus === 'APPROVED' ? 'Verified' : 'Pending'}</td>
+                    <td>${(u.balances?.find((b: any) => b.currency === 'USD')?.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                    <td style={{ color: '#a5b4fc' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
                   </tr>
                 ))
               )}

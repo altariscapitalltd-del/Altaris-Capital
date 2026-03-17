@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
+import { Bell, BarChart3, CircleDollarSign, CreditCard, LayoutDashboard, Menu, MessageCircle, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
 
 type PendingCounts = {
   deposits: number
@@ -14,22 +15,23 @@ type PendingCounts = {
 }
 
 const NAV_ITEMS = [
-  { href: '/admin/dashboard', label: 'Overview' },
-  { href: '/admin/users', label: 'Users' },
-  { href: '/admin/deposits', label: 'Deposits' },
-  { href: '/admin/withdrawals', label: 'Withdrawals' },
-  { href: '/admin/kyc', label: 'KYC Review' },
-  { href: '/admin/chat', label: 'Support' },
-  { href: '/admin/notifications', label: 'Broadcast' },
-  { href: '/admin/settings', label: 'Settings' },
+  { href: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { href: '/admin/users', label: 'Users', icon: Users },
+  { href: '/admin/deposits', label: 'Deposits', icon: CircleDollarSign },
+  { href: '/admin/withdrawals', label: 'Withdrawals', icon: CreditCard },
+  { href: '/admin/kyc', label: 'KYC Review', icon: ShieldCheck },
+  { href: '/admin/chat', label: 'Support', icon: MessageCircle },
+  { href: '/admin/notifications', label: 'Broadcast', icon: Bell },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 const MOBILE_NAV_ITEMS = [
-  { href: '/admin/dashboard', label: 'Home' },
-  { href: '/admin/users', label: 'Users' },
-  { href: '/admin/deposits', label: 'Deposits' },
-  { href: '/admin/kyc', label: 'KYC' },
-  { href: '/admin/settings', label: 'Settings' },
+  { href: '/admin/dashboard', label: 'Home', icon: LayoutDashboard },
+  { href: '/admin/users', label: 'Users', icon: UserRound },
+  { href: '/admin/deposits', label: 'Deposits', icon: CircleDollarSign },
+  { href: '/admin/kyc', label: 'KYC', icon: ShieldCheck },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -103,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
           <button className="admin-close-mobile" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
-            ✕
+            <X size={16} />
           </button>
         </div>
 
@@ -111,9 +113,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {NAV_ITEMS.map((item) => {
             const active = pathname.startsWith(item.href)
             const badge = badges[item.href as keyof typeof badges] ?? 0
+            const Icon = item.icon
             return (
               <Link key={item.href} href={item.href} className={`admin-nav-link ${active ? 'active' : ''}`} onClick={() => setMobileMenuOpen(false)}>
-                <span>{item.label}</span>
+                <span><Icon size={15} />{item.label}</span>
                 {badge > 0 && <em>{badge}</em>}
               </Link>
             )
@@ -126,7 +129,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="admin-content-wrap">
         <header className="admin-topbar">
           <button className="admin-open-mobile" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
-            ☰
+            <Menu size={18} />
           </button>
           <div className="admin-live">
             <span />
@@ -146,8 +149,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {MOBILE_NAV_ITEMS.map((item) => {
             const active = pathname.startsWith(item.href)
             const badge = badges[item.href as keyof typeof badges] ?? 0
+            const Icon = item.icon
             return (
               <Link key={item.href} href={item.href} className={`admin-bottom-link ${active ? 'active' : ''}`}>
+                <Icon size={15} />
                 <span>{item.label}</span>
                 {badge > 0 && <em>{badge}</em>}
               </Link>

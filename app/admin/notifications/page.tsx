@@ -39,7 +39,7 @@ export default function AdminNotificationsPage() {
 
       {msg && <div style={{background:msg.type==='success'?'rgba(14,203,129,0.08)':'rgba(246,70,93,0.08)',border:`1px solid ${msg.type==='success'?'rgba(14,203,129,0.2)':'rgba(246,70,93,0.2)'}`,borderRadius:10,padding:'11px 16px',marginBottom:16,fontSize:13,color:msg.type==='success'?'#0ECB81':'#F6465D'}}>{msg.text}</div>}
 
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:16}}>
         {/* Compose */}
         <div style={{background:'#111',border:'1px solid rgba(255,255,255,0.06)',borderRadius:16,padding:20}}>
           <h2 style={{fontSize:14,fontWeight:700,marginBottom:16}}>Compose Message</h2>
