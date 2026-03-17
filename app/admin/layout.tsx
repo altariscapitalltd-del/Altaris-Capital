@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
-import { Bell, BarChart3, CircleDollarSign, CreditCard, LayoutDashboard, Menu, MessageCircle, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
+import { Bell, BarChart3, CircleDollarSign, CreditCard, LayoutDashboard, Menu, MessageCircle, Search, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
 
 type PendingCounts = {
   deposits: number
@@ -15,14 +15,14 @@ type PendingCounts = {
 }
 
 const NAV_ITEMS = [
-  { href: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/deposits', label: 'Deposits', icon: CircleDollarSign },
   { href: '/admin/withdrawals', label: 'Withdrawals', icon: CreditCard },
   { href: '/admin/kyc', label: 'KYC Review', icon: ShieldCheck },
   { href: '/admin/chat', label: 'Support', icon: MessageCircle },
   { href: '/admin/notifications', label: 'Broadcast', icon: Bell },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -98,10 +98,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className={`admin-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         <div className="admin-sidebar-head">
           <div className="admin-brand">
-            <AltarisLogoMark size={22} />
+            <AltarisLogoMark size={20} />
             <div>
-              <div>Altaris Admin</div>
-              <small>Operations Center</small>
+              <div>Altaris</div>
+              <small>Admin Suite</small>
             </div>
           </div>
           <button className="admin-close-mobile" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
@@ -131,15 +131,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button className="admin-open-mobile" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
             <Menu size={18} />
           </button>
-          <div className="admin-live">
-            <span />
-            System Live
+          <div className="admin-top-meta">
+            <div className="admin-search-pill"><Search size={13}/> Search records</div>
+            <div className="admin-live"><span />System Live</div>
           </div>
           <div className="admin-top-actions">
             <small>{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</small>
-            <Link href="/" target="_blank">
-              View Main App
-            </Link>
+            <Link href="/" target="_blank">View App</Link>
           </div>
         </header>
 

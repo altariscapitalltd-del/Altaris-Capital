@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="blue-chip-hot-41">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#105168"/>
+      <stop offset="100%" stop-color="#06d5b3"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="14" fill="#0b1225" stroke="url(#g)" stroke-width="3"/>
+  <circle cx="32" cy="23" r="10" fill="url(#g)" opacity="0.95"/>
+  <path d="M18 46c4-6 9-9 14-9s10 3 14 9" fill="none" stroke="#c4b5fd" stroke-width="4" stroke-linecap="round"/>
+  <text x="32" y="57" text-anchor="middle" fill="#e2e8f0" font-size="8" font-family="Arial, sans-serif">BC</text>
+</svg>

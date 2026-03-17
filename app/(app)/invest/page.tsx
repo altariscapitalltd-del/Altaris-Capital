@@ -52,56 +52,7 @@ type PlanType = {
   image?: string
 }
 
-const PLAN_SVG_BY_ID: Record<string, string> = {
-  'btc-yield': '/invest-icons/bitcoin-logo.svg',
-  'eth-stake': '/invest-icons/ethereum.svg',
-  'defi-accel': '/invest-icons/coins.svg',
-  altcoin: '/invest-icons/coin-stack.svg',
-  'btc-micro': '/invest-icons/bitcoin-logo.svg',
-  'web3-venture': '/invest-icons/network.svg',
-  'us-tech': '/invest-icons/chart-square.svg',
-  dividend: '/invest-icons/coins.svg',
-  sp500: '/invest-icons/analytics.svg',
-  'blue-chip': '/invest-icons/briefcase.svg',
-  'ai-stocks': '/invest-icons/chip.svg',
-  'reit-us': '/invest-icons/building.svg',
-  'reit-asia': '/invest-icons/building.svg',
-  'dev-fund': '/invest-icons/buildings.svg',
-  'reit-global': '/invest-icons/home-1.svg',
-  'us-treasury': '/invest-icons/bank.svg',
-  'corp-bond': '/invest-icons/bank.svg',
-  'hi-yield-bond': '/invest-icons/badge-dollar.svg',
-  'em-bond': '/invest-icons/document-text.svg',
-  'smart-save': '/invest-icons/safe.svg',
-  stablecoin: '/invest-icons/wallet-money.svg',
-  gold: '/invest-icons/gold.svg',
-  silver: '/invest-icons/silver.svg',
-  energy: '/invest-icons/lightning.svg',
-  'usd-eur': '/invest-icons/exchange-rate.svg',
-  'em-fx': '/invest-icons/globe.svg',
-  'asia-fx': '/invest-icons/world.svg',
-  'clean-energy': '/invest-icons/leaf.svg',
-  'health-etf': '/invest-icons/heart-pulse.svg',
-  'global-macro': '/invest-icons/line-chart.svg',
-  longshort: '/invest-icons/arrows-up-down.svg',
-}
-
-const CLASS_SVG_FALLBACK: Record<string, string> = {
-  Crypto: '/invest-icons/bitcoin-logo.svg',
-  DeFi: '/invest-icons/network.svg',
-  Stocks: '/invest-icons/chart-square.svg',
-  'Real Estate': '/invest-icons/building.svg',
-  Bonds: '/invest-icons/bank.svg',
-  'Fixed Income': '/invest-icons/safe.svg',
-  Commodities: '/invest-icons/gold.svg',
-  Forex: '/invest-icons/exchange-rate.svg',
-  ETF: '/invest-icons/analytics.svg',
-  Hedge: '/invest-icons/line-chart.svg',
-}
-
-function getPlanImage(plan: PlanType) {
-  return PLAN_SVG_BY_ID[plan.id] || CLASS_SVG_FALLBACK[plan.class] || '/invest-icons/coins.svg'
-}
+const planImagePath = (planId: string) => `/invest-icons/plans/${planId}.svg`
 
 // 30 investment plans across all asset classes
 const PLANS = [
@@ -161,7 +112,7 @@ const CATEGORY_COLORS: Record<string,string> = {
   'Bonds':'#1D4ED8','Fixed Income':'#059669','Commodities':'#D97706','Forex':'#2563EB','ETF':'#16A34A','Hedge':'#DC2626',
 }
 
-const PLANS_WITH_SHARP: PlanType[] = PLANS.map((plan) => ({ ...plan, icon: 'SHP', iconBg: '#F2BA0E', image: getPlanImage(plan) }))
+const PLANS_WITH_SHARP: PlanType[] = PLANS.map((plan) => ({ ...plan, icon: 'SHP', iconBg: '#F2BA0E', image: planImagePath(plan.id) }))
 
 const EXTRA_PLANS = Array.from({ length: 70 }, (_, idx) => {
   const source = PLANS_WITH_SHARP[idx % PLANS_WITH_SHARP.length]
@@ -182,7 +133,7 @@ const EXTRA_PLANS = Array.from({ length: 70 }, (_, idx) => {
     investors,
     spots: idx % 11 === 0 ? 12 - (idx % 6) : null,
     spark: source.spark.map((v, pointIdx) => v + ((idx + pointIdx) % 5) - 2),
-    image: source.image || getPlanImage(source),
+    image: planImagePath(`${source.id}-hot-${n}`),
   }
 })
 
