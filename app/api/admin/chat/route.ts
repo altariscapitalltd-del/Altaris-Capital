@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { trigger, userChannel, adminChannel } from '@/lib/pusher'
+import { notifyUser } from '@/lib/push'
 
 export async function GET(req: NextRequest) {
   const admin = await getAdminUser(req)
@@ -61,6 +62,14 @@ export async function POST(req: NextRequest) {
 
   await trigger(userChannel(userId), 'chat:message', { ...msg, sender: 'admin' })
   await trigger(adminChannel, 'chat:message', { ...msg, sender: 'admin', userId })
+
+  await notifyUser(
+    prisma,
+    userId,
+    'Support reply',
+    `Support replied: ${text.trim().slice(0, 140)}`,
+    '/support'
+  )
 
   return NextResponse.json({ message: msg })
 }
