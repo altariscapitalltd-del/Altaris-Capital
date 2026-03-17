@@ -52,56 +52,7 @@ type PlanType = {
   image?: string
 }
 
-const PLAN_SVG_BY_ID: Record<string, string> = {
-  'btc-yield': 'https://www.svgrepo.com/show/303449/bitcoin-logo.svg',
-  'eth-stake': 'https://www.svgrepo.com/show/353528/ethereum.svg',
-  'defi-accel': 'https://www.svgrepo.com/show/375531/coins.svg',
-  altcoin: 'https://www.svgrepo.com/show/408086/coin-stack.svg',
-  'btc-micro': 'https://www.svgrepo.com/show/303449/bitcoin-logo.svg',
-  'web3-venture': 'https://www.svgrepo.com/show/520240/network.svg',
-  'us-tech': 'https://www.svgrepo.com/show/457912/chart-square.svg',
-  dividend: 'https://www.svgrepo.com/show/434049/coins.svg',
-  sp500: 'https://www.svgrepo.com/show/522282/analytics.svg',
-  'blue-chip': 'https://www.svgrepo.com/show/490528/briefcase.svg',
-  'ai-stocks': 'https://www.svgrepo.com/show/530585/chip.svg',
-  'reit-us': 'https://www.svgrepo.com/show/532034/building.svg',
-  'reit-asia': 'https://www.svgrepo.com/show/532034/building.svg',
-  'dev-fund': 'https://www.svgrepo.com/show/533520/buildings.svg',
-  'reit-global': 'https://www.svgrepo.com/show/526753/home-1.svg',
-  'us-treasury': 'https://www.svgrepo.com/show/443157/bank.svg',
-  'corp-bond': 'https://www.svgrepo.com/show/525629/bank.svg',
-  'hi-yield-bond': 'https://www.svgrepo.com/show/511291/badge-dollar.svg',
-  'em-bond': 'https://www.svgrepo.com/show/525511/document-text.svg',
-  'smart-save': 'https://www.svgrepo.com/show/521414/safe.svg',
-  stablecoin: 'https://www.svgrepo.com/show/533696/wallet-money.svg',
-  gold: 'https://www.svgrepo.com/show/440162/gold.svg',
-  silver: 'https://www.svgrepo.com/show/508699/silver.svg',
-  energy: 'https://www.svgrepo.com/show/533002/lightning.svg',
-  'usd-eur': 'https://www.svgrepo.com/show/384421/exchange-rate.svg',
-  'em-fx': 'https://www.svgrepo.com/show/532038/globe.svg',
-  'asia-fx': 'https://www.svgrepo.com/show/530444/world.svg',
-  'clean-energy': 'https://www.svgrepo.com/show/532016/leaf.svg',
-  'health-etf': 'https://www.svgrepo.com/show/515153/heart-pulse.svg',
-  'global-macro': 'https://www.svgrepo.com/show/521566/line-chart.svg',
-  longshort: 'https://www.svgrepo.com/show/525829/arrows-up-down.svg',
-}
-
-const CLASS_SVG_FALLBACK: Record<string, string> = {
-  Crypto: 'https://www.svgrepo.com/show/303449/bitcoin-logo.svg',
-  DeFi: 'https://www.svgrepo.com/show/520240/network.svg',
-  Stocks: 'https://www.svgrepo.com/show/457912/chart-square.svg',
-  'Real Estate': 'https://www.svgrepo.com/show/532034/building.svg',
-  Bonds: 'https://www.svgrepo.com/show/443157/bank.svg',
-  'Fixed Income': 'https://www.svgrepo.com/show/521414/safe.svg',
-  Commodities: 'https://www.svgrepo.com/show/440162/gold.svg',
-  Forex: 'https://www.svgrepo.com/show/384421/exchange-rate.svg',
-  ETF: 'https://www.svgrepo.com/show/522282/analytics.svg',
-  Hedge: 'https://www.svgrepo.com/show/521566/line-chart.svg',
-}
-
-function getPlanImage(plan: PlanType) {
-  return PLAN_SVG_BY_ID[plan.id] || CLASS_SVG_FALLBACK[plan.class] || 'https://www.svgrepo.com/show/434049/coins.svg'
-}
+const planImagePath = (planId: string) => `/invest-icons/plans/${planId}.svg`
 
 // 30 investment plans across all asset classes
 const PLANS = [
@@ -161,7 +112,7 @@ const CATEGORY_COLORS: Record<string,string> = {
   'Bonds':'#1D4ED8','Fixed Income':'#059669','Commodities':'#D97706','Forex':'#2563EB','ETF':'#16A34A','Hedge':'#DC2626',
 }
 
-const PLANS_WITH_SHARP: PlanType[] = PLANS.map((plan) => ({ ...plan, icon: 'SHP', iconBg: '#F2BA0E', image: getPlanImage(plan) }))
+const PLANS_WITH_SHARP: PlanType[] = PLANS.map((plan) => ({ ...plan, icon: 'SHP', iconBg: '#F2BA0E', image: planImagePath(plan.id) }))
 
 const EXTRA_PLANS = Array.from({ length: 70 }, (_, idx) => {
   const source = PLANS_WITH_SHARP[idx % PLANS_WITH_SHARP.length]
@@ -182,7 +133,7 @@ const EXTRA_PLANS = Array.from({ length: 70 }, (_, idx) => {
     investors,
     spots: idx % 11 === 0 ? 12 - (idx % 6) : null,
     spark: source.spark.map((v, pointIdx) => v + ((idx + pointIdx) % 5) - 2),
-    image: source.image || getPlanImage(source),
+    image: planImagePath(`${source.id}-hot-${n}`),
   }
 })
 
