@@ -26,11 +26,25 @@ function StatusLogo({ status }: { status: KycStatus }) {
       <svg width="46" height="46" viewBox="0 0 64 64" fill="none" aria-hidden>
         <path d="M32 6 12 14v18c0 14 9 22 20 26 11-4 20-12 20-26V14L32 6Z" stroke={palette.stroke} strokeWidth="3.2" strokeLinejoin="round" />
         <path d="M22 31.5 29 38l13-13" stroke={status === 'REJECTED' ? 'transparent' : palette.stroke} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
-        {status === 'REJECTED' && (
-          <path d="m24 24 16 16m0-16-16 16" stroke={palette.stroke} strokeWidth="3.4" strokeLinecap="round" />
-        )}
+        {status === 'REJECTED' && <path d="m24 24 16 16m0-16-16 16" stroke={palette.stroke} strokeWidth="3.4" strokeLinecap="round" />}
       </svg>
     </div>
+  )
+}
+
+function RoundUploadCard({ title, subtitle, active, onClick }: { title: string; subtitle: string; active: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 0 }}>
+      <div style={{ width: 210, height: 210, margin: '0 auto', borderRadius: '50%', border: `2px dashed ${active ? 'var(--success)' : 'var(--border)'}`, background: active ? 'var(--success-bg)' : 'var(--bg-card)', display: 'grid', placeItems: 'center', transition: 'all .2s' }}>
+        <div style={{ textAlign: 'center', padding: '0 18px' }}>
+          <div style={{ margin: '0 auto 10px', width: 52, height: 52, borderRadius: '50%', background: active ? 'rgba(14,203,129,0.14)' : 'rgba(242,186,14,0.12)', display: 'grid', placeItems: 'center' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={active ? 'var(--success)' : 'var(--brand-primary)'} strokeWidth="2"><path d="M4 7h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', marginBottom: 4 }}>{title}</div>
+          <div style={{ fontSize: 12, color: active ? 'var(--success)' : 'var(--text-muted)' }}>{subtitle}</div>
+        </div>
+      </div>
+    </button>
   )
 }
 
@@ -48,22 +62,17 @@ export default function KYCPage() {
   const selfieRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetch('/api/user/kyc')
-      .then((r) => r.json())
-      .then((d) => {
-        const incoming = (d.status || 'NOT_SUBMITTED') as KycStatus
-        if (incoming === 'REJECTED') {
-          const alreadyShown = sessionStorage.getItem('kyc-rejected-shown') === '1'
-          if (alreadyShown) setStatus('NOT_SUBMITTED')
-          else {
-            setStatus('REJECTED')
-            sessionStorage.setItem('kyc-rejected-shown', '1')
-          }
-        } else {
-          setStatus(incoming)
+    fetch('/api/user/kyc').then((r) => r.json()).then((d) => {
+      const incoming = (d.status || 'NOT_SUBMITTED') as KycStatus
+      if (incoming === 'REJECTED') {
+        const alreadyShown = sessionStorage.getItem('kyc-rejected-shown') === '1'
+        if (alreadyShown) setStatus('NOT_SUBMITTED')
+        else {
+          setStatus('REJECTED')
+          sessionStorage.setItem('kyc-rejected-shown', '1')
         }
-      })
-      .finally(() => setLoading(false))
+      } else setStatus(incoming)
+    }).finally(() => setLoading(false))
   }, [])
 
   const statusTitle = useMemo(() => {
@@ -80,7 +89,6 @@ export default function KYCPage() {
     Object.entries(form).forEach(([k, v]) => fd.append(k, v))
     if (docFile) fd.append('documentFile', docFile)
     if (selfieFile) fd.append('selfieFile', selfieFile)
-
     const res = await fetch('/api/user/kyc', { method: 'POST', body: fd })
     const data = await res.json()
     if (res.ok) {
@@ -100,15 +108,9 @@ export default function KYCPage() {
           <StatusLogo status={status} />
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase' }}>KYC status</p>
           <h2 style={{ margin: '6px 0 10px', fontSize: 26, fontWeight: 800 }}>{statusTitle}</h2>
-
           {status === 'APPROVED' && <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Your identity has been verified. You now have full account access.</p>}
           {status === 'PENDING_REVIEW' && <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Documents received. Reviews usually complete in 1–2 business days.</p>}
-          {status === 'REJECTED' && (
-            <>
-              <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Your previous verification was rejected. Please submit a new clear document set.</p>
-              <button onClick={() => setStatus('NOT_SUBMITTED')} className="btn-primary" style={{ width: '100%', marginTop: 10 }}>Start New Verification</button>
-            </>
-          )}
+          {status === 'REJECTED' && <><p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Your previous verification was rejected. Please submit a new clear document set.</p><button onClick={() => setStatus('NOT_SUBMITTED')} className="btn-primary" style={{ width: '100%', marginTop: 10 }}>Start New Verification</button></>}
         </div>
       </div>
     )
@@ -125,11 +127,7 @@ export default function KYCPage() {
         {STEPS.map((s, i) => (
           <div key={s.id} style={{ flex: 1, textAlign: 'center' }}>
             <div style={{ margin: '0 auto 8px', width: 34, height: 34, borderRadius: '50%', border: `2px solid ${i <= step ? 'var(--brand-primary)' : 'var(--border)'}`, background: i < step ? 'var(--brand-primary)' : 'transparent', display: 'grid', placeItems: 'center' }}>
-              {i < step ? (
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="m3.5 8 3 3 6-6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              ) : (
-                <span style={{ fontSize: 12, fontWeight: 700, color: i === step ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{i + 1}</span>
-              )}
+              {i < step ? <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="m3.5 8 3 3 6-6" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg> : <span style={{ fontSize: 12, fontWeight: 700, color: i === step ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{i + 1}</span>}
             </div>
             <span style={{ fontSize: 11, color: i === step ? 'var(--text-primary)' : 'var(--text-muted)' }}>{s.label}</span>
           </div>
@@ -157,8 +155,8 @@ export default function KYCPage() {
             ))}
           </div>
           <input className="input" value={form.docNumber} onChange={(e) => setForm((f) => ({ ...f, docNumber: e.target.value }))} placeholder="Document number" />
-          <button onClick={() => docRef.current?.click()} className="btn-ghost" style={{ border: '1px dashed var(--border)', minHeight: 58 }}>{docFile ? `Uploaded: ${docFile.name}` : 'Upload government ID'}</button>
-          <input ref={docRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
+          <RoundUploadCard title="Upload ID Document" subtitle={docFile ? docFile.name : 'Tap to open camera or files'} active={!!docFile} onClick={() => docRef.current?.click()} />
+          <input ref={docRef} type="file" accept="image/*,.pdf" capture="environment" style={{ display: 'none' }} onChange={(e) => setDocFile(e.target.files?.[0] || null)} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <button onClick={() => setStep(0)} className="btn-ghost">Back</button>
             <button disabled={!docFile || !form.docNumber} onClick={() => setStep(2)} className="btn-primary">Continue</button>
@@ -168,10 +166,7 @@ export default function KYCPage() {
 
       {step === 2 && (
         <div style={{ display: 'grid', gap: 12 }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 12, color: 'var(--text-muted)', fontSize: 13 }}>
-            Make sure your face is clear, no glare, and your ID is visible.
-          </div>
-          <button onClick={() => selfieRef.current?.click()} className="btn-ghost" style={{ border: '1px dashed var(--border)', minHeight: 58 }}>{selfieFile ? `Uploaded: ${selfieFile.name}` : 'Upload selfie with your ID'}</button>
+          <RoundUploadCard title="Upload Selfie" subtitle={selfieFile ? selfieFile.name : 'Tap the round card to use camera'} active={!!selfieFile} onClick={() => selfieRef.current?.click()} />
           <input ref={selfieRef} type="file" accept="image/*" capture="user" style={{ display: 'none' }} onChange={(e) => setSelfieFile(e.target.files?.[0] || null)} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <button onClick={() => setStep(1)} className="btn-ghost">Back</button>
@@ -184,9 +179,7 @@ export default function KYCPage() {
         <div style={{ display: 'grid', gap: 12 }}>
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 14 }}>
             {[{ l: 'Full name', v: `${form.firstName} ${form.lastName}` }, { l: 'Date of birth', v: form.dob }, { l: 'Country', v: form.country }, { l: 'Document', v: `${form.docType.replace('_', ' ')} • ${form.docNumber}` }, { l: 'ID file', v: docFile?.name || '—' }, { l: 'Selfie', v: selfieFile?.name || '—' }].map((row) => (
-              <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: '9px 0', fontSize: 13 }}>
-                <span style={{ color: 'var(--text-muted)' }}>{row.l}</span><span>{row.v}</span>
-              </div>
+              <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', padding: '9px 0', fontSize: 13 }}><span style={{ color: 'var(--text-muted)' }}>{row.l}</span><span>{row.v}</span></div>
             ))}
           </div>
           {msg && <div style={{ background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)', padding: 10, borderRadius: 10, fontSize: 13 }}>{msg.text}</div>}
