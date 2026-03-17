@@ -15,6 +15,11 @@ model User {
   passwordHash     String
   role             Role      @default(USER)
   kycStatus        KycStatus @default(NOT_SUBMITTED)
+  emailVerified    Boolean   @default(false)
+  referralCode     String    @unique
+  referredById     String?
+  rewardBalance    Float     @default(0)
+  vipInvestor      Boolean   @default(false)
   isActive         Boolean   @default(true)
   withdrawEnabled  Boolean   @default(true)
   bonusClaimed     Boolean   @default(false)
@@ -37,6 +42,12 @@ model User {
   notifications    Notification[]
   conversation     Conversation?
   auditTargets     AdminAuditLog[] @relation("TargetUser")
+  referredBy       User? @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals        User[] @relation("UserReferrals")
+  referralRecords  Referral[] @relation("ReferrerRecords")
+  referredRecord   Referral[] @relation("ReferredRecords")
+  referralRewards  ReferralReward[]
+  campaignRewards  ReferralCampaignReward[]
   @@map("users")
 }
 
@@ -174,10 +185,75 @@ model AdminAuditLog {
   @@map("admin_audit_logs")
 }
 
+
+
+model Referral {
+  id                  String         @id @default(cuid())
+  referrerId          String
+  referredUserId      String         @unique
+  status              ReferralStatus @default(PENDING)
+  signedUpAt          DateTime       @default(now())
+  emailVerifiedAt     DateTime?
+  kycVerifiedAt       DateTime?
+  minDepositAt        DateTime?
+  qualifiedAt         DateTime?
+  firstDepositAmount  Float          @default(0)
+  campaignCounted     Boolean        @default(false)
+  referrer            User           @relation("ReferrerRecords", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUser        User           @relation("ReferredRecords", fields: [referredUserId], references: [id], onDelete: Cascade)
+  @@index([referrerId])
+  @@map("referrals")
+}
+
+model ReferralReward {
+  id          String   @id @default(cuid())
+  userId       String
+  referralId   String?
+  kind         String
+  amount       Float
+  level        Int?
+  note         String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
+  @@map("referral_rewards")
+}
+
+model ReferralCampaign {
+  id                String   @id @default(cuid())
+  title             String
+  description       String?
+  targetQualified   Int
+  rewardAmount      Float
+  startAt           DateTime
+  endAt             DateTime
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  rewards           ReferralCampaignReward[]
+  @@map("referral_campaigns")
+}
+
+model ReferralCampaignReward {
+  id          String   @id @default(cuid())
+  campaignId  String
+  userId      String
+  amount      Float
+  createdAt   DateTime @default(now())
+  campaign    ReferralCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([campaignId, userId])
+  @@map("referral_campaign_rewards")
+}
+
 enum Role {
   USER
   ADMIN
   SUPER_ADMIN
+}
+
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
 }
 
 enum KycStatus {

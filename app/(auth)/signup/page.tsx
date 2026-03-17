@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 function Logo() {
@@ -18,6 +18,8 @@ function Logo() {
 
 export default function SignupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const referralCode = searchParams.get('ref') || ''
   const [step, setStep] = useState<'form' | 'otp'>('form')
   const [userId, setUserId] = useState('')
   const [otp, setOtp] = useState('')
@@ -34,7 +36,7 @@ export default function SignupPage() {
     try {
       const res = await fetch('/api/auth/signup', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password }),
+        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password, referralCode: referralCode || undefined }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
@@ -106,6 +108,11 @@ export default function SignupPage() {
 
           {step === 'form' ? (
             <form onSubmit={handleSignup}>
+              {referralCode && (
+                <div style={{ background:'rgba(14,203,129,0.1)', border:'1px solid rgba(14,203,129,0.28)', borderRadius:8, padding:'10px 12px', marginBottom:16, color:'#0ECB81', fontSize:13 }}>
+                  Referral applied: <strong>{referralCode}</strong>
+                </div>
+              )}
               <label style={{ display:'block', color:'#B0B3B8', fontSize:13, marginBottom:6 }}>Full Name</label>
               <input style={inputStyle} placeholder="John Doe" value={form.name} required
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
