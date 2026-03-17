@@ -186,6 +186,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .admin-top-actions small{color:#666}
 .admin-top-actions a{font-size:12px;text-decoration:none;color:#aaa;padding:6px 10px;border:1px solid rgba(255,255,255,.1);border-radius:8px}
 .admin-page{padding:20px}
+.admin-bottom-nav{display:none}
 .admin-panel{background:#101010;border:1px solid rgba(255,255,255,.08);border-radius:16px}
 .admin-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px;flex-wrap:wrap}
 .admin-heading h1{font-size:24px}
@@ -202,6 +203,10 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   .admin-open-mobile{display:inline-flex;width:34px;height:34px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#c1c1c1;align-items:center;justify-content:center}
   .admin-close-mobile{display:inline-flex;width:28px;height:28px;border:none;border-radius:8px;background:rgba(255,255,255,.06);color:#bdbdbd;align-items:center;justify-content:center}
   .admin-topbar{padding:0 12px}
-  .admin-page{padding:14px}
+  .admin-page{padding:14px 14px calc(90px + env(safe-area-inset-bottom))}
+  .admin-bottom-nav{position:fixed;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:8px 10px calc(10px + env(safe-area-inset-bottom));background:rgba(9,9,9,.98);border-top:1px solid rgba(255,255,255,.08);z-index:45}
+  .admin-bottom-link{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-decoration:none;color:#818181;font-size:11px;padding:8px 4px;border-radius:8px;position:relative}
+  .admin-bottom-link.active{color:#f2ba0e;background:rgba(242,186,14,.08)}
+  .admin-bottom-link em{position:absolute;top:2px;right:8px;min-width:16px;height:16px;border-radius:999px;background:#f6465d;color:#fff;font-size:9px;font-style:normal;display:flex;align-items:center;justify-content:center;padding:0 4px}
 }
 @media (max-width: 620px){.admin-grid{grid-template-columns:1fr}}

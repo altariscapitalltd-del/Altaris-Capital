@@ -24,6 +24,14 @@ const NAV_ITEMS = [
   { href: '/admin/settings', label: 'Settings' },
 ]
 
+const MOBILE_NAV_ITEMS = [
+  { href: '/admin/dashboard', label: 'Home' },
+  { href: '/admin/users', label: 'Users' },
+  { href: '/admin/deposits', label: 'Deposits' },
+  { href: '/admin/kyc', label: 'KYC' },
+  { href: '/admin/settings', label: 'Settings' },
+]
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -133,6 +141,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         <main className="admin-page">{children}</main>
+
+        <nav className="admin-bottom-nav" aria-label="Admin mobile navigation">
+          {MOBILE_NAV_ITEMS.map((item) => {
+            const active = pathname.startsWith(item.href)
+            const badge = badges[item.href as keyof typeof badges] ?? 0
+            return (
+              <Link key={item.href} href={item.href} className={`admin-bottom-link ${active ? 'active' : ''}`}>
+                <span>{item.label}</span>
+                {badge > 0 && <em>{badge}</em>}
+              </Link>
+            )
+          })}
+        </nav>
       </div>
     </div>
   )
