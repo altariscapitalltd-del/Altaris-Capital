@@ -64,8 +64,12 @@ export async function PATCH(req: NextRequest) {
       })
 
       await notifyUser(prisma, tx.userId, 'Deposit Confirmed', `Your deposit of $${tx.amount} has been confirmed and added to your account.`, '/wallet')
-      await awardMultiLevelDepositCommissions(prisma, tx.userId, tx.amount)
-      await evaluateReferralQualification(prisma, tx.userId)
+      try {
+        await awardMultiLevelDepositCommissions(prisma, tx.userId, tx.amount)
+        await evaluateReferralQualification(prisma, tx.userId)
+      } catch (error) {
+        console.warn('[admin/deposits] referral post-processing skipped', error)
+      }
       return NextResponse.json({ success: true })
     }
 

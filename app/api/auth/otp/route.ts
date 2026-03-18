@@ -36,9 +36,17 @@ export async function POST(req: NextRequest) {
     if (!result.success) return NextResponse.json({ error: result.error }, { status: 400 })
 
     if (purpose === 'SIGNUP') {
-      await prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } })
-      const { evaluateReferralQualification } = await import('@/lib/referrals')
-      await evaluateReferralQualification(prisma, user.id)
+      try {
+        await prisma.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } })
+      } catch (error) {
+        console.warn('[auth/otp] emailVerifiedAt update skipped', error)
+      }
+      try {
+        const { evaluateReferralQualification } = await import('@/lib/referrals')
+        await evaluateReferralQualification(prisma, user.id)
+      } catch (error) {
+        console.warn('[auth/otp] referral qualification skipped', error)
+      }
       const token = await signToken({ userId: user.id, role: user.role })
       const res = NextResponse.json({ success: true, user: { id: user.id, name: user.name, role: user.role } })
       res.cookies.set('token', token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 7 })

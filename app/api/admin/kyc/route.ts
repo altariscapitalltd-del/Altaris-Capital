@@ -32,7 +32,11 @@ export async function PATCH(req: NextRequest) {
       prisma.kycSubmission.update({ where: { userId }, data: { status: 'APPROVED', rejectionReason: null, reviewedAt: new Date() } }),
       prisma.user.update({ where: { id: userId }, data: { kycStatus: 'APPROVED' } }),
     ])
-    await evaluateReferralQualification(prisma, userId)
+    try {
+      await evaluateReferralQualification(prisma, userId)
+    } catch (error) {
+      console.warn('[admin/kyc] referral qualification skipped', error)
+    }
     await notifyUser(prisma, userId, 'KYC Approved', 'Your identity has been verified. Your account is now fully verified.', '/kyc')
   } else {
     await prisma.$transaction([
