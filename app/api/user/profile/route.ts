@@ -27,19 +27,50 @@ function normalizeProfilePicture<T extends { profilePicture: string | null }>(re
   return record
 }
 
+async function loadProfileData(userId: string) {
+  try {
+    const full = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        balances: true,
+        investments: { where: { status: 'ACTIVE' }, orderBy: { startDate: 'desc' } },
+        notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
+        outgoingReferrals: { include: { referredUser: { select: { id: true, name: true, email: true, kycStatus: true, emailVerifiedAt: true } } } },
+        rewardEvents: { orderBy: { createdAt: 'desc' }, take: 20 },
+      },
+    })
+    if (!full) return null
+    return {
+      ...normalizeProfilePicture(full),
+      referralCode: full.referralCode || full.id.slice(-8).toUpperCase(),
+    }
+  } catch (error) {
+    console.warn('[user/profile] advanced profile query failed, falling back to legacy mode', error)
+    const legacy = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        balances: true,
+        investments: { where: { status: 'ACTIVE' }, orderBy: { startDate: 'desc' } },
+        notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
+      },
+    })
+    if (!legacy) return null
+    return {
+      ...normalizeProfilePicture(legacy),
+      referralCode: legacy.id.slice(-8).toUpperCase(),
+      outgoingReferrals: [],
+      rewardEvents: [],
+      rewardBalance: 0,
+      rewardEarnings: 0,
+    }
+  }
+}
+
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const full = await prisma.user.findUnique({
-    where: { id: user.id },
-    include: {
-      balances: true,
-      investments: { where: { status: 'ACTIVE' }, orderBy: { startDate: 'desc' } },
-      notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
-    },
-  })
-  return NextResponse.json({ user: full ? normalizeProfilePicture(full) : null })
+  const full = await loadProfileData(user.id)
+  return NextResponse.json({ user: full })
 }
 
 export async function PUT(req: NextRequest) {
