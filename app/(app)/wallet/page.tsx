@@ -620,8 +620,12 @@ export default function WalletPage() {
           <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:14, marginBottom:12 }}>
             <div style={{ fontWeight:800, marginBottom:8 }}>Progress to next tier</div>
             <div style={{ color:'var(--text-muted)', fontSize:12, marginBottom:8 }}>Current referrals: {rewardStats?.stats?.qualified || 0} • Next reward tier: {rewardStats?.stats?.nextTier?.referrals || 50} referrals • Reward: {rewardStats?.stats?.nextTier?.vip ? 'VIP Investor' : `$${rewardStats?.stats?.nextTier?.reward || 0}`}</div>
-            <div style={{ height:10, borderRadius:999, background:'rgba(255,255,255,0.08)', overflow:'hidden' }}>
+            <div style={{ height:10, borderRadius:999, background:'rgba(255,255,255,0.08)', overflow:'hidden', marginBottom:8 }}>
               <div style={{ width:`${rewardStats?.stats?.nextTierProgress || 0}%`, height:'100%', background:'linear-gradient(90deg,#F2BA0E,#FFD86B)' }} />
+            </div>
+            <div style={{ display:'flex', justifyContent:'space-between', color:'var(--text-muted)', fontSize:11 }}>
+              <span>{rewardStats?.stats?.qualified || 0} qualified</span>
+              <span>{Math.max(0, (rewardStats?.stats?.nextTier?.referrals || 50) - (rewardStats?.stats?.qualified || 0))} to go</span>
             </div>
           </div>
 
@@ -648,6 +652,21 @@ export default function WalletPage() {
               <div key={c.id} style={{ padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
                 <div style={{ fontWeight:700, fontSize:13 }}>{c.title}</div>
                 <div style={{ color:'var(--text-muted)', fontSize:12 }}>{c.current}/{c.targetQualified} qualified • Reward ${c.rewardAmount} {c.completed ? '• Claimed' : ''}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:14, padding:14, marginBottom:12 }}>
+            <div style={{ fontWeight:800, marginBottom:8 }}>Recent reward activity</div>
+            {(rewardStats?.recentRewards || []).length === 0 ? (
+              <div style={{ color:'var(--text-muted)', fontSize:12 }}>Your referral bonuses and campaign rewards will appear here automatically.</div>
+            ) : (rewardStats?.recentRewards || []).map((reward: any) => (
+              <div key={reward.id} style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8, padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
+                <div>
+                  <div style={{ fontWeight:700, fontSize:13 }}>{reward.note || reward.kind}</div>
+                  <div style={{ color:'var(--text-muted)', fontSize:11 }}>{reward.level ? `Level ${reward.level} commission` : 'Referral reward'} • {new Date(reward.createdAt).toLocaleDateString()}</div>
+                </div>
+                <div style={{ fontWeight:800, color:'#0ECB81' }}>+${Number(reward.amount || 0).toFixed(2)}</div>
               </div>
             ))}
           </div>

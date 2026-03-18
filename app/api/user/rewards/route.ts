@@ -81,6 +81,11 @@ export async function GET(req: NextRequest) {
   }))
 
   const earnings = await prisma.referralReward.aggregate({ where: { userId: user.id }, _sum: { amount: true } })
+  const recentRewards = await prisma.referralReward.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+    take: 8,
+  })
   const level1 = await countDescendants(user.id, 1)
   const level2 = await countDescendants(user.id, 2) - level1
   const level3 = await countDescendants(user.id, 3) - level1 - level2
@@ -114,5 +119,13 @@ export async function GET(req: NextRequest) {
     })),
     campaignProgress,
     leaderboard,
+    recentRewards: recentRewards.map((reward) => ({
+      id: reward.id,
+      kind: reward.kind,
+      amount: reward.amount,
+      level: reward.level,
+      note: reward.note,
+      createdAt: reward.createdAt,
+    })),
   })
 }
