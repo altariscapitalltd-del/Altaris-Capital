@@ -8,35 +8,48 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  name             String
-  phone            String?
-  passwordHash     String
-  role             Role      @default(USER)
-  kycStatus        KycStatus @default(NOT_SUBMITTED)
-  isActive         Boolean   @default(true)
-  withdrawEnabled  Boolean   @default(true)
-  bonusClaimed     Boolean   @default(false)
-  profilePicture   String?
-  pushSubscription Json?
-  lastKnownLat     Float?
-  lastKnownLng     Float?
-  lastKnownCity    String?
-  lastKnownCountry String?
-  locationUpdatedAt DateTime?
-  createdAt        DateTime  @default(now())
-  lastLoginAt           DateTime?
-  passwordResetToken    String?
-  passwordResetExpires  DateTime?
-  balances         Balance[]
-  transactions     Transaction[]
-  investments      Investment[]
-  otps             OTP[]
-  kyc              KycSubmission?
-  notifications    Notification[]
-  conversation     Conversation?
-  auditTargets     AdminAuditLog[] @relation("TargetUser")
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  name                 String
+  phone                String?
+  passwordHash         String
+  role                 Role      @default(USER)
+  kycStatus            KycStatus @default(NOT_SUBMITTED)
+  isActive             Boolean   @default(true)
+  withdrawEnabled      Boolean   @default(true)
+  bonusClaimed         Boolean   @default(false)
+  profilePicture       String?
+  pushSubscription     Json?
+  lastKnownLat         Float?
+  lastKnownLng         Float?
+  lastKnownCity        String?
+  lastKnownCountry     String?
+  locationUpdatedAt    DateTime?
+  emailVerifiedAt      DateTime?
+  rewardBalance        Float     @default(0)
+  referralCode         String    @unique
+  referredById         String?
+  vipInvestor          Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  lastLoginAt          DateTime?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+
+  referredBy        User?                   @relation("UserReferrals", fields: [referredById], references: [id])
+  referredUsers     User[]                  @relation("UserReferrals")
+  balances          Balance[]
+  transactions      Transaction[]
+  investments       Investment[]
+  otps              OTP[]
+  kyc               KycSubmission?
+  notifications     Notification[]
+  conversation      Conversation?
+  auditTargets      AdminAuditLog[]         @relation("TargetUser")
+  referralsSent     Referral[]              @relation("Referrer")
+  referralsReceived Referral[]              @relation("Referee")
+  referralRewards   ReferralReward[]
+  campaignBonuses   ReferralCampaignBonus[]
+
   @@map("users")
 }
 
@@ -47,6 +60,7 @@ model Balance {
   amount    Float             @default(0)
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   snapshots BalanceSnapshot[]
+
   @@unique([userId, currency])
   @@map("balances")
 }
@@ -57,6 +71,7 @@ model BalanceSnapshot {
   amount    Float
   createdAt DateTime @default(now())
   balance   Balance  @relation(fields: [balanceId], references: [id], onDelete: Cascade)
+
   @@map("balance_snapshots")
 }
 
@@ -72,6 +87,7 @@ model Transaction {
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("transactions")
 }
 
@@ -87,6 +103,7 @@ model Investment {
   status      InvestmentStatus @default(ACTIVE)
   totalEarned Float            @default(0)
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("investments")
 }
 
@@ -100,6 +117,7 @@ model OTP {
   attempts  Int        @default(0)
   createdAt DateTime   @default(now())
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("otps")
 }
 
@@ -109,13 +127,89 @@ model KycSubmission {
   fullName        String
   dateOfBirth     String
   address         String
+  country         String?
+  documentType    String?
+  documentNumber  String?
   documentPath    String
+  selfiePath      String?
   status          KycStatus @default(PENDING_REVIEW)
   rejectionReason String?
   submittedAt     DateTime  @default(now())
   reviewedAt      DateTime?
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("kyc_submissions")
+}
+
+model Referral {
+  id                 String           @id @default(cuid())
+  referrerId         String
+  refereeId          String           @unique
+  codeUsed           String
+  status             ReferralStatus   @default(PENDING)
+  signedUpAt         DateTime         @default(now())
+  emailVerifiedAt    DateTime?
+  identityVerifiedAt DateTime?
+  minimumDepositAt   DateTime?
+  qualifiedAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  referrer           User             @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee            User             @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+  ReferralReward     ReferralReward[]
+
+  @@index([referrerId, status])
+  @@map("referrals")
+}
+
+model ReferralReward {
+  id          String             @id @default(cuid())
+  userId      String
+  referralId  String?
+  kind        ReferralRewardKind
+  amount      Float
+  status      RewardStatus       @default(CREDITED)
+  tierTarget  Int?
+  campaignId  String?
+  level       Int?
+  sourceTxId  String?
+  description String
+  createdAt   DateTime           @default(now())
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referral    Referral?          @relation(fields: [referralId], references: [id], onDelete: SetNull)
+  campaign    ReferralCampaign?  @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([userId, kind])
+  @@map("referral_rewards")
+}
+
+model ReferralCampaign {
+  id                         String                  @id @default(cuid())
+  title                      String
+  description                String
+  startAt                    DateTime
+  endAt                      DateTime
+  requiredQualifiedReferrals Int
+  bonusAmount                Float
+  isActive                   Boolean                 @default(true)
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime                @updatedAt
+  rewards                    ReferralReward[]
+  bonuses                    ReferralCampaignBonus[]
+
+  @@map("referral_campaigns")
+}
+
+model ReferralCampaignBonus {
+  id         String           @id @default(cuid())
+  campaignId String
+  userId     String
+  createdAt  DateTime         @default(now())
+  campaign   ReferralCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@map("referral_campaign_bonuses")
 }
 
 model Notification {
@@ -128,6 +222,7 @@ model Notification {
   url       String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("notifications")
 }
 
@@ -139,6 +234,7 @@ model Conversation {
   updatedAt DateTime  @updatedAt
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  Message[]
+
   @@map("conversations")
 }
 
@@ -151,6 +247,7 @@ model Message {
   readStatus     String       @default("sent")
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
   @@map("messages")
 }
 
@@ -160,6 +257,7 @@ model WalletAddress {
   address   String
   updatedAt DateTime @updatedAt
   updatedBy String   @default("system")
+
   @@map("wallet_addresses")
 }
 
@@ -171,6 +269,7 @@ model AdminAuditLog {
   details      Json?
   createdAt    DateTime @default(now())
   targetUser   User?    @relation("TargetUser", fields: [targetUserId], references: [id])
+
   @@map("admin_audit_logs")
 }
 
@@ -216,3 +315,23 @@ enum OTPPurpose {
   KYC
 }
 
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
+  REJECTED
+}
+
+enum ReferralRewardKind {
+  REFERRER_BONUS
+  REFEREE_BONUS
+  TIER_BONUS
+  CAMPAIGN_BONUS
+  NETWORK_COMMISSION
+  LEADERBOARD_BONUS
+}
+
+enum RewardStatus {
+  PENDING
+  CREDITED
+  REVOKED
+}

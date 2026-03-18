@@ -1,16 +1,28 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { COUNTRIES } from '@/lib/countries'
 
-const STEPS = [
-  { id:'personal', icon:'', label:'Personal Info' },
-  { id:'document', icon:'', label:'ID Document' },
-  { id:'selfie',   icon:'', label:'Selfie' },
-  { id:'review',   icon:'Verified', label:'Review' },
-]
+function VerificationLogo({ tone = '#F2BA0E' }: { tone?: string }) {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M12 3l7 3v5c0 4.97-3.05 8.94-7 10-3.95-1.06-7-5.03-7-10V6l7-3Z" fill={tone} fillOpacity="0.15" stroke={tone} strokeWidth="1.5" />
+      <path d="m9.5 12 1.7 1.7L15.5 9.5" stroke={tone} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function DocumentIcon() {
+  return <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="#F2BA0E" strokeWidth="1.6"/><path d="M14 3v5h5M9 13h6M9 17h6" stroke="#F2BA0E" strokeWidth="1.6" strokeLinecap="round"/></svg>
+}
+
+function CameraIcon() {
+  return <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6H8l1.2-1.6A2 2 0 0 1 10.8 4h2.4a2 2 0 0 1 1.6.8L16 6h1.5A2.5 2.5 0 0 1 20 8.5v7A2.5 2.5 0 0 1 17.5 18h-11A2.5 2.5 0 0 1 4 15.5v-7Z" stroke="#8AB4FF" strokeWidth="1.6"/><circle cx="12" cy="12" r="3.2" stroke="#8AB4FF" strokeWidth="1.6"/></svg>
+}
+
+const steps = ['Personal details', 'Document upload', 'Selfie check', 'Review & submit']
 
 export default function KYCPage() {
-  const [status, setStatus] = useState<string|null>(null)
+  const [status, setStatus] = useState<string>('NOT_SUBMITTED')
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -22,175 +34,114 @@ export default function KYCPage() {
   const selfieRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetch('/api/user/kyc').then(r=>r.json()).then(d=>{setStatus(d.status);setLoading(false)})
+    fetch('/api/user/kyc').then(r=>r.json()).then(d=>{
+      const viewedRejected = typeof window !== 'undefined' && sessionStorage.getItem('kyc-rejected-seen') === '1'
+      setStatus(d.status === 'REJECTED' && viewedRejected ? 'NOT_SUBMITTED' : d.status || 'NOT_SUBMITTED')
+      setLoading(false)
+    })
   },[])
 
+  useEffect(() => {
+    if (status === 'REJECTED' && typeof window !== 'undefined') sessionStorage.setItem('kyc-rejected-seen', '1')
+  }, [status])
+
   async function submit() {
-    setSubmitting(true); setMsg(null)
+    setSubmitting(true)
+    setMsg(null)
     const fd = new FormData()
     Object.entries(form).forEach(([k,v])=>fd.append(k,v))
     if(docFile) fd.append('documentFile', docFile)
     if(selfieFile) fd.append('selfieFile', selfieFile)
     const res = await fetch('/api/user/kyc', { method:'POST', body:fd })
     const data = await res.json()
-    if(res.ok) { setStatus('PENDING_REVIEW'); setMsg({type:'success',text:'KYC submitted for review!'}) }
+    if(res.ok) { setStatus('PENDING_REVIEW'); setMsg({type:'success',text:'Your KYC was submitted successfully.'}) }
     else setMsg({type:'error',text:data.error})
     setSubmitting(false)
   }
 
-  if(loading) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh'}}>
-      <div style={{width:32,height:32,border:'3px solid rgba(242,186,14,0.2)',borderTopColor:'#F2BA0E',borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
-    </div>
-  )
+  if(loading) return <div style={{display:'grid',placeItems:'center',height:'60vh'}}><VerificationLogo /></div>
 
-  if(status==='APPROVED') return (
-    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'70vh',padding:24,textAlign:'center'}}>
-      <div style={{width:80,height:80,borderRadius:'50%',background:'var(--success-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,marginBottom:20,border:'2px solid var(--success)'}}>Check</div>
-      <h2 style={{fontWeight:800,fontSize:22,marginBottom:10}}>KYC Verified!</h2>
-      <p style={{color:'var(--text-muted)',fontSize:14,maxWidth:280,lineHeight:1.7}}>Your identity has been verified. You can now make withdrawals and claim your $100 bonus.</p>
-    </div>
-  )
+  const statusLabel = status === 'APPROVED' ? 'Verified' : status === 'PENDING_REVIEW' ? 'Pending' : status === 'REJECTED' ? 'Rejected' : 'Not verified'
+  const statusTone = status === 'APPROVED' ? '#0ECB81' : status === 'PENDING_REVIEW' ? '#F2BA0E' : status === 'REJECTED' ? '#F6465D' : '#7f8a9a'
 
-  if(status==='PENDING_REVIEW') return (
-    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'70vh',padding:24,textAlign:'center'}}>
-      <div style={{width:80,height:80,borderRadius:'50%',background:'var(--warning-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,marginBottom:20}}><svg width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2'><path d='M6 2h12M6 22h12M8 2v6l4 4 4-4V2M8 22v-6l4-4 4 4v6'/></svg></div>
-      <h2 style={{fontWeight:800,fontSize:22,marginBottom:10}}>Under Review</h2>
-      <p style={{color:'var(--text-muted)',fontSize:14,maxWidth:280,lineHeight:1.7}}>Your documents are being reviewed. This typically takes 1–2 business days.</p>
-    </div>
-  )
-
-  if(status==='REJECTED') return (
-    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'70vh',padding:24,textAlign:'center'}}>
-      <div style={{width:80,height:80,borderRadius:'50%',background:'var(--danger-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:40,marginBottom:20}}>Rejected</div>
-      <h2 style={{fontWeight:800,fontSize:22,marginBottom:10}}>Verification Rejected</h2>
-      <p style={{color:'var(--text-muted)',fontSize:14,maxWidth:280,lineHeight:1.7,marginBottom:20}}>Your submission was rejected. Please re-submit with clearer documents.</p>
-      <button onClick={()=>setStatus(null)} className="btn-primary" style={{padding:'13px 32px'}}>Re-submit KYC</button>
-    </div>
-  )
+  if (status === 'APPROVED' || status === 'PENDING_REVIEW' || status === 'REJECTED') {
+    return (
+      <div style={{ padding:'12px 16px 32px' }}>
+        <div style={{ background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border:'1px solid var(--border)', borderRadius:24, padding:24, textAlign:'center', minHeight:'72vh', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center' }}>
+          <div style={{ width:84, height:84, borderRadius:24, display:'grid', placeItems:'center', background:`${statusTone}22`, border:`1px solid ${statusTone}44`, marginBottom:18 }}><VerificationLogo tone={statusTone} /></div>
+          <div style={{ fontSize:13, color:statusTone, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10 }}>{statusLabel}</div>
+          <h1 style={{ fontSize:28, fontWeight:900, marginBottom:10 }}>{status === 'APPROVED' ? 'Your account is verified' : status === 'PENDING_REVIEW' ? 'Verification in progress' : 'Verification was rejected'}</h1>
+          <p style={{ color:'var(--text-muted)', maxWidth:320, lineHeight:1.7, marginBottom:24 }}>{status === 'APPROVED' ? 'Your identity is approved and your account now shows Verified.' : status === 'PENDING_REVIEW' ? 'We received your document and selfie. Your account now shows Pending until our team reviews it.' : 'Your account shows Rejected for this session. When you come back later it resets to Not verified so you can start a fresh submission.'}</p>
+          {status === 'REJECTED' && <button onClick={() => setStatus('NOT_SUBMITTED')} className="btn-primary">Start new verification</button>}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div style={{padding:'0 16px 32px'}}>
-      <div style={{padding:'12px 0 20px'}}>
-        <h1 style={{fontSize:22,fontWeight:800,marginBottom:4}}>Identity Verification</h1>
-        <p style={{color:'var(--text-muted)',fontSize:13}}>Complete in under 5 minutes to unlock all features</p>
-      </div>
-
-      {/* Step progress */}
-      <div style={{display:'flex',marginBottom:28,gap:0}}>
-        {STEPS.map((s,i)=>(
-          <div key={s.id} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
-            <div style={{display:'flex',alignItems:'center',width:'100%'}}>
-              {i>0&&<div style={{flex:1,height:2,background:i<=step?'var(--brand-primary)':'var(--bg-elevated)',transition:'background .3s'}}/>}
-              <div style={{width:32,height:32,borderRadius:'50%',background:i<step?'var(--success)':i===step?'var(--brand-primary)':'var(--bg-elevated)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:i<step?16:14,flexShrink:0,transition:'all .3s',border:i===step?'none':'2px solid var(--border)'}}>
-                {i<step?'Check':s.icon}
-              </div>
-              {i<STEPS.length-1&&<div style={{flex:1,height:2,background:i<step?'var(--brand-primary)':'var(--bg-elevated)',transition:'background .3s'}}/>}
-            </div>
-            <span style={{fontSize:9,color:i===step?'var(--text-primary)':'var(--text-muted)',fontWeight:i===step?700:500,textAlign:'center'}}>{s.label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Step 0 — Personal Info */}
-      {step===0&&(
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            <div><label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>First Name</label><input className="input" value={form.firstName} onChange={e=>setForm(f=>({...f,firstName:e.target.value}))} placeholder="John"/></div>
-            <div><label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Last Name</label><input className="input" value={form.lastName} onChange={e=>setForm(f=>({...f,lastName:e.target.value}))} placeholder="Doe"/></div>
-          </div>
-          <div><label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Date of Birth</label><input className="input" type="date" value={form.dob} onChange={e=>setForm(f=>({...f,dob:e.target.value}))}/></div>
-          <div><label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Country of residence</label>
-            <select className="input" value={form.country} onChange={e=>setForm(f=>({...f,country:e.target.value}))}>
-              <option value="">Select country</option>
-              {COUNTRIES.map(c=><option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <p style={{color:'var(--text-muted)',fontSize:11,lineHeight:1.5}}>Your data is encrypted and used only for identity verification and regulatory compliance.</p>
-          <button onClick={()=>setStep(1)} disabled={!form.firstName||!form.lastName||!form.dob||!form.country} className="btn-primary" style={{marginTop:6}}>Continue →</button>
-        </div>
-      )}
-
-      {/* Step 1 — Document */}
-      {step===1&&(
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-          <div>
-            <label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:10}}>Document Type</label>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
-              {[{id:'passport',l:'Passport'},{id:'drivers_license',l:"Driver's License"},{id:'national_id',l:'National ID'}].map(d=>(
-                <button key={d.id} onClick={()=>setForm(f=>({...f,docType:d.id}))}
-                  style={{padding:'10px 6px',borderRadius:11,border:`2px solid ${form.docType===d.id?'var(--brand-primary)':'var(--border)'}`,background:form.docType===d.id?'rgba(242,186,14,0.08)':'var(--bg-card)',cursor:'pointer',fontFamily:'inherit',fontSize:11,fontWeight:600,color:form.docType===d.id?'var(--brand-primary)':'var(--text-secondary)'}}>
-                  {d.l}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div><label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Document Number</label><input className="input" value={form.docNumber} onChange={e=>setForm(f=>({...f,docNumber:e.target.value}))} placeholder="AB1234567"/></div>
-          <div>
-            <label style={{display:'block',color:'var(--text-muted)',fontSize:12,fontWeight:600,marginBottom:7}}>Upload Document Photo</label>
-            <div onClick={()=>docRef.current?.click()} style={{border:'2px dashed var(--border)',borderRadius:12,padding:28,textAlign:'center',cursor:'pointer',transition:'border-color .2s',background:docFile?'var(--success-bg)':'transparent'}} onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--brand-primary)')} onMouseLeave={e=>(e.currentTarget.style.borderColor='var(--border)')}>
-              <div style={{fontSize:32,marginBottom:8}}>{docFile?'Verified':''}</div>
-              <div style={{fontWeight:600,fontSize:13,color:docFile?'var(--success)':'var(--text-secondary)'}}>{docFile?docFile.name:'Tap to upload'}</div>
-              <div style={{color:'var(--text-muted)',fontSize:11,marginTop:4}}>JPG, PNG or PDF • Max 10MB</div>
-            </div>
-            <input ref={docRef} type="file" accept="image/*,.pdf" style={{display:'none'}} onChange={e=>setDocFile(e.target.files?.[0]||null)}/>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <button onClick={()=>setStep(0)} className="btn-ghost">← Back</button>
-            <button onClick={()=>setStep(2)} disabled={!form.docNumber||!docFile} className="btn-primary">Continue →</button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2 — Selfie */}
-      {step===2&&(
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-          <div style={{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:14,padding:16}}>
-            <div style={{fontWeight:700,marginBottom:8}}> Selfie Requirements</div>
-            {['Hold your ID document next to your face','Ensure good lighting — face clearly visible','No glasses or hats','Photo must match your document'].map(t=>(
-              <div key={t} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid var(--border)'}}>
-                <span style={{color:'var(--success)',fontWeight:700}}>Check</span>
-                <span style={{color:'var(--text-secondary)',fontSize:13}}>{t}</span>
-              </div>
-            ))}
-          </div>
-          <div onClick={()=>selfieRef.current?.click()} style={{border:'2px dashed var(--border)',borderRadius:12,padding:36,textAlign:'center',cursor:'pointer',transition:'border-color .2s',background:selfieFile?'var(--success-bg)':'transparent'}} onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--brand-primary)')} onMouseLeave={e=>(e.currentTarget.style.borderColor='var(--border)')}>
-            <div style={{fontSize:40,marginBottom:8}}>{selfieFile?'Verified':''}</div>
-            <div style={{fontWeight:600,fontSize:13,color:selfieFile?'var(--success)':'var(--text-secondary)'}}>{selfieFile?selfieFile.name:'Take or upload selfie'}</div>
-          </div>
-          <input ref={selfieRef} type="file" accept="image/*" capture="user" style={{display:'none'}} onChange={e=>setSelfieFile(e.target.files?.[0]||null)}/>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <button onClick={()=>setStep(1)} className="btn-ghost">← Back</button>
-            <button onClick={()=>setStep(3)} disabled={!selfieFile} className="btn-primary">Review →</button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3 — Review */}
-      {step===3&&(
+    <div style={{ padding:'0 16px 32px' }}>
+      <div style={{ margin:'12px 0 18px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
         <div>
-          <div style={{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:14,padding:16,marginBottom:14}}>
-            {[
-              {l:'Full Name',v:`${form.firstName} ${form.lastName}`},
-              {l:'Date of Birth',v:form.dob},
-              {l:'Country',v:form.country},
-              {l:'Document',v:`${form.docType.replace('_',' ')} · ${form.docNumber}`},
-              {l:'Document Photo',v:docFile?.name||''},
-              {l:'Selfie',v:selfieFile?.name||''},
-            ].map(({l,v})=>(
-              <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderBottom:'1px solid var(--border)'}}>
-                <span style={{color:'var(--text-muted)',fontSize:13}}>{l}</span>
-                <span style={{fontWeight:600,fontSize:13,maxWidth:'55%',textAlign:'right',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v}</span>
-              </div>
-            ))}
-          </div>
-          {msg&&<div style={{padding:'10px 14px',borderRadius:9,marginBottom:14,fontSize:13,fontWeight:600,background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)',color:msg.type==='success'?'var(--success)':'var(--danger)'}}>{msg.text}</div>}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            <button onClick={()=>setStep(2)} className="btn-ghost">← Back</button>
-            <button onClick={submit} disabled={submitting} className="btn-primary">{submitting?'Submitting...':'Submit KYC Check'}</button>
-          </div>
+          <h1 style={{fontSize:24,fontWeight:900,marginBottom:4}}>Identity verification</h1>
+          <p style={{color:'var(--text-muted)',fontSize:13}}>Professional KYC flow with secure document review and live status updates.</p>
         </div>
-      )}
+        <div style={{ padding:'10px 12px', borderRadius:14, background:`${statusTone}18`, border:`1px solid ${statusTone}33`, color:statusTone, fontWeight:800, fontSize:12 }}>{statusLabel}</div>
+      </div>
+
+      <div style={{ background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border:'1px solid var(--border)', borderRadius:22, padding:18, marginBottom:18 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+          {steps.map((label, index) => (
+            <div key={label}>
+              <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
+                <div style={{ width:32, height:32, borderRadius:12, display:'grid', placeItems:'center', background:index <= step ? 'rgba(242,186,14,0.16)' : 'rgba(255,255,255,0.06)', border:`1px solid ${index <= step ? 'rgba(242,186,14,0.26)' : 'rgba(255,255,255,0.08)'}`, color:index <= step ? '#F2BA0E' : 'var(--text-muted)', fontWeight:800 }}>{index + 1}</div>
+              </div>
+              <div style={{ fontSize:11, color:index === step ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight:index === step ? 700 : 500 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {step===0 && <div style={{ display:'grid', gap:14 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          <div><label style={{display:'block',marginBottom:6,fontSize:12,color:'var(--text-muted)'}}>First name</label><input className="input" value={form.firstName} onChange={e=>setForm(f=>({...f, firstName:e.target.value}))} /></div>
+          <div><label style={{display:'block',marginBottom:6,fontSize:12,color:'var(--text-muted)'}}>Last name</label><input className="input" value={form.lastName} onChange={e=>setForm(f=>({...f, lastName:e.target.value}))} /></div>
+        </div>
+        <div><label style={{display:'block',marginBottom:6,fontSize:12,color:'var(--text-muted)'}}>Date of birth</label><input className="input" type="date" value={form.dob} onChange={e=>setForm(f=>({...f, dob:e.target.value}))} /></div>
+        <div><label style={{display:'block',marginBottom:6,fontSize:12,color:'var(--text-muted)'}}>Country of residence</label><select className="input" value={form.country} onChange={e=>setForm(f=>({...f, country:e.target.value}))}><option value="">Select country</option>{COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+        <div style={{ background:'rgba(242,186,14,0.08)', border:'1px solid rgba(242,186,14,0.16)', borderRadius:16, padding:14, fontSize:12, color:'var(--text-secondary)' }}>Your data is encrypted and reviewed securely. Status moves from <strong>Not verified</strong> to <strong>Pending</strong>, then <strong>Verified</strong> after approval.</div>
+        <button onClick={()=>setStep(1)} disabled={!form.firstName||!form.lastName||!form.dob||!form.country} className="btn-primary">Continue</button>
+      </div>}
+
+      {step===1 && <div style={{ display:'grid', gap:14 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>{[{id:'passport',label:'Passport'},{id:'drivers_license',label:'Driver license'},{id:'national_id',label:'National ID'}].map(d => <button key={d.id} onClick={()=>setForm(f=>({...f, docType:d.id}))} style={{ padding:'12px 8px', borderRadius:14, border:`1px solid ${form.docType===d.id ? 'rgba(242,186,14,0.3)' : 'var(--border)'}`, background:form.docType===d.id ? 'rgba(242,186,14,0.1)' : 'var(--bg-card)', color:form.docType===d.id ? '#F2BA0E' : 'var(--text-secondary)', fontWeight:700, cursor:'pointer' }}>{d.label}</button>)}</div>
+        <div><label style={{display:'block',marginBottom:6,fontSize:12,color:'var(--text-muted)'}}>Document number</label><input className="input" value={form.docNumber} onChange={e=>setForm(f=>({...f, docNumber:e.target.value}))} /></div>
+        <div onClick={()=>docRef.current?.click()} style={{ border:'1px dashed rgba(242,186,14,0.34)', borderRadius:20, padding:22, background:'linear-gradient(180deg,rgba(242,186,14,0.05),rgba(255,255,255,0.02))', cursor:'pointer' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14 }}><div style={{ width:68, height:68, borderRadius:18, display:'grid', placeItems:'center', background:'rgba(242,186,14,0.12)' }}><DocumentIcon /></div><div><div style={{ fontWeight:800, marginBottom:4 }}>{docFile ? docFile.name : 'Upload document'}</div><div style={{ color:'var(--text-muted)', fontSize:12 }}>Tap to upload a clear document image or PDF. Max 10MB.</div></div></div>
+        </div>
+        <input ref={docRef} type="file" accept="image/*,.pdf" style={{display:'none'}} onChange={e=>setDocFile(e.target.files?.[0]||null)} />
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}><button onClick={()=>setStep(0)} className="btn-ghost">Back</button><button onClick={()=>setStep(2)} disabled={!form.docNumber || !docFile} className="btn-primary">Continue</button></div>
+      </div>}
+
+      {step===2 && <div style={{ display:'grid', gap:14 }}>
+        <div onClick={()=>selfieRef.current?.click()} style={{ border:'1px dashed rgba(138,180,255,0.34)', borderRadius:20, padding:22, background:'linear-gradient(180deg,rgba(138,180,255,0.05),rgba(255,255,255,0.02))', cursor:'pointer' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14 }}><div style={{ width:68, height:68, borderRadius:18, display:'grid', placeItems:'center', background:'rgba(138,180,255,0.12)' }}><CameraIcon /></div><div><div style={{ fontWeight:800, marginBottom:4 }}>{selfieFile ? selfieFile.name : 'Upload selfie'}</div><div style={{ color:'var(--text-muted)', fontSize:12 }}>Use a clear selfie photo with your face fully visible. No need to hold your document.</div></div></div>
+        </div>
+        <input ref={selfieRef} type="file" accept="image/*" capture="user" style={{display:'none'}} onChange={e=>setSelfieFile(e.target.files?.[0]||null)} />
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}><button onClick={()=>setStep(1)} className="btn-ghost">Back</button><button onClick={()=>setStep(3)} disabled={!selfieFile} className="btn-primary">Continue</button></div>
+      </div>}
+
+      {step===3 && <div>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:18, padding:16, marginBottom:16 }}>{[
+          ['Full name', `${form.firstName} ${form.lastName}`],
+          ['Date of birth', form.dob],
+          ['Country', form.country],
+          ['Document', `${form.docType.replace('_',' ')} · ${form.docNumber}`],
+          ['Uploaded document', docFile?.name || '—'],
+          ['Selfie', selfieFile?.name || '—'],
+        ].map(([l,v]) => <div key={String(l)} style={{ display:'flex', justifyContent:'space-between', gap:12, padding:'10px 0', borderBottom:'1px solid rgba(255,255,255,0.06)' }}><span style={{ color:'var(--text-muted)', fontSize:12 }}>{l}</span><span style={{ fontWeight:700, fontSize:13, textAlign:'right' }}>{v}</span></div>)}</div>
+        {msg && <div style={{ padding:'12px 14px', borderRadius:12, marginBottom:14, background:msg.type==='success'?'var(--success-bg)':'var(--danger-bg)', color:msg.type==='success'?'var(--success)':'var(--danger)', fontWeight:700, fontSize:13 }}>{msg.text}</div>}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}><button onClick={()=>setStep(2)} className="btn-ghost">Back</button><button onClick={submit} disabled={submitting} className="btn-primary">{submitting ? 'Submitting...' : 'Submit verification'}</button></div>
+      </div>}
     </div>
   )
 }
