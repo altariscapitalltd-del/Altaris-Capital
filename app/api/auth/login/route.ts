@@ -11,8 +11,12 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = schema.parse(await req.json())
-    const user = await prisma.user.findUnique({ where: { email } })
+    const body = await req.json()
+    const parsed = schema.safeParse(body)
+    if (!parsed.success) return NextResponse.json({ error: 'Invalid email or password' }, { status: 400 })
+
+    const { email, password } = parsed.data
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } })
     if (!user) return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     if (!user.isActive) return NextResponse.json({ error: 'Account is suspended. Contact support.' }, { status: 403 })
 
@@ -23,9 +27,16 @@ export async function POST(req: NextRequest) {
 
     const token = await signToken({ userId: user.id, role: user.role, name: user.name })
     const res = NextResponse.json({ success: true, user: { id: user.id, name: user.name, role: user.role } })
-    res.cookies.set('token', token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 7 })
+    res.cookies.set('token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    })
     return res
   } catch (e: any) {
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 })
+    console.error('[Login] error:', e?.message ?? e)
+    return NextResponse.json({ error: 'Login failed. Please try again.' }, { status: 500 })
   }
 }

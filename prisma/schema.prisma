@@ -29,6 +29,11 @@ model User {
   lastLoginAt           DateTime?
   passwordResetToken    String?
   passwordResetExpires  DateTime?
+
+  referralCode          String?   @unique
+  referredById          String?
+  referralRewardBalance Float     @default(0)
+
   balances         Balance[]
   transactions     Transaction[]
   investments      Investment[]
@@ -36,7 +41,11 @@ model User {
   kyc              KycSubmission?
   notifications    Notification[]
   conversation     Conversation?
-  auditTargets     AdminAuditLog[] @relation("TargetUser")
+  auditTargets     AdminAuditLog[]  @relation("TargetUser")
+  referrals        Referral[]       @relation("ReferrerReferrals")
+  referredByLink   Referral?        @relation("ReferredUserReferral")
+  referralRewards  ReferralReward[]
+
   @@map("users")
 }
 
@@ -109,6 +118,9 @@ model KycSubmission {
   fullName        String
   dateOfBirth     String
   address         String
+  documentType    String?
+  documentNumber  String?
+  selfieFile      String?
   documentPath    String
   status          KycStatus @default(PENDING_REVIEW)
   rejectionReason String?
@@ -174,6 +186,59 @@ model AdminAuditLog {
   @@map("admin_audit_logs")
 }
 
+model Referral {
+  id            String         @id @default(cuid())
+  referrerId    String
+  referredId    String         @unique
+  status        ReferralStatus @default(PENDING)
+  emailVerified Boolean        @default(false)
+  kycApproved   Boolean        @default(false)
+  depositMade   Boolean        @default(false)
+  qualifiedAt   DateTime?
+  rewardedAt    DateTime?
+  createdAt     DateTime       @default(now())
+  referrer      User           @relation("ReferrerReferrals", fields: [referrerId], references: [id])
+  referred      User           @relation("ReferredUserReferral", fields: [referredId], references: [id])
+  @@map("referrals")
+}
+
+model ReferralReward {
+  id         String   @id @default(cuid())
+  userId     String
+  amount     Float
+  reason     String
+  referralId String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("referral_rewards")
+}
+
+model Campaign {
+  id          String                 @id @default(cuid())
+  title       String
+  description String
+  target      Int
+  reward      Float
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean                @default(true)
+  progresses  UserCampaignProgress[]
+  createdAt   DateTime               @default(now())
+  @@map("campaigns")
+}
+
+model UserCampaignProgress {
+  id         String    @id @default(cuid())
+  userId     String
+  campaignId String
+  count      Int       @default(0)
+  rewarded   Boolean   @default(false)
+  rewardedAt DateTime?
+  campaign   Campaign  @relation(fields: [campaignId], references: [id])
+  @@unique([userId, campaignId])
+  @@map("user_campaign_progress")
+}
+
 enum Role {
   USER
   ADMIN
@@ -194,6 +259,7 @@ enum TransactionType {
   PROFIT
   BONUS
   ADJUSTMENT
+  REFERRAL_BONUS
 }
 
 enum TransactionStatus {
@@ -216,3 +282,8 @@ enum OTPPurpose {
   KYC
 }
 
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
+  REWARDED
+}

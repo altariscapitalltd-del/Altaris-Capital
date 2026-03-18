@@ -83,6 +83,30 @@ const NAV = [
     ),
   },
   {
+    href: '/rewards', label: 'Rewards',
+    icon: (a: boolean) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        {a ? (
+          <>
+            <polyline points="20 12 20 22 4 22 4 12" fill="#FFFFFF" stroke="#FFFFFF" strokeWidth="1.2" strokeLinejoin="round"/>
+            <rect x="2" y="7" width="20" height="5" rx="1" fill="#FFFFFF"/>
+            <line x1="12" y1="22" x2="12" y2="7" stroke="#000" strokeWidth="1.5"/>
+            <path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z" fill="#F2BA0E"/>
+            <path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" fill="#F2BA0E"/>
+          </>
+        ) : (
+          <>
+            <polyline points="20 12 20 22 4 22 4 12" stroke="#4A4A4A" strokeWidth="1.7" strokeLinejoin="round" fill="none"/>
+            <rect x="2" y="7" width="20" height="5" rx="1" stroke="#4A4A4A" strokeWidth="1.5" fill="none"/>
+            <line x1="12" y1="22" x2="12" y2="7" stroke="#4A4A4A" strokeWidth="1.5"/>
+            <path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z" stroke="#4A4A4A" strokeWidth="1.2" fill="none"/>
+            <path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z" stroke="#4A4A4A" strokeWidth="1.2" fill="none"/>
+          </>
+        )}
+      </svg>
+    ),
+  },
+  {
     href: '/settings', label: 'Profile',
     icon: (a: boolean) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -593,7 +617,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         boxShadow: '0 -2px 18px rgba(0,0,0,0.35)',
         overflow: 'hidden',
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 62 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', height: 62 }}>
           {NAV.map(({ href, label, icon }) => {
             const active = activeTab === href
             return (

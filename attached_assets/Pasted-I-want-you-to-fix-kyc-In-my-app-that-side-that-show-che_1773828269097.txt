@@ -1,0 +1,157 @@
+I want you to fix kyc In my app that side that show check that move when the user fill the kyc form remove check and use a nice svg logo that indicates it and now if the user submit it never comes to admin it always fail to come fix that and I want you to improve user experience in the kyc tab make it feel like real kyc like from big companies do it, and when user have not submitted kyc it should show not verified when they submit it should show pending and when admin see the document and review them and approve them it show verified this is already implemented, then if rejected it show rejected for then is they leave thta season it log back to not verified  the side thta said upload document I want the upload Botton card to be in form of a document svg same with selfie it show a camera card svg , and the side thta say user need to hold documents and take selfie remove that I just need selfie, I want documents to be sent to me on telegram so integrate if so I send telegram credentials in env
+
+Build a complete referral and rewards system inside the investment app’s Rewards section.
+
+The referral system should allow users to invite friends using a unique referral code and referral link. Each user must automatically receive a unique referral code when their account is created. This code should be displayed in the Rewards screen and attached to a shareable referral link that users can send to others.
+
+When someone signs up using a referral link, the system must track that referral and link the new account to the original referrer.
+
+A referral should only become valid after three required steps are completed:
+
+1. The new user signs up using the referral link.
+2. The new user verifies their account (email and identity verification).
+3. The new user makes the minimum required deposit.
+
+Only after all three conditions are completed should the referral be marked as qualified.
+
+Once a referral becomes qualified, both users should receive rewards:
+- The referrer receives a $200 bonus.
+- The new user receives a $100 bonus.
+
+Rewards should be credited to the user’s reward balance and clearly visible in the Rewards screen.
+
+Implement a tiered referral system with the following milestones:
+
+1 referral → $100 bonus  
+5 referrals → $700 bonus  
+20 referrals → $3000 bonus  
+50 referrals → VIP Investor status
+
+When a user reaches the VIP Investor tier, unlock the following benefits:
+- Free stock reward
+- 90% cashback protection during the first month of a market dip
+- Access to exclusive investment benefits
+
+The Rewards screen should also include a referral progress tracker showing:
+- total invited users
+- qualified referrals
+- pending referrals
+- total referral earnings
+
+Add a visual progress indicator that shows how close the user is to reaching the next referral tier.
+
+The referral system should also support time-limited campaigns. For example:
+“Refer 10 friends this month and earn a $1000 bonus.”
+
+If a user reaches the campaign requirement within the campaign period, the system should automatically award the bonus.
+
+Implement automated referral notifications for important events:
+- when someone signs up using a referral link
+- when a referred user completes their investment
+- when a referral reward is credited
+
+Example notification:
+“Your friend just invested. Your referral bonus is now available.”
+
+The Rewards screen should allow users to easily share their referral link with one tap and copy the link to share anywhere.
+
+The system should also include protections against abuse such as:
+- preventing self-referrals
+- preventing multiple accounts from the same user
+- preventing rewards before deposit confirmation
+
+All referral activity, progress, rewards, and bonuses should update automatically and be reflected in the Rewards dashboard in real time.
+
+The goal is to create a professional referral system that encourages users to invite friends, track their progress, unlock higher reward tiers, and grow the investment platform through referrals.
+
+Upgrade the referral system in the investment app so it becomes a viral growth engine that actively encourages users to invite others and compete for rewards.
+
+The referral system should motivate users to share their referral link frequently and track their progress toward larger rewards.
+
+First, implement a referral leaderboard that displays the top referrers within the app. The leaderboard should show the users with the highest number of successful referrals during a selected time period (for example weekly or monthly). Top referrers should receive additional bonuses or recognition.
+
+Example leaderboard structure:
+Rank  
+User  
+Total Referrals  
+
+The leaderboard should refresh automatically and encourage competition between users.
+
+Second, introduce referral challenges and limited-time campaigns that encourage rapid growth. These campaigns should have a clear target and reward.
+
+Example campaign:
+Refer 10 friends within the campaign period and earn a $1000 bonus.
+
+The system should track referrals during the campaign and automatically reward users once the requirement is met.
+
+Third, add referral progress tracking to the Rewards screen. Users should clearly see how close they are to unlocking the next referral milestone. Display progress toward the next tier visually so users feel encouraged to keep inviting friends.
+
+Example progress display:
+Current referrals: 3  
+Next reward tier: 5 referrals  
+Reward: $700 bonus
+
+Include a visual progress bar or indicator that fills as the user gains more qualified referrals.
+
+Fourth, implement automatic referral prompts that appear at key moments inside the app. These prompts should encourage users to share their referral link after positive experiences.
+
+Example trigger moments:
+After a user earns investment profit  
+After a successful withdrawal  
+After completing an investment plan  
+
+Example prompt:
+“You just earned profit from your investment. Invite friends and earn referral bonuses for every investor you bring.”
+
+Fifth, add simple sharing tools that allow users to instantly share their referral link. The share feature should open the device sharing menu so users can easily send their referral link through messaging apps or social media.
+
+The referral message should automatically include a short description of the investment platform and the referral bonus.
+
+Example message:
+“I’m using this investment app that manages investments for you. Join with my referral link and get a bonus when you start investing.”
+
+Sixth, create a referral statistics dashboard inside the Rewards screen that shows users their referral performance.
+
+The dashboard should include:
+Total invited users  
+Qualified referrals  
+Pending referrals  
+Total referral earnings  
+Current referral tier  
+
+This information should update automatically so users always know their progress.
+
+Seventh, introduce milestone celebration animations when users reach referral tiers. When a user unlocks a new tier, the app should display a congratulatory message and highlight the reward they earned. This helps reinforce engagement and encourages further sharing.
+
+Eighth, implement a multi-level referral commission structure to create a network growth effect. Users should earn rewards not only from people they directly refer but also from investors invited by those referrals.
+
+Example multi-level structure:
+
+Level 1 referral (direct referral):  
+The user earns 10% commission from qualifying deposits or investments made by the person they directly referred.
+
+Level 2 referral:  
+The user earns 5% commission from qualifying deposits or investments made by users invited by their Level 1 referrals.
+
+Level 3 referral:  
+The user earns 2% commission from qualifying deposits or investments made by users invited by Level 2 referrals.
+
+This multi-level structure should be automatically tracked by the system and displayed in the user's referral dashboard.
+
+The dashboard should include:
+Level 1 referrals  
+Level 2 referrals  
+Level 3 referrals  
+Total network earnings
+
+Users should also be able to see the growth of their referral network in a simple and clear format.
+
+Finally, ensure the referral system is secure and prevents abuse by validating referrals carefully. Only reward referrals when the referred user has completed all required actions including signup, account verification, and minimum deposit.
+
+The goal of this system is to transform the referral feature into a powerful growth tool that encourages users to actively invite others, build referral networks, compete for rewards, unlock new tiers, and grow the investment platform through viral sharing.
+
+
+Please know how to handle prisma, you need to migrate 
+
+
+Why each time I give my ai builder this prompt to buy my app when it done the app stop logging , I can’t sign in anymore 
