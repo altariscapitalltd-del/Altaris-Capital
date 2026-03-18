@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
@@ -24,6 +24,13 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ name:'', email:'', phone:'', password:'', confirm:'' })
+  const [referralCode, setReferralCode] = useState('')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const ref = new URLSearchParams(window.location.search).get('ref') || ''
+    setReferralCode(ref.toUpperCase())
+  }, [])
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -34,7 +41,7 @@ export default function SignupPage() {
     try {
       const res = await fetch('/api/auth/signup', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password }),
+        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password, referralCode }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
@@ -123,6 +130,8 @@ export default function SignupPage() {
                 onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                 onFocus={e => (e.target.style.borderColor='#F0B90B')}
                 onBlur={e => (e.target.style.borderColor='#2B3139')} />
+
+              {referralCode && <div style={{ background:'rgba(14,165,233,0.08)', border:'1px solid rgba(14,165,233,0.22)', borderRadius:8, padding:'10px 12px', marginBottom:16, color:'#8bd5ff', fontSize:13 }}>Referral code applied: <strong style={{ color:'#fff' }}>{referralCode}</strong></div>}
 
               <label style={{ display:'block', color:'#B0B3B8', fontSize:13, marginBottom:6 }}>Password</label>
               <input style={inputStyle} type="password" placeholder="Minimum 8 characters" value={form.password} required
