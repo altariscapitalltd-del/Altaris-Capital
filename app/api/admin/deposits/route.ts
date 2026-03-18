@@ -3,6 +3,7 @@ import { getAdminUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { notifyUser } from '@/lib/push'
 import { z } from 'zod'
+import { evaluateReferralQualification } from '@/lib/referrals'
 
 const patchSchema = z.object({
   txId: z.string().min(1, 'Transaction ID is required'),
@@ -62,6 +63,7 @@ export async function PATCH(req: NextRequest) {
         })
       })
 
+      await evaluateReferralQualification(prisma, tx.userId)
       await notifyUser(prisma, tx.userId, 'Deposit Confirmed', `Your deposit of $${tx.amount} has been confirmed and added to your account.`, '/wallet')
       return NextResponse.json({ success: true })
     }

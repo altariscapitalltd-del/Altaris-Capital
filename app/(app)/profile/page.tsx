@@ -136,7 +136,7 @@ export default function ProfilePage() {
       <div style={{ marginTop:28, background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
         {[
           { type:'member', label:'Member Since', value: new Date(user.createdAt||Date.now()).toLocaleDateString('en-US',{month:'long',year:'numeric'}) },
-          { type:'kyc', label:'KYC Status', value: user.kycStatus==='APPROVED'?'Verified':'Not verified' },
+          { type:'kyc', label:'KYC Status', value: user.kycStatus==='APPROVED'?'Verified':user.kycStatus==='PENDING_REVIEW'?'Pending':user.kycStatus==='REJECTED'?'Rejected':'Not verified' },
           { type:'id', label:'User ID', value: user.id?.slice(0,12)+'...' },
         ].map(({type,label,value}) => (
           <div key={label} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderBottom:'1px solid var(--border)' }}>
