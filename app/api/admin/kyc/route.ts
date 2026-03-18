@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { notifyUser } from '@/lib/push'
+import { markReferralKycVerified } from '@/lib/referrals'
 
 export async function GET(req: NextRequest) {
   const admin = await getAdminUser(req)
@@ -48,6 +49,7 @@ export async function PATCH(req: NextRequest) {
     ? 'Your identity has been verified. You can now make withdrawals.'
     : `KYC rejected: ${reviewReason || 'Please resubmit with a clearer document.'}`
   await notifyUser(prisma, userId, `KYC ${action === 'approve' ? 'Approved' : 'Rejected'}`, msg, '/kyc')
+  if (action === 'approve') await markReferralKycVerified(userId)
 
   await prisma.adminAuditLog.create({ data: { adminId: admin.id, action: `kyc_${action}`, targetUserId: userId } })
   return NextResponse.json({ success: true })
