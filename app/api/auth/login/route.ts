@@ -12,7 +12,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = schema.parse(await req.json())
-    const user = await prisma.user.findUnique({ where: { email } })
+    const user = await prisma.user.findUnique({ where: { email }, select: { id: true, name: true, role: true, passwordHash: true, isActive: true } })
     if (!user) return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     if (!user.isActive) return NextResponse.json({ error: 'Account is suspended. Contact support.' }, { status: 403 })
 
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     res.cookies.set('token', token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 7 })
     return res
   } catch (e: any) {
+    console.error('Login failed', e)
     return NextResponse.json({ error: 'Login failed' }, { status: 500 })
   }
 }

@@ -24,22 +24,33 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 12)
     const uniqueReferralCode = await createUniqueReferralCode(name, email)
-    const user = await prisma.user.create({
-      data: {
-        name, email, phone, passwordHash, referralCode: uniqueReferralCode,
-        balances: {
-          create: [
-            { currency: 'USD', amount: 0 },
-            { currency: 'BTC', amount: 0 },
-            { currency: 'ETH', amount: 0 },
-            { currency: 'USDT', amount: 0 },
-          ],
-        },
+    const baseUserData = {
+      name, email, phone, passwordHash,
+      balances: {
+        create: [
+          { currency: 'USD', amount: 0 },
+          { currency: 'BTC', amount: 0 },
+          { currency: 'ETH', amount: 0 },
+          { currency: 'USDT', amount: 0 },
+        ],
       },
-    })
+    }
+
+    let user
+    try {
+      user = await prisma.user.create({ data: { ...baseUserData, referralCode: uniqueReferralCode } as any })
+    } catch (createError: any) {
+      const message = String(createError?.message || '')
+      if (!message.includes('referralCode')) throw createError
+      user = await prisma.user.create({ data: baseUserData as any })
+    }
 
     await createAndSendOTP(user.id, email, name, 'SIGNUP')
-    await createReferralFromCode(user.id, referralCode)
+    try {
+      await createReferralFromCode(user.id, referralCode)
+    } catch (referralError) {
+      console.error('Referral bootstrap skipped', referralError)
+    }
 
     // Notify admin via Pusher
     await trigger(adminChannel, 'admin:new_user', { id: user.id, name, email, createdAt: user.createdAt })

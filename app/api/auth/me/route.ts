@@ -15,8 +15,6 @@ export async function GET(req: NextRequest) {
       email: true,
       kycStatus: true,
       bonusClaimed: true,
-      referralCode: true,
-      rewardBalance: true,
       notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
     },
   })
