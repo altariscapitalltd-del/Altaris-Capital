@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { createAndSendOTP, verifyOTP } from '@/lib/otp'
 import { signToken } from '@/lib/auth'
+import { evaluateReferralQualification } from '@/lib/referrals'
 import { z } from 'zod'
 
 const otpSchema = z.object({
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
 
     if (purpose === 'SIGNUP') {
       const token = await signToken({ userId: user.id, role: user.role })
+      await evaluateReferralQualification(prisma, user.id)
       const res = NextResponse.json({ success: true, user: { id: user.id, name: user.name, role: user.role } })
       res.cookies.set('token', token, { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', maxAge: 60 * 60 * 24 * 7 })
       return res

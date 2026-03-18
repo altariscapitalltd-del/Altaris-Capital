@@ -28,6 +28,7 @@ async function main() {
       passwordHash: adminHash,
       role: 'SUPER_ADMIN',
       kycStatus: 'APPROVED',
+      referralCode: 'ADMIN001',
       balances: { create: [
         { currency: 'USD', amount: 0 },
         { currency: 'BTC', amount: 0 },
@@ -67,6 +68,7 @@ async function main() {
       passwordHash: demoHash,
       role: 'USER',
       kycStatus: 'APPROVED',
+      referralCode: 'DEMO001',
       balances: { create: [
         { currency: 'USD', amount: 5000 },
         { currency: 'BTC', amount: 0.05 },
