@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
@@ -18,6 +18,12 @@ function Logo() {
 
 export default function SignupPage() {
   const router = useRouter()
+  const [referralCode, setReferralCode] = useState('')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setReferralCode(new URLSearchParams(window.location.search).get('ref') || '')
+  }, [])
   const [step, setStep] = useState<'form' | 'otp'>('form')
   const [userId, setUserId] = useState('')
   const [otp, setOtp] = useState('')
@@ -34,7 +40,7 @@ export default function SignupPage() {
     try {
       const res = await fetch('/api/auth/signup', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password }),
+        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password, referralCode }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
@@ -136,6 +142,7 @@ export default function SignupPage() {
                 onFocus={e => (e.target.style.borderColor='#F0B90B')}
                 onBlur={e => (e.target.style.borderColor='#2B3139')} />
 
+              {referralCode && <div style={{ background:'rgba(240,185,11,0.08)', border:'1px solid rgba(240,185,11,0.18)', borderRadius:8, padding:'12px 14px', marginBottom:16, fontSize:13, color:'#F0B90B' }}>Referral code applied: <strong>{referralCode}</strong></div>}
               <button type="submit" disabled={loading}
                 style={{ width:'100%', padding:'14px', background:'#F0B90B', color:'#0B0E11', border:'none', borderRadius:8, fontWeight:700, fontSize:16, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
                 {loading ? 'Creating Account...' : 'Create Account'}

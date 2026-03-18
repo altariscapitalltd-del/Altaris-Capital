@@ -13,18 +13,18 @@ export default function AdminKYCPage() {
 
   useBodyScrollLock(!!selected)
 
-  function load() { fetch('/api/admin/kyc').then(r=>r.json()).then(d=>setSubmissions(d.submissions||[])) }
-  useEffect(load,[])
+  function load(nextFilter = filter) { fetch(`/api/admin/kyc?status=${nextFilter}`).then(r=>r.json()).then(d=>setSubmissions(d.submissions||[])) }
+  useEffect(() => { load(filter) }, [filter])
 
   async function decide(subId:string, action:'approve'|'reject') {
     setLoading(true); setMsg(null)
-    const res = await fetch('/api/admin/kyc',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({submissionId:subId,action,note})})
+    const res = await fetch('/api/admin/kyc',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({submissionId:subId,action,note,reason:note})})
     if(res.ok){setMsg({type:'success',text:`KYC ${action}d`});setSelected(null);setNote('');load()}
     else{const d=await res.json();setMsg({type:'error',text:d.error})}
     setLoading(false)
   }
 
-  const filtered = filter==='ALL' ? submissions : submissions.filter(s=>s.status===filter)
+  const filtered = submissions
   const pending = submissions.filter(s=>s.status==='PENDING_REVIEW').length
 
   return (
@@ -62,7 +62,7 @@ export default function AdminKYCPage() {
               <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{s.user?.name||'Unknown'}</div>
               <div style={{color:'#555',fontSize:12,marginBottom:6}}>{s.user?.email}</div>
               <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-                {[{l:'Document',v:s.documentType?.replace('_',' ')},{l:'Doc #',v:s.documentNumber},{l:'Country',v:s.country},{l:'Submitted',v:new Date(s.createdAt).toLocaleDateString()}].map(({l,v})=>(
+                {[{l:'Document',v:s.documentType?.replace('_',' ')},{l:'Doc #',v:s.documentNumber},{l:'Country',v:s.country},{l:'Submitted',v:new Date(s.submittedAt).toLocaleDateString()}].map(({l,v})=>(
                   <div key={l}><span style={{color:'#444',fontSize:10}}>{l}: </span><span style={{fontSize:12,fontWeight:600}}>{v||'—'}</span></div>
                 ))}
               </div>
@@ -92,7 +92,7 @@ export default function AdminKYCPage() {
             <h3 style={{fontSize:17,fontWeight:800,marginBottom:18}}>KYC Review — {selected.user?.name}</h3>
             <div style={{background:'#1A1A1A',borderRadius:12,padding:16,marginBottom:18}}>
               {[
-                {l:'Full Name',v:`${selected.firstName} ${selected.lastName}`},
+                {l:'Full Name',v:selected.fullName},
                 {l:'Date of Birth',v:selected.dateOfBirth||'—'},
                 {l:'Country',v:selected.country},
                 {l:'Document Type',v:selected.documentType?.replace('_',' ')},

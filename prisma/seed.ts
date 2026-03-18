@@ -26,6 +26,7 @@ async function main() {
       name: 'Super Admin',
       email: adminEmail,
       passwordHash: adminHash,
+      referralCode: 'ADMIN001',
       role: 'SUPER_ADMIN',
       kycStatus: 'APPROVED',
       balances: { create: [
@@ -65,6 +66,7 @@ async function main() {
       name: 'Demo User',
       email: demoEmail,
       passwordHash: demoHash,
+      referralCode: 'DEMO001',
       role: 'USER',
       kycStatus: 'APPROVED',
       balances: { create: [
@@ -73,6 +75,20 @@ async function main() {
         { currency: 'ETH', amount: 0.5 },
         { currency: 'USDT', amount: 2000 },
       ] },
+    },
+  })
+
+  await prisma.referralCampaign.upsert({
+    where: { id: 'seed-monthly-sprint' },
+    update: {},
+    create: {
+      id: 'seed-monthly-sprint',
+      name: 'Monthly sprint',
+      description: 'Refer 10 friends this month and earn a $1000 bonus.',
+      startAt: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      endAt: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59),
+      requiredReferrals: 10,
+      rewardAmount: 1000,
     },
   })
 
