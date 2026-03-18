@@ -124,7 +124,7 @@ export default function AdminDashboard() {
                 <tr key={u.id}>
                   <td>{u.name || '—'}</td>
                   <td style={{ color: '#cbd5e1' }}>{u.email}</td>
-                  <td style={{ color: u.kycStatus === 'APPROVED' ? '#22c55e' : '#fbbf24' }}>{u.kycStatus === 'APPROVED' ? 'Verified' : 'Pending'}</td>
+                  <td style={{ color: u.kycStatus === 'APPROVED' ? '#22c55e' : '#fbbf24' }}>{u.kycStatus === 'APPROVED' ? 'Verified' : u.kycStatus === 'PENDING_REVIEW' ? 'Pending' : u.kycStatus === 'REJECTED' ? 'Rejected' : 'Not verified'}</td>
                   <td>${(u.balances?.find((b: any) => b.currency === 'USD')?.amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                   <td style={{ color: '#a5b4fc' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
                 </tr>

@@ -27,6 +27,8 @@ export async function GET(req: NextRequest) {
       email: '',
       kycStatus: 'NOT_SUBMITTED',
       bonusClaimed: false,
+      rewardBalance: 0,
+      referralCode: '',
       notifications: [],
     },
   })
