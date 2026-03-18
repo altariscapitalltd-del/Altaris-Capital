@@ -7,7 +7,7 @@ const Pusher = require('pusher')
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOST || '0.0.0.0'
-const port = parseInt(process.env.PORT || '3000', 10)
+const port = parseInt(process.env.PORT || '5000', 10)
 
 const pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID || '',
