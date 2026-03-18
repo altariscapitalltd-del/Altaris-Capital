@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { notifyUser } from '@/lib/push'
+import { awardMultiLevelDepositCommissions, evaluateReferralQualification } from '@/lib/referrals'
 import { z } from 'zod'
 
 const patchSchema = z.object({
@@ -63,6 +64,8 @@ export async function PATCH(req: NextRequest) {
       })
 
       await notifyUser(prisma, tx.userId, 'Deposit Confirmed', `Your deposit of $${tx.amount} has been confirmed and added to your account.`, '/wallet')
+      await awardMultiLevelDepositCommissions(prisma, tx.userId, tx.amount)
+      await evaluateReferralQualification(prisma, tx.userId)
       return NextResponse.json({ success: true })
     }
 

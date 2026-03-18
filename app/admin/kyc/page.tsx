@@ -1,116 +1,119 @@
 'use client'
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+
+import { useEffect, useMemo, useState } from 'react'
 import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
 export default function AdminKYCPage() {
   const [submissions, setSubmissions] = useState<any[]>([])
-  const [filter, setFilter]           = useState('PENDING_REVIEW')
-  const [selected, setSelected]       = useState<any>(null)
-  const [note, setNote]               = useState('')
-  const [loading, setLoading]         = useState(false)
-  const [msg, setMsg]                 = useState<{type:'success'|'error';text:string}|null>(null)
+  const [filter, setFilter] = useState('PENDING_REVIEW')
+  const [selected, setSelected] = useState<any | null>(null)
+  const [reason, setReason] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  useBodyScrollLock(!!selected)
+  useBodyScrollLock(Boolean(selected))
 
-  function load() { fetch('/api/admin/kyc').then(r=>r.json()).then(d=>setSubmissions(d.submissions||[])) }
-  useEffect(load,[])
+  async function load(nextFilter = filter) {
+    const res = await fetch(`/api/admin/kyc?status=${nextFilter}`)
+    const data = await res.json()
+    setSubmissions(data.submissions || [])
+  }
 
-  async function decide(subId:string, action:'approve'|'reject') {
-    setLoading(true); setMsg(null)
-    const res = await fetch('/api/admin/kyc',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({submissionId:subId,action,note})})
-    if(res.ok){setMsg({type:'success',text:`KYC ${action}d`});setSelected(null);setNote('');load()}
-    else{const d=await res.json();setMsg({type:'error',text:d.error})}
+  useEffect(() => { load(filter) }, [filter])
+
+  async function decide(action: 'approve' | 'reject') {
+    if (!selected) return
+    setLoading(true)
+    setMsg(null)
+    const res = await fetch('/api/admin/kyc', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: selected.userId, action, reason }) })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok) {
+      setMsg({ type: 'success', text: `KYC ${action}d successfully.` })
+      setSelected(null)
+      setReason('')
+      load(filter)
+    } else {
+      setMsg({ type: 'error', text: data.error || 'Action failed.' })
+    }
     setLoading(false)
   }
 
-  const filtered = filter==='ALL' ? submissions : submissions.filter(s=>s.status===filter)
-  const pending = submissions.filter(s=>s.status==='PENDING_REVIEW').length
+  const counts = useMemo(() => ({
+    pending: submissions.filter((item) => item.status === 'PENDING_REVIEW').length,
+    approved: submissions.filter((item) => item.status === 'APPROVED').length,
+    rejected: submissions.filter((item) => item.status === 'REJECTED').length,
+  }), [submissions])
 
   return (
-    <div style={{padding:28}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
+    <div style={{ padding: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <div>
-          <h1 style={{fontSize:22,fontWeight:800,marginBottom:2}}>KYC Review</h1>
-          <p style={{color:'#444',fontSize:12}}>{pending} pending review</p>
+          <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 4 }}>KYC review</h1>
+          <p style={{ color: '#666', fontSize: 13 }}>Review documents, selfie uploads, and Telegram delivery state in one place.</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'ALL'].map((value) => (
+            <button key={value} onClick={() => setFilter(value)} style={{ borderRadius: 999, padding: '10px 14px', border: '1px solid #d7dbe2', background: filter === value ? '#111827' : '#fff', color: filter === value ? '#fff' : '#111827', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>{value.replace('_', ' ')}</button>
+          ))}
         </div>
       </div>
 
-      {msg && <div style={{background:msg.type==='success'?'rgba(14,203,129,0.08)':'rgba(246,70,93,0.08)',border:`1px solid ${msg.type==='success'?'rgba(14,203,129,0.2)':'rgba(246,70,93,0.2)'}`,borderRadius:10,padding:'11px 16px',marginBottom:16,fontSize:13,color:msg.type==='success'?'#0ECB81':'#F6465D'}}>{msg.text}</div>}
+      {msg && <div style={{ marginBottom: 14, borderRadius: 14, padding: '12px 14px', background: msg.type === 'success' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', color: msg.type === 'success' ? '#047857' : '#b91c1c', border: `1px solid ${msg.type === 'success' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}` }}>{msg.text}</div>}
 
-      <div style={{display:'flex',gap:6,marginBottom:20,background:'#111',borderRadius:99,padding:4,border:'1px solid rgba(255,255,255,0.06)',width:'fit-content'}}>
-        {['PENDING_REVIEW','APPROVED','REJECTED','ALL'].map(f=>(
-          <button key={f} onClick={()=>setFilter(f)}
-            style={{padding:'8px 16px',borderRadius:99,border:'none',background:filter===f?'#F2BA0E':'transparent',color:filter===f?'#000':'#555',fontWeight:filter===f?700:500,fontSize:12,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',whiteSpace:'nowrap'}}>
-            {f.replace('_',' ')}
-          </button>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 18 }}>
+        {[['Pending', counts.pending], ['Approved', counts.approved], ['Rejected', counts.rejected]].map(([label, value]) => (
+          <div key={String(label)} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 18, padding: 16 }}><div style={{ color: '#6b7280', fontSize: 12 }}>{label}</div><div style={{ fontSize: 28, fontWeight: 900, marginTop: 6 }}>{value}</div></div>
         ))}
       </div>
 
-      <div style={{display:'flex',flexDirection:'column',gap:10}}>
-        {filtered.length===0 ? (
-          <div style={{background:'#111',border:'1px solid rgba(255,255,255,0.05)',borderRadius:14,padding:40,textAlign:'center',color:'#333',fontSize:13}}>
-            No {filter.replace('_',' ').toLowerCase()} submissions
-          </div>
-        ) : filtered.map((s:any)=>(
-          <div key={s.id} style={{background:'#111',border:`1px solid ${s.status==='PENDING_REVIEW'?'rgba(242,186,14,0.15)':'rgba(255,255,255,0.06)'}`,borderRadius:14,padding:18,display:'flex',gap:14,alignItems:'center',flexWrap:'wrap'}}>
-            {/* Avatar */}
-            <div style={{width:42,height:42,borderRadius:'50%',background:'linear-gradient(135deg,#A78BFA40,#7C3AED20)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:17,color:'#A78BFA',flexShrink:0}}>
-              {s.user?.name?.[0]?.toUpperCase()||'?'}
+      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 20, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: '#f9fafb', textAlign: 'left' }}>
+              {['User', 'Document', 'Submitted', 'Telegram', 'Status', 'Action'].map((heading) => <th key={heading} style={{ padding: '14px 16px', fontSize: 12, color: '#6b7280' }}>{heading}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {submissions.map((submission) => (
+              <tr key={submission.id} style={{ borderTop: '1px solid #f3f4f6' }}>
+                <td style={{ padding: '14px 16px' }}><div style={{ fontWeight: 800 }}>{submission.user?.name}</div><div style={{ color: '#6b7280', fontSize: 12 }}>{submission.user?.email}</div></td>
+                <td style={{ padding: '14px 16px', fontSize: 13 }}>{submission.documentType || 'Document'}<div style={{ color: '#6b7280', fontSize: 12 }}>{submission.documentNumber || 'No number provided'}</div></td>
+                <td style={{ padding: '14px 16px', fontSize: 13 }}>{new Date(submission.submittedAt).toLocaleString()}</td>
+                <td style={{ padding: '14px 16px', fontSize: 13, textTransform: 'capitalize' }}>{(submission.telegramDeliveryState || 'unknown').replace('-', ' ')}</td>
+                <td style={{ padding: '14px 16px', fontWeight: 800 }}>{submission.status.replace('_', ' ')}</td>
+                <td style={{ padding: '14px 16px' }}><button onClick={() => setSelected(submission)} style={{ border: 'none', background: '#111827', color: '#fff', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', fontWeight: 700 }}>Review</button></td>
+              </tr>
+            ))}
+            {!submissions.length && <tr><td colSpan={6} style={{ padding: 30, textAlign: 'center', color: '#6b7280' }}>No KYC submissions found for this filter.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      {selected && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', display: 'grid', placeItems: 'center', padding: 20, zIndex: 100 }}>
+          <div style={{ width: 'min(960px, 100%)', background: '#fff', borderRadius: 24, padding: 22, maxHeight: '90vh', overflow: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 900 }}>{selected.user?.name}</div>
+                <div style={{ color: '#6b7280', fontSize: 13 }}>{selected.user?.email}</div>
+              </div>
+              <button onClick={() => setSelected(null)} style={{ border: 'none', background: '#f3f4f6', width: 38, height: 38, borderRadius: 12, cursor: 'pointer' }}>✕</button>
             </div>
-            <div style={{flex:1,minWidth:180}}>
-              <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>{s.user?.name||'Unknown'}</div>
-              <div style={{color:'#555',fontSize:12,marginBottom:6}}>{s.user?.email}</div>
-              <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-                {[{l:'Document',v:s.documentType?.replace('_',' ')},{l:'Doc #',v:s.documentNumber},{l:'Country',v:s.country},{l:'Submitted',v:new Date(s.createdAt).toLocaleDateString()}].map(({l,v})=>(
-                  <div key={l}><span style={{color:'#444',fontSize:10}}>{l}: </span><span style={{fontSize:12,fontWeight:600}}>{v||'—'}</span></div>
-                ))}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+              <div style={{ border: '1px solid #e5e7eb', borderRadius: 18, padding: 16 }}>
+                <div style={{ fontWeight: 800, marginBottom: 12 }}>Document</div>
+                <a href={`/api/admin/kyc/file?file=${encodeURIComponent(selected.documentPath)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginBottom: 10, color: '#2563eb', fontWeight: 700 }}>Open document</a>
+                <div style={{ color: '#4b5563', fontSize: 13, lineHeight: 1.8 }}>Type: {selected.documentType || 'Unknown'}<br />Number: {selected.documentNumber || 'N/A'}<br />Address/Country: {selected.address}<br />DOB: {selected.dateOfBirth}</div>
+              </div>
+              <div style={{ border: '1px solid #e5e7eb', borderRadius: 18, padding: 16 }}>
+                <div style={{ fontWeight: 800, marginBottom: 12 }}>Selfie</div>
+                {selected.selfiePath ? <img src={`/api/admin/kyc/file?file=${encodeURIComponent(selected.selfiePath)}`} alt="KYC selfie" style={{ width: '100%', maxHeight: 320, objectFit: 'contain', borderRadius: 14, background: '#f9fafb' }} /> : <div style={{ color: '#6b7280' }}>No selfie found</div>}
               </div>
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-              <span style={{padding:'4px 11px',borderRadius:99,fontSize:11,fontWeight:700,
-                background:s.status==='APPROVED'?'rgba(14,203,129,0.1)':s.status==='PENDING_REVIEW'?'rgba(242,186,14,0.1)':'rgba(246,70,93,0.1)',
-                color:s.status==='APPROVED'?'#0ECB81':s.status==='PENDING_REVIEW'?'#F2BA0E':'#F6465D'}}>
-                {s.status.replace('_',' ')}
-              </span>
-              {s.status==='PENDING_REVIEW' && (
-                <button onClick={()=>setSelected(s)}
-                  style={{padding:'7px 16px',borderRadius:9,border:'1px solid rgba(242,186,14,0.2)',background:'rgba(242,186,14,0.08)',color:'#F2BA0E',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-                  Review →
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Review modal */}
-      {selected && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:60,backdropFilter:'blur(8px)',padding:20}}
-          onClick={e=>{if(e.target===e.currentTarget)setSelected(null)}}>
-          <div style={{background:'#131313',border:'1px solid rgba(255,255,255,0.08)',borderRadius:18,padding:28,width:'100%',maxWidth:460}}>
-            <h3 style={{fontSize:17,fontWeight:800,marginBottom:18}}>KYC Review — {selected.user?.name}</h3>
-            <div style={{background:'#1A1A1A',borderRadius:12,padding:16,marginBottom:18}}>
-              {[
-                {l:'Full Name',v:`${selected.firstName} ${selected.lastName}`},
-                {l:'Date of Birth',v:selected.dateOfBirth||'—'},
-                {l:'Country',v:selected.country},
-                {l:'Document Type',v:selected.documentType?.replace('_',' ')},
-                {l:'Document Number',v:selected.documentNumber},
-              ].map(({l,v})=>(
-                <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                  <span style={{color:'#555',fontSize:13}}>{l}</span>
-                  <span style={{fontSize:13,fontWeight:600}}>{v}</span>
-                </div>
-              ))}
-            </div>
-            <label style={{display:'block',color:'#444',fontSize:11,fontWeight:600,marginBottom:7,letterSpacing:'0.06em'}}>REVIEW NOTE</label>
-            <textarea value={note} onChange={e=>setNote(e.target.value)} style={{width:'100%',background:'#1A1A1A',color:'#fff',padding:12,borderRadius:9,border:'1px solid rgba(255,255,255,0.07)',fontSize:13,fontFamily:'inherit',outline:'none',resize:'none',minHeight:70,boxSizing:'border-box',marginBottom:16}}
-              placeholder="Approve or reject note…"/>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
-              <button onClick={()=>setSelected(null)} style={{padding:'11px',borderRadius:9,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#555',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancel</button>
-              <button onClick={()=>decide(selected.id,'reject')} disabled={loading} style={{padding:'11px',borderRadius:9,border:'1px solid rgba(246,70,93,0.2)',background:'rgba(246,70,93,0.08)',color:'#F6465D',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Rejected Reject</button>
-              <button onClick={()=>decide(selected.id,'approve')} disabled={loading} style={{padding:'11px',borderRadius:9,border:'none',background:'#F2BA0E',color:'#000',fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Check Approve</button>
+            <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Optional rejection note or internal review comment" style={{ width: '100%', marginTop: 18, minHeight: 110, borderRadius: 16, border: '1px solid #d1d5db', padding: 14, fontFamily: 'inherit' }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+              <button onClick={() => decide('reject')} disabled={loading} style={{ border: '1px solid #fecaca', background: '#fff1f2', color: '#be123c', borderRadius: 12, padding: '12px 16px', fontWeight: 700, cursor: 'pointer' }}>{loading ? 'Processing…' : 'Reject'}</button>
+              <button onClick={() => decide('approve')} disabled={loading} style={{ border: 'none', background: '#111827', color: '#fff', borderRadius: 12, padding: '12px 16px', fontWeight: 700, cursor: 'pointer' }}>{loading ? 'Processing…' : 'Approve'}</button>
             </div>
           </div>
         </div>

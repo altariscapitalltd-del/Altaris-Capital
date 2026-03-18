@@ -8,35 +8,47 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  name             String
-  phone            String?
-  passwordHash     String
-  role             Role      @default(USER)
-  kycStatus        KycStatus @default(NOT_SUBMITTED)
-  isActive         Boolean   @default(true)
-  withdrawEnabled  Boolean   @default(true)
-  bonusClaimed     Boolean   @default(false)
-  profilePicture   String?
-  pushSubscription Json?
-  lastKnownLat     Float?
-  lastKnownLng     Float?
-  lastKnownCity    String?
-  lastKnownCountry String?
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String
+  phone             String?
+  passwordHash      String
+  role              Role      @default(USER)
+  kycStatus         KycStatus @default(NOT_SUBMITTED)
+  isActive          Boolean   @default(true)
+  withdrawEnabled   Boolean   @default(true)
+  bonusClaimed      Boolean   @default(false)
+  profilePicture    String?
+  pushSubscription  Json?
+  lastKnownLat      Float?
+  lastKnownLng      Float?
+  lastKnownCity     String?
+  lastKnownCountry  String?
   locationUpdatedAt DateTime?
-  createdAt        DateTime  @default(now())
-  lastLoginAt           DateTime?
-  passwordResetToken    String?
-  passwordResetExpires  DateTime?
-  balances         Balance[]
-  transactions     Transaction[]
-  investments      Investment[]
-  otps             OTP[]
-  kyc              KycSubmission?
-  notifications    Notification[]
-  conversation     Conversation?
-  auditTargets     AdminAuditLog[] @relation("TargetUser")
+  createdAt         DateTime  @default(now())
+  lastLoginAt       DateTime?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  emailVerifiedAt   DateTime?
+  referralCode      String    @unique
+  referredById      String?
+  rewardBalance     Float     @default(0)
+  rewardEarnings    Float     @default(0)
+  balances          Balance[]
+  transactions      Transaction[]
+  investments       Investment[]
+  otps              OTP[]
+  kyc               KycSubmission?
+  notifications     Notification[]
+  conversation      Conversation?
+  auditTargets      AdminAuditLog[] @relation("TargetUser")
+  referredBy        User?     @relation("UserReferrals", fields: [referredById], references: [id])
+  referredUsers     User[]    @relation("UserReferrals")
+  outgoingReferrals Referral[] @relation("ReferralReferrer")
+  incomingReferral  Referral?  @relation("ReferralReferredUser")
+  rewardEvents      RewardEvent[]
+  campaignRewards   CampaignReward[]
+
   @@map("users")
 }
 
@@ -104,17 +116,21 @@ model OTP {
 }
 
 model KycSubmission {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  fullName        String
-  dateOfBirth     String
-  address         String
-  documentPath    String
-  status          KycStatus @default(PENDING_REVIEW)
-  rejectionReason String?
-  submittedAt     DateTime  @default(now())
-  reviewedAt      DateTime?
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  fullName              String
+  dateOfBirth           String
+  address               String
+  documentType          String?
+  documentNumber        String?
+  documentPath          String
+  selfiePath            String?
+  telegramDeliveryState String?
+  status                KycStatus @default(PENDING_REVIEW)
+  rejectionReason       String?
+  submittedAt           DateTime  @default(now())
+  reviewedAt            DateTime?
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@map("kyc_submissions")
 }
 
@@ -174,6 +190,68 @@ model AdminAuditLog {
   @@map("admin_audit_logs")
 }
 
+model Referral {
+  id                    String         @id @default(cuid())
+  referrerId            String
+  referredUserId        String         @unique
+  status                ReferralStatus @default(PENDING)
+  emailVerifiedAt       DateTime?
+  kycVerifiedAt         DateTime?
+  depositQualifiedAt    DateTime?
+  qualifiedAt           DateTime?
+  qualificationDeposit  Float?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  referrer              User           @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUser          User           @relation("ReferralReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId, status])
+  @@map("referrals")
+}
+
+model RewardEvent {
+  id          String          @id @default(cuid())
+  userId       String
+  type         RewardEventType
+  amount       Float
+  title        String
+  description  String?
+  metadata     Json?
+  createdAt    DateTime        @default(now())
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("reward_events")
+}
+
+model ReferralCampaign {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  targetReferrals Int
+  rewardAmount    Float
+  startAt         DateTime
+  endAt           DateTime
+  isActive        Boolean  @default(true)
+  rewards         CampaignReward[]
+
+  @@map("referral_campaigns")
+}
+
+model CampaignReward {
+  id                   String           @id @default(cuid())
+  campaignId           String
+  userId               String
+  qualifiedReferrals   Int
+  amount               Float
+  awardedAt            DateTime         @default(now())
+  campaign             ReferralCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, userId])
+  @@map("campaign_rewards")
+}
+
 enum Role {
   USER
   ADMIN
@@ -216,3 +294,17 @@ enum OTPPurpose {
   KYC
 }
 
+enum ReferralStatus {
+  PENDING
+  QUALIFIED
+  REJECTED_SELF
+  REJECTED_DUPLICATE
+}
+
+enum RewardEventType {
+  REFERRAL_BONUS
+  REFERRAL_TIER
+  REFERRAL_COMMISSION
+  CAMPAIGN_BONUS
+  VIP_UNLOCK
+}
