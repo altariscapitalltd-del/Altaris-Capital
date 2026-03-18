@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
       balances: true,
       investments: { where: { status: 'ACTIVE' }, orderBy: { startDate: 'desc' } },
       notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
+      referredUsers: { select: { id: true, name: true, createdAt: true } },
     },
   })
   return NextResponse.json({ user: full ? normalizeProfilePicture(full) : null })

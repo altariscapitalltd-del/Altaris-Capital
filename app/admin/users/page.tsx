@@ -69,7 +69,7 @@ export default function AdminUsersPage() {
                     <tr key={u.id} onClick={() => (window.location.href = `/admin/users/${u.id}`)} style={{ borderBottom: '1px solid rgba(255,255,255,.05)', cursor: 'pointer' }}>
                       <td style={{ padding: '12px 14px' }}>{u.name || '—'}</td>
                       <td style={{ padding: '12px 14px', color: '#888' }}>{u.email}</td>
-                      <td style={{ padding: '12px 14px', color: u.kycStatus === 'APPROVED' ? '#0ECB81' : '#f2ba0e' }}>{u.kycStatus === 'APPROVED' ? 'Verified' : 'Pending'}</td>
+                      <td style={{ padding: '12px 14px', color: u.kycStatus === 'APPROVED' ? '#0ECB81' : '#f2ba0e' }}>{u.kycStatus === 'APPROVED' ? 'Verified' : u.kycStatus === 'PENDING_REVIEW' ? 'Pending' : u.kycStatus === 'REJECTED' ? 'Rejected' : 'Not verified'}</td>
                       <td style={{ padding: '12px 14px' }}>${bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td style={{ padding: '12px 14px', color: u.isFrozen ? '#f6465d' : '#0ECB81' }}>{u.isFrozen ? 'Frozen' : 'Active'}</td>
                       <td style={{ padding: '12px 14px', color: '#888' }}>{new Date(u.createdAt).toLocaleDateString()}</td>

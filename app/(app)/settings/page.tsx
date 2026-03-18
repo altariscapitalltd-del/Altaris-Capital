@@ -170,7 +170,7 @@ export default function SettingsPage() {
               <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{user?.email}</div>
               <div style={{ marginTop:6 }}>
                 <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99, background: user?.kycStatus==='APPROVED'?'var(--success-bg)':'var(--warning-bg)', color: user?.kycStatus==='APPROVED'?'var(--success)':'var(--warning)' }}>
-                  {user?.kycStatus==='APPROVED' ? 'Verified' : 'KYC Pending'}
+                  {user?.kycStatus==='APPROVED' ? 'Verified' : user?.kycStatus==='PENDING_REVIEW' ? 'Pending' : user?.kycStatus==='REJECTED' ? 'Rejected' : 'Not verified'}
                 </span>
               </div>
             </div>
@@ -183,7 +183,7 @@ export default function SettingsPage() {
       <SectionCard>
         <SettingRow icon={<User size={18} strokeWidth={2} />} label="Edit Profile" value="Name, photo, phone" href="/profile" />
         <SettingRow icon={<Key size={18} strokeWidth={2} />} label="Change Password" href="/forgot-password" />
-        <SettingRow icon={<UserCheck size={18} strokeWidth={2} />} label="KYC Verification" value={user?.kycStatus === 'APPROVED' ? 'Verified' : 'Pending'} href="/kyc" />
+        <SettingRow icon={<UserCheck size={18} strokeWidth={2} />} label="KYC Verification" value={user?.kycStatus === 'APPROVED' ? 'Verified' : user?.kycStatus === 'PENDING_REVIEW' ? 'Pending' : user?.kycStatus === 'REJECTED' ? 'Rejected' : 'Not verified'} href="/kyc" />
         <SettingRow icon={<Coins size={18} strokeWidth={2} />} label="Claim $100 Bonus" value={user?.bonusClaimed ? 'Already claimed' : 'Tap to claim!'} href="/home" />
       </SectionCard>
 
