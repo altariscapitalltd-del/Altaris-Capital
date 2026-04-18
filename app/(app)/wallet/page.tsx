@@ -98,8 +98,7 @@ export default function WalletPage() {
         setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
         setProfitToday(active.reduce((sum: number, i: any) => sum + i.amount * (i.dailyRoi || 0), 0))
 
-        const code = (d.user?.id || '').slice(-8).toUpperCase()
-        setRefCode(code || 'ALTARIS01')
+        setRefCode(d.user?.referralCode || 'ALTARIS01')
       })
       .catch(() => {})
   }
@@ -301,7 +300,7 @@ export default function WalletPage() {
 
   async function shareReferral() {
     const referralUrl = `${window.location.origin}/signup?ref=${refCode}`
-    const text = `Join me on Altaris Capital and earn referral rewards: ${referralUrl}`
+    const text = `I'm using Altaris Capital — an investment platform that grows your wealth. Join with my referral link and get a $100 bonus when you start investing!\n${referralUrl}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Join Altaris Capital', text, url: referralUrl })
