@@ -1,0 +1,282 @@
+PRODUCTION-READY APP IMPROVEMENT — ENGINEER PROMPT
+
+Goal:
+Upgrade the full product (web app, and admin panel) to production-grade quality: clean, fast, secure, mobile-friendly, and ready for Vercel deployment. Target quality similar to bybit, Stripe, Paystack, Binance or Flutterwave dashboards. 
+
+IMPORTANT RULES:
+• Do NOT break authentication
+• Do NOT break database structure
+• Do NOT break existing APIs
+• Work in safe incremental steps
+• Improve UI/UX across the full app
+• Make everything production ready
+
+--------------------------------------------------
+
+NAVIGATION & WALLET:
+
+1 Remove the Rewards tab from bottom navigation.
+
+2 Move rewards into Wallet:
+• Remove the old rewards card
+• Replace with full rewards section
+
+• Make design clean fintech style
+
+Rewards must only be accessible when user is logged in.
+
+--------------------------------------------------
+
+PROFILE & KYC:
+
+Update profile page to show KYC status badge:
+
+Status types:
+• Not Verified (gray)
+• Pending (orange)
+• Verified (green)
+• Rejected (red)
+
+Add actions:
+• Retry button if rejected
+• View submission if pending
+• Verified badge if approved
+
+KYC must update automatically from backend.
+
+--------------------------------------------------
+
+LANDING PAGE IMPROVEMENTS:
+
+Replace the hero video.
+
+Add:
+Animated UI showcase (UI moving like product demo).
+
+Make it auto loop when they visit the site
+
+--------------------------------------------------
+
+REFERRAL PROGRAM RULE (VERY IMPORTANT):
+
+Landing page should ONLY explain referral program.
+
+Users must NOT be able to:
+• Generate referral links from website
+• View referral earnings from website
+• Access referral dashboard from website
+• Use referral APIs without login
+
+Landing page only shows:
+• How referral works
+• Benefits
+• Example rewards
+
+Buttons allowed:
+• Get Started → signup
+• Login to access referrals → login
+
+SECURITY:
+
+Referral system must be APP ONLY.
+
+Add:
+• Auth middleware protection
+• Block public referral APIs
+• Redirect unauthenticated users to login
+• Show message:
+"Please login to access the referral program"
+
+--------------------------------------------------
+
+ADMIN PANEL REDESIGN:
+
+Make admin panel:
+• Mobile friendly
+• Desktop friendly
+• Tablet friendly
+• Modern dashboard design
+
+Add features:
+
+USER MANAGEMENT:
+• View users
+• Search users
+• Suspend users
+• Activate users
+• View wallets
+• View referrals
+
+KYC MANAGEMENT:
+• View KYC submissions
+• Approve
+• Reject
+• Request resubmission
+• Document preview
+• Status history
+
+REFERRAL MANAGEMENT:
+• Referral tree
+• Commission tracking
+• Fraud detection flags
+• Manual reward adjustment
+
+NOTIFICATIONS:
+• Send push notifications
+• Send announcements
+• Target user groups
+• Notification history
+• Delivery logs
+
+FINANCE DASHBOARD:
+• Total users
+• Verified users
+• Pending KYC
+• Total rewards
+• Referral payouts
+• Activity logs
+
+SYSTEM:
+• Admin roles
+• Permissions
+• Audit logs
+• Error logs
+• API health monitoring
+• ⁠and add more features you think is best and  wire everything correctly (admin -> user)
+
+--------------------------------------------------
+
+BACKEND FIXES:
+
+Fix data flow:
+
+• KYC submissions must reach admin
+• Admin decision must reflect in user app
+• Rewards must sync properly
+• Referrals must track properly
+
+Add:
+• Logging system
+• Error tracking
+• Request IDs
+
+--------------------------------------------------
+
+PUSH NOTIFICATION FIX:
+
+Fix push system:
+
+• Validate device tokens
+• Prevent duplicates
+• Retry failed sends
+• Delivery reports
+• Failure logs
+
+Add admin notification sender.
+
+--------------------------------------------------
+
+GLOBAL UI/UX IMPROVEMENTS:
+
+Improve entire app:
+
+• Better spacing
+• Better typography
+• Consistent colors
+• Loading skeletons
+• Empty states
+• Error states
+• Form validation feedback
+• Smooth animations
+• Toast notifications
+• Success animations
+• Modern SVG icons
+• Smooth transitions
+
+Make app feel:
+Modern
+Fast
+Clean
+High trust
+Professional
+
+--------------------------------------------------
+
+SECURITY:
+
+Add:
+• HTTPS enforcement
+• Secure cookies
+• CSRF protection
+• Rate limiting
+• File upload limits for KYC
+• Admin role protection
+
+--------------------------------------------------
+
+PRODUCTION READY REQUIREMENTS:
+
+Prepare for Vercel deployment:
+
+• Clean build
+• No console errors
+• Optimized images
+• Code splitting
+• Lazy loading
+• Environment variables
+• Secure API calls
+• Error boundaries
+• Health check endpoint
+
+--------------------------------------------------
+
+ACCEPTANCE CHECKLIST:
+
+App is complete when:
+
+• Rewards removed from nav
+• Rewards inside wallet works
+• Profile shows KYC status
+• KYC reaches admin panel
+• Admin can approve/reject
+• Status reflects in user app
+• Referral only works inside app
+• Website cannot access referral system
+• Notifications send correctly
+• App deploys successfully on Vercel
+
+--------------------------------------------------
+
+EXECUTION ORDER:
+
+1 UI updates
+2 Navigation restructure
+3 Profile improvements
+4 Landing page update
+5 Admin panel upgrade
+6 Backend fixes
+7 Notification fixes
+8 Security improvements
+9 Production optimization
+10 Final testing
+
+Do not rush. Do safe changes.
+
+--------------------------------------------------
+
+FINAL GOAL:
+
+Make the app:
+
+Production ready
+Very professional
+Very clean
+Very fast
+Unique
+Modern
+Scalable
+
+Quality target:
+Top startup level product.
+
+END TASK

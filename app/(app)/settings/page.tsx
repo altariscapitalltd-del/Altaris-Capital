@@ -1,0 +1,245 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import {
+  User, Key, UserCheck, Coins, Bell, Mail, TrendingUp, Fingerprint, Shield, Smartphone,
+  MessageCircle, HelpCircle, FileText, Lock, Info, LogOut,
+} from 'lucide-react'
+import { getFirebaseMessagingToken } from '@/lib/firebaseClient'
+
+function SettingRow({ icon, label, value, href, onClick, danger, toggle, toggled, onToggle }:
+  { icon: React.ReactNode; label: string; value?: string; href?: string; onClick?: () => void; danger?: boolean; toggle?: boolean; toggled?: boolean; onToggle?: () => void }) {
+  const content = (
+    <div className="row-item" style={{ background:'transparent', borderBottom:'1px solid var(--border)' }}
+      onClick={toggle ? undefined : onClick}>
+      <div style={{ width:34, height:34, borderRadius:10, background: danger?'rgba(246,70,93,0.1)':'var(--bg-elevated)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color: danger ? 'var(--danger)' : 'var(--text-secondary)' }}>
+        {icon}
+      </div>
+      <div style={{ flex:1 }}>
+        <div style={{ fontWeight:600, fontSize:14, color: danger?'var(--danger)':'var(--text-primary)' }}>{label}</div>
+        {value && <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:1 }}>{value}</div>}
+      </div>
+      {toggle ? (
+        <div onClick={(e) => { e.stopPropagation(); onToggle?.() }} style={{ width:44, height:26, borderRadius:99, background: toggled?'var(--brand-primary)':'var(--bg-elevated)', position:'relative', cursor:'pointer', transition:'background .2s', flexShrink:0 }}>
+          <div style={{ position:'absolute', top:3, left: toggled?22:3, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 1px 4px rgba(0,0,0,0.3)' }}/>
+        </div>
+      ) : (
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+      )}
+    </div>
+  )
+  if (href) return <Link href={href} style={{ textDecoration:'none' }}>{content}</Link>
+  return content
+}
+
+function SectionLabel({ label }: { label:string }) {
+  return <div style={{ padding:'18px 20px 8px', color:'var(--text-muted)', fontSize:10, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase' }}>{label}</div>
+}
+
+function SectionCard({ children }: { children:React.ReactNode }) {
+  return (
+    <div style={{ margin:'0 16px', background:'var(--bg-card)', borderRadius:16, border:'1px solid var(--border)', overflow:'hidden' }}>
+      {children}
+    </div>
+  )
+}
+
+
+export default function SettingsPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [notifPush, setNotifPush] = useState(false)
+  const [notifEmail, setNotifEmail] = useState(true)
+  const [notifInvest, setNotifInvest] = useState(true)
+  const [biometric, setBiometric] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  useEffect(() => {
+    try {
+      const cached = window.localStorage.getItem('altaris_user_cache')
+      if (cached) setUser(JSON.parse(cached))
+    } catch {}
+
+    fetch('/api/user/profile').then(r=>r.json()).then(d=>{
+      setUser(d.user)
+      try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(d.user)) } catch {}
+    }).catch(() => {})
+    fetch('/api/user/push-subscribe').then(r=>r.json()).then(d=>{
+      if (d?.preferences) {
+        setNotifPush(Boolean(d.preferences.pushAlerts))
+        setNotifEmail(Boolean(d.preferences.emailUpdates))
+        setNotifInvest(Boolean(d.preferences.investmentAlerts))
+      }
+    }).catch(() => {})
+    setBiometric(localStorage.getItem('altaris_biometric') === '1')
+  }, [])
+
+  async function logout() {
+    setLoggingOut(true)
+    await fetch('/api/auth/logout', { method:'POST' })
+    router.push('/login')
+  }
+
+  async function enablePush(enable: boolean) {
+    try {
+      if (!enable) {
+        await fetch('/api/user/push-subscribe', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pushAlerts: false }),
+        })
+        setNotifPush(false)
+        return
+      }
+
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true
+      if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window) || (isIos && !isStandalone)) {
+        setNotifPush(false)
+        return
+      }
+
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        return
+      }
+
+      const token = await getFirebaseMessagingToken()
+      if (token) {
+        await fetch('/api/user/push-subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        })
+      } else {
+        await fetch('/api/user/push-subscribe', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pushAlerts: true }),
+        })
+      }
+      setNotifPush(true)
+    } catch {
+    }
+  }
+
+
+  function toggleEmail(next: boolean) {
+    setNotifEmail(next)
+    fetch('/api/user/push-subscribe', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emailUpdates: next }),
+    }).catch(() => {})
+  }
+
+  function toggleInvest(next: boolean) {
+    setNotifInvest(next)
+    fetch('/api/user/push-subscribe', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ investmentAlerts: next }),
+    }).catch(() => {})
+  }
+
+  function toggleBiometric(next: boolean) {
+    setBiometric(next)
+    localStorage.setItem('altaris_biometric', next ? '1' : '0')
+  }
+
+  return (
+    <div style={{ paddingBottom:24 }}>
+      <div style={{ margin:'0 16px 4px' }}>
+        <Link href="/profile" style={{ textDecoration:'none' }}>
+          <div style={{ background:'var(--bg-card)', borderRadius:16, border:'1px solid var(--border)', padding:16, display:'flex', alignItems:'center', gap:14 }} className="pressable">
+            <div style={{ width:54, height:54, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'2px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:22, color:'#000', flexShrink:0, overflow:'hidden', position:'relative' }}>
+              {user?.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                user?.name?.[0]?.toUpperCase()||'A'
+              )}
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:700, fontSize:16 }}>{user?.name || 'User'}</div>
+              <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{user?.email}</div>
+              <div style={{ marginTop:6 }}>
+                {(() => {
+                  const s = user?.kycStatus
+                  const cfg: Record<string, {bg:string;color:string;label:string}> = {
+                    APPROVED:       { bg:'rgba(14,203,129,0.12)',  color:'#0ECB81', label:'✓ Verified' },
+                    PENDING_REVIEW: { bg:'rgba(242,186,14,0.12)',  color:'#F2BA0E', label:'⏳ Pending Review' },
+                    REJECTED:       { bg:'rgba(246,70,93,0.12)',   color:'#F6465D', label:'✕ Rejected' },
+                    NOT_SUBMITTED:  { bg:'rgba(148,163,184,0.10)', color:'#8A8A9A', label:'○ Not Verified' },
+                  }
+                  const c = cfg[s] || cfg.NOT_SUBMITTED
+                  return (
+                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:99, background:c.bg, color:c.color, border:`1px solid ${c.color}30` }}>
+                      {c.label}
+                    </span>
+                  )
+                })()}
+              </div>
+            </div>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </Link>
+      </div>
+
+      <SectionLabel label="Account" />
+      <SectionCard>
+        <SettingRow icon={<User size={18} strokeWidth={2} />} label="Edit Profile" value="Name, photo, phone" href="/profile" />
+        <SettingRow icon={<Key size={18} strokeWidth={2} />} label="Change Password" href="/forgot-password" />
+        <SettingRow
+          icon={<UserCheck size={18} strokeWidth={2} />}
+          label="KYC Verification"
+          value={
+            user?.kycStatus === 'APPROVED' ? 'Identity verified' :
+            user?.kycStatus === 'PENDING_REVIEW' ? 'Under review — 24–48 hrs' :
+            user?.kycStatus === 'REJECTED' ? 'Rejected — tap to re-submit' :
+            'Not verified — required to withdraw'
+          }
+          href="/kyc"
+        />
+        <SettingRow icon={<Coins size={18} strokeWidth={2} />} label="Claim $100 Bonus" value={user?.bonusClaimed ? 'Already claimed' : 'Tap to claim!'} href="/home" />
+      </SectionCard>
+
+      <SectionLabel label="Notifications" />
+      <SectionCard>
+        <SettingRow icon={<Bell size={18} strokeWidth={2} />} label="Push Alerts" toggle toggled={notifPush} onToggle={() => enablePush(!notifPush)} />
+        <SettingRow icon={<Mail size={18} strokeWidth={2} />} label="Email Updates" toggle toggled={notifEmail} onToggle={() => toggleEmail(!notifEmail)} />
+        <SettingRow icon={<TrendingUp size={18} strokeWidth={2} />} label="Investment Alerts" value="ROI credits, plan maturity" toggle toggled={notifInvest} onToggle={() => toggleInvest(!notifInvest)} />
+      </SectionCard>
+
+      <SectionLabel label="Security" />
+      <SectionCard>
+        <SettingRow icon={<Fingerprint size={18} strokeWidth={2} />} label="Biometric Login" toggle toggled={biometric} onToggle={() => toggleBiometric(!biometric)} />
+        <SettingRow icon={<Shield size={18} strokeWidth={2} />} label="Two-Factor Auth" value="Use OTP on login" href="/settings" />
+        <SettingRow icon={<Smartphone size={18} strokeWidth={2} />} label="Active Sessions" value="Current device" href="/profile" />
+      </SectionCard>
+
+      <SectionLabel label="Support & Legal" />
+      <SectionCard>
+        <SettingRow icon={<MessageCircle size={18} strokeWidth={2} />} label="Live Chat" href="/support" />
+        <SettingRow icon={<HelpCircle size={18} strokeWidth={2} />} label="FAQ & Help Center" href="/support" />
+        <SettingRow icon={<FileText size={18} strokeWidth={2} />} label="Terms of Service" href="https://altaris-capital.com/terms" />
+        <SettingRow icon={<Lock size={18} strokeWidth={2} />} label="Privacy Policy" href="https://altaris-capital.com/privacy" />
+        <SettingRow icon={<Info size={18} strokeWidth={2} />} label="About Altaris Capital" value="v1.0.0" href="/support" />
+      </SectionCard>
+
+      <div style={{ margin:'24px 16px 0' }}>
+        <button onClick={logout} disabled={loggingOut}
+          style={{ width:'100%', padding:'15px', borderRadius:14, background:'rgba(246,70,93,0.08)', border:'1px solid rgba(246,70,93,0.2)', color:'#F6465D', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'inherit', transition:'all .15s', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+          {loggingOut ? 'Logging out...' : <><LogOut size={18} strokeWidth={2} /> Log Out</>}
+        </button>
+      </div>
+
+      <div style={{ height:16 }}/>
+    </div>
+  )
+}
