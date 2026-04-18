@@ -4,23 +4,31 @@ import { NextRequest } from 'next/server'
 import { prisma } from './db'
 
 const isProd = process.env.NODE_ENV === 'production'
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || (isProd ? (() => { throw new Error('JWT_SECRET is required in production') })() : 'altaris-secret-change-this')
-)
-const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || (isProd ? (() => { throw new Error('ADMIN_JWT_SECRET is required in production') })() : 'altaris-admin-secret-change-this')
-)
+
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET
+  if (secret) return new TextEncoder().encode(secret)
+  if (isProd) throw new Error('JWT_SECRET is required in production')
+  return new TextEncoder().encode('altaris-secret-change-this')
+}
+
+function getAdminJwtSecret() {
+  const secret = process.env.ADMIN_JWT_SECRET
+  if (secret) return new TextEncoder().encode(secret)
+  if (isProd) throw new Error('ADMIN_JWT_SECRET is required in production')
+  return new TextEncoder().encode('altaris-admin-secret-change-this')
+}
 
 export async function signToken(payload: Record<string, unknown>, admin = false) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
-    .sign(admin ? ADMIN_JWT_SECRET : JWT_SECRET)
+    .sign(admin ? getAdminJwtSecret() : getJwtSecret())
 }
 
 export async function verifyToken(token: string, admin = false) {
   try {
-    const { payload } = await jwtVerify(token, admin ? ADMIN_JWT_SECRET : JWT_SECRET)
+    const { payload } = await jwtVerify(token, admin ? getAdminJwtSecret() : getJwtSecret())
     return payload
   } catch {
     return null
