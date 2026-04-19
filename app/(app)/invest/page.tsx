@@ -89,7 +89,7 @@ function InvestContent() {
           investors: Math.floor(Math.random() * 10000) + 500,
           spots: null,
           badge: a.change24h > 5 ? 'Hot' : null,
-          spark: a.spark || [],
+          spark: a.spark && a.spark.length > 0 ? a.spark : Array.from({length: 20}, () => Math.random() * 100),
           image: a.image,
           change24h: a.change24h
         }))
