@@ -84,7 +84,7 @@ const COINS = [
 ]
 
 const PLANS = [
-  { name:'Stablecoin Reserve',  roi:'0.6% daily', dur:'60 days', min:'$100',   risk:1, cat:'CRYPTO',   color:'#0ECB81' },
+  { name:'Stablecoin Reserve',  roi:'0.6% daily', dur:'60 days', min:'$40',   risk:1, cat:'CRYPTO',   color:'#0ECB81' },
   { name:'Altaris Smart Save',  roi:'40% / year', dur:'1 year',  min:'$500',   risk:1, cat:'BONDS',    color:'#3B82F6' },
   { name:'Blue Chip Equities',  roi:'1.2% daily', dur:'90 days', min:'$1,000', risk:2, cat:'STOCKS',   color:'#A78BFA' },
   { name:'Prime Real Estate',   roi:'1.8% daily', dur:'180 days',min:'$2,500', risk:2, cat:'REAL EST', color:'#F97316' },
@@ -110,7 +110,7 @@ const TESTIMONIALS = [
 
 const FAQ = [
   { q:'How do I get started?', a:'Create a free account, complete a quick identity check (under 10 min), fund your wallet, and pick a plan. Your first earnings appear the next day.' },
-  { q:'What is the minimum investment?', a:'Plans start from $100 on our Stablecoin Reserve. Every plan has a clearly stated minimum on the Marketplace page.' },
+  { q:'What is the minimum investment?', a:'Plans start from $40 on our Stablecoin Reserve. Every plan has a clearly stated minimum on the Marketplace page.' },
   { q:'How is my money protected?', a:'Client funds are held in segregated multi-sig cold wallets. We never mix client funds with company assets, and every balance is auditable.' },
   { q:'When can I withdraw?', a:'After KYC approval you can withdraw anytime. Requests are processed within 24 hours, 7 days a week.' },
   { q:'Which cryptocurrencies are accepted?', a:'BTC, ETH, and USDT (ERC-20 & TRC-20). More networks rolling out in Q3 2025.' },
@@ -216,7 +216,7 @@ export default function LandingPage() {
         </h1>
 
         <p style={{ fontSize:'clamp(15px, 2.2vw, 19px)', color:'#555', maxWidth:560, lineHeight:1.7, marginBottom:40 }}>
-          Institutional-grade investment strategies for everyone. Start with $100 and watch AI-powered compounding work 24/7.
+          Institutional-grade investment strategies for everyone. Start with $40 and watch AI-powered compounding work 24/7.
         </p>
 
         <div style={{ display:'flex', gap:12, flexWrap:'wrap', justifyContent:'center', marginBottom:60 }}>
@@ -457,7 +457,7 @@ export default function LandingPage() {
                       <div style={{ fontSize:16 }}>🎁</div>
                       <div>
                         <div style={{ fontSize:9, fontWeight:800, color:'#F2BA0E' }}>WELCOME OFFER</div>
-                        <div style={{ fontSize:8, color:'#555' }}>Claim Your $100 Bonus → Complete KYC</div>
+                        <div style={{ fontSize:8, color:'#555' }}>Claim Your $40 Bonus → Complete KYC</div>
                       </div>
                     </div>
                     {/* Nav */}
@@ -522,7 +522,7 @@ export default function LandingPage() {
                       ))}
                     </div>
                     {[
-                      {name:'Stablecoin Reserve', roi:'0.6%/day',  dur:'60d',  min:'$100',  risk:1, color:'#0ECB81', cat:'CRYPTO'},
+                      {name:'Stablecoin Reserve', roi:'0.6%/day',  dur:'60d',  min:'$40',  risk:1, color:'#0ECB81', cat:'CRYPTO'},
                       {name:'Altaris Smart Save',  roi:'40%/year',  dur:'1yr',  min:'$500',  risk:1, color:'#3B82F6', cat:'BONDS'},
                       {name:'Blue Chip Equities',  roi:'1.2%/day',  dur:'90d',  min:'$1,000',risk:2, color:'#A78BFA', cat:'STOCKS'},
                       {name:'Prime Real Estate',   roi:'1.8%/day',  dur:'180d', min:'$2,500',risk:2, color:'#F97316', cat:'REAL EST'},
@@ -660,7 +660,7 @@ export default function LandingPage() {
               <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:36 }}>
                 {[
                   { who:'You earn', amount:'$200', per:'per qualified referral', color:'#F2BA0E' },
-                  { who:'Your friend earns', amount:'$100', per:'welcome bonus on first deposit', color:'#0ECB81' },
+                  { who:'Your friend earns', amount:'$40', per:'welcome bonus on first deposit', color:'#0ECB81' },
                   { who:'Tier bonuses', amount:'Up to 30%', per:'commission on multi-level referrals', color:'#A78BFA' },
                 ].map(r => (
                   <div key={r.who} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 16px', borderRadius:12, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)' }}>
@@ -688,7 +688,7 @@ export default function LandingPage() {
                     { n:'1', t:'Sign up & get your link', d:'After registration you instantly receive a unique referral link and code to share anywhere.', c:'#F2BA0E' },
                     { n:'2', t:'Share with friends', d:'Send via WhatsApp, email, social media, or embed on your blog. No limit on invites.', c:'#3B82F6' },
                     { n:'3', t:'Friend registers & verifies', d:'They sign up using your link, complete KYC identity check (10 minutes), and make a deposit.', c:'#0ECB81' },
-                    { n:'4', t:'Both receive bonuses', d:'You instantly receive $200, they receive $100 — credited directly to your investment wallet.', c:'#A78BFA' },
+                    { n:'4', t:'Both receive bonuses', d:'You instantly receive $200, they receive $40 — credited directly to your investment wallet.', c:'#A78BFA' },
                     { n:'5', t:'Track earnings live', d:'Monitor all referrals, their status, tier progress, and total earnings from your Rewards dashboard.', c:'#F97316' },
                   ].map((s,i) => (
                     <div key={s.n} style={{ display:'flex', gap:22, paddingBottom: i < 4 ? 28 : 0 }}>
@@ -743,13 +743,13 @@ export default function LandingPage() {
              LIMITED TIME OFFER
           </div>
           <h2 style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:900, marginBottom:14 }}>
-            Claim your <span style={{ color:'#F2BA0E' }}>$100 welcome bonus</span>
+            Claim your <span style={{ color:'#F2BA0E' }}>$40 welcome bonus</span>
           </h2>
           <p style={{ color:'#666', fontSize:15, maxWidth:480, margin:'0 auto 32px', lineHeight:1.7 }}>
-            Sign up, complete KYC, and make your first deposit to unlock $100 added directly to your investment balance.
+            Sign up, complete KYC, and make your first deposit to unlock $40 added directly to your investment balance.
           </p>
           <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'16px 44px', background:'#F2BA0E', color:'#000', textDecoration:'none', borderRadius:14, fontWeight:900, fontSize:16 }}>
-            Claim $100 Bonus →
+            Claim $40 Bonus →
           </Link>
         </div>
       </section>

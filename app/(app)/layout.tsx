@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
-const TRENDING = ['BTC +2.34%', 'ETH +1.78%', 'SOL +5.12%', 'Smart Save 40%/yr', 'Claim $100 bonus']
+const TRENDING = ['BTC +2.34%', 'ETH +1.78%', 'SOL +5.12%', 'Smart Save 40%/yr', 'Claim $40 bonus']
 
 // ── Bybit-exact icons: white when active, #4A4A4A when inactive ──
 const NAV = [

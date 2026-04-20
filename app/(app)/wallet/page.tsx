@@ -300,7 +300,7 @@ export default function WalletPage() {
 
   async function shareReferral() {
     const referralUrl = `${window.location.origin}/signup?ref=${refCode}`
-    const text = `I'm using Altaris Capital — an investment platform that grows your wealth. Join with my referral link and get a $100 bonus when you start investing!\n${referralUrl}`
+    const text = `I'm using Altaris Capital — an investment platform that grows your wealth. Join with my referral link and get a $40 bonus when you start investing!\n${referralUrl}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Join Altaris Capital', text, url: referralUrl })
@@ -568,7 +568,7 @@ export default function WalletPage() {
               { n: '1', t: 'Share your link', d: 'Send your unique referral link to anyone', c: '#A78BFA' },
               { n: '2', t: 'They sign up', d: 'Friend creates an account via your link', c: '#F2BA0E' },
               { n: '3', t: 'They verify + deposit', d: 'Complete KYC and make first deposit', c: '#0ECB81' },
-              { n: '4', t: 'Both earn bonuses', d: 'You get $200 · They get $100 — instantly', c: '#F2BA0E' },
+              { n: '4', t: 'Both earn bonuses', d: 'You get $200 · They get $40 — instantly', c: '#F2BA0E' },
             ].map(s => (
               <div key={s.n} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${s.c}15`, border: `1.5px solid ${s.c}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: s.c, flexShrink: 0 }}>{s.n}</div>
@@ -581,7 +581,7 @@ export default function WalletPage() {
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 18 }}>
             <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 14 }}>Tier Bonuses</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              {[{ icon: '🌱', label: 'Starter', n: '1 ref', bonus: '+$100' }, { icon: '⭐', label: 'Rising', n: '5 refs', bonus: '+$700' }, { icon: '👑', label: 'Elite', n: '20 refs', bonus: '+$3K' }, { icon: '💎', label: 'VIP', n: '50 refs', bonus: 'VIP' }].map(t => (
+              {[{ icon: '🌱', label: 'Starter', n: '1 ref', bonus: '+$40' }, { icon: '⭐', label: 'Rising', n: '5 refs', bonus: '+$700' }, { icon: '👑', label: 'Elite', n: '20 refs', bonus: '+$3K' }, { icon: '💎', label: 'VIP', n: '50 refs', bonus: 'VIP' }].map(t => (
                 <div key={t.label} style={{ flex: 1, textAlign: 'center', padding: '10px 4px', background: '#1A1A1A', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#888' }}>{t.label}</div>

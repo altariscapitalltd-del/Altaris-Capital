@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Complete KYC verification to claim your bonus' }, { status: 400 })
   }
 
-  const BONUS_AMOUNT = 100
+  const BONUS_AMOUNT = 40
 
   // Credit balance + mark claimed in a transaction
   await prisma.$transaction([
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   ])
 
   // Notify user
-  await notifyUser(prisma, user.id, ' $100 Bonus Credited!', 'Your welcome bonus has been added to your account. Start investing today!', '/dashboard')
+  await notifyUser(prisma, user.id, ' $40 Bonus Credited!', 'Your welcome bonus has been added to your account. Start investing today!', '/dashboard')
 
   return NextResponse.json({ success: true, amount: BONUS_AMOUNT })
 }

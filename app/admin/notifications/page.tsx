@@ -24,7 +24,7 @@ export default function AdminNotificationsPage() {
   }
 
   const TEMPLATES = [
-    {t:'KYC Approved ',m:'Your identity verification has been approved! You can now withdraw funds and claim your $100 bonus.'},
+    {t:'KYC Approved ',m:'Your identity verification has been approved! You can now withdraw funds and claim your $40 bonus.'},
     {t:'Deposit Confirmed Verified',m:'Your deposit has been confirmed and credited to your account.'},
     {t:'New Investment Plan ',m:'A new high-yield investment plan is now available. Log in to invest before spots run out!'},
     {t:'Security Alert ',m:'A new login was detected on your account. If this was not you, please contact support immediately.'},

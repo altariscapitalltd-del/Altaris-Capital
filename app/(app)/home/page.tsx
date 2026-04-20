@@ -335,9 +335,9 @@ export default function HomePage() {
   const BANNERS = [
     {
       id: 'welcome',
-      title: 'Claim Your $100 Welcome Bonus',
+      title: 'Claim Your $40 Welcome Bonus',
       subtitleApproved: 'KYC verified! Claim your reward instantly.',
-      subtitleDefault: 'Complete KYC verification → Get $100 free',
+      subtitleDefault: 'Complete KYC verification → Get $40 free',
       pill: 'Welcome Offer',
     },
     {
@@ -530,7 +530,7 @@ export default function HomePage() {
                     className="btn-primary"
                     style={{ width: '100%', padding: '12px 0', borderRadius: 12, fontWeight: 700 }}
                   >
-                    {bonusClaiming ? 'Claiming…' : bonusDone ? 'Claimed' : 'Claim $100 Bonus'}
+                    {bonusClaiming ? 'Claiming…' : bonusDone ? 'Claimed' : 'Claim $40 Bonus'}
                   </button>
                 ) : (
                   <Link href="/kyc" style={{ display: 'block', textDecoration: 'none' }}>

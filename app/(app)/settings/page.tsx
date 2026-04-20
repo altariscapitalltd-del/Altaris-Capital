@@ -206,7 +206,7 @@ export default function SettingsPage() {
           }
           href="/kyc"
         />
-        <SettingRow icon={<Coins size={18} strokeWidth={2} />} label="Claim $100 Bonus" value={user?.bonusClaimed ? 'Already claimed' : 'Tap to claim!'} href="/home" />
+        <SettingRow icon={<Coins size={18} strokeWidth={2} />} label="Claim $40 Bonus" value={user?.bonusClaimed ? 'Already claimed' : 'Tap to claim!'} href="/home" />
       </SectionCard>
 
       <SectionLabel label="Notifications" />

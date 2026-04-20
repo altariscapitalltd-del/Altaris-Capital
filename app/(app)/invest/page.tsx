@@ -35,6 +35,7 @@ function RiskBar({ level }: { level: number }) {
 type PlanType = {
   id: string
   name: string
+  description?: string
   class: string
   icon: string
   iconBg: string
@@ -51,6 +52,49 @@ type PlanType = {
   change24h?: number
 }
 
+function generateVariantPlans(asset: any, count: number = 3): PlanType[] {
+  const plans: PlanType[] = []
+  const durations = [7, 14, 30, 60, 90, 180, 365]
+  const minInvestments = [50, 100, 250, 500, 1000]
+  const descriptions = [
+    'Conservative strategy with steady returns',
+    'Balanced approach for moderate growth',
+    'Aggressive strategy for high returns',
+    'Short-term quick gains',
+    'Long-term wealth building',
+    'Premium tier with exclusive benefits',
+    'Entry-level plan for beginners',
+  ]
+
+  for (let i = 0; i < count; i++) {
+    const dur = durations[Math.floor(Math.random() * durations.length)]
+    const min = minInvestments[Math.floor(Math.random() * minInvestments.length)]
+    const dailyAdjustment = (Math.random() - 0.5) * 2
+    const daily = Math.max(0.1, parseFloat(asset.dailyReturn) + dailyAdjustment)
+    
+    plans.push({
+      id: `${asset.id}-variant-${i}`,
+      name: `${asset.name} ${i === 0 ? 'Standard' : i === 1 ? 'Plus' : 'Elite'}`,
+      description: descriptions[Math.floor(Math.random() * descriptions.length)],
+      class: asset.category,
+      icon: asset.symbol,
+      iconBg: '#111',
+      daily: parseFloat(daily.toFixed(2)),
+      roi: `${(daily * 365).toFixed(1)}%`,
+      dur,
+      min,
+      risk: asset.riskLevel,
+      investors: Math.floor(Math.random() * 15000) + 100,
+      spots: null,
+      badge: Math.random() > 0.7 ? 'Hot' : null,
+      spark: asset.spark && asset.spark.length > 0 ? asset.spark : Array.from({length: 20}, () => Math.random() * 100),
+      image: asset.image,
+      change24h: asset.change24h
+    })
+  }
+  return plans
+}
+
 function InvestContent() {
   const searchParams = useSearchParams()
   const [tab, setTab] = useState<'marketplace' | 'my'>( (searchParams.get('tab') as any) || 'marketplace')
@@ -62,9 +106,10 @@ function InvestContent() {
   const [msg, setMsg] = useState<{ type:'success'|'error', text:string } | null>(null)
   const [userInvestments, setUserInvestments] = useState<any[]>([])
   const [summary, setSummary] = useState<any>(null)
-  const [liveAssets, setLiveAssets] = useState<any[]>([])
-  const [liveHot, setLiveHot] = useState<any[]>([])
+  const [allPlans, setAllPlans] = useState<PlanType[]>([])
+  const [liveHot, setLiveHot] = useState<PlanType[]>([])
   const [fetchingLive, setFetchingLive] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useBodyScrollLock(sheetOpen)
 
@@ -75,27 +120,14 @@ function InvestContent() {
     fetch(`/api/markets/live?category=${category}`)
       .then(r => r.json())
       .then(data => {
-        const mapped = (data.assets || []).map((a: any) => ({
-          id: a.id,
-          name: a.name,
-          class: a.category,
-          icon: a.symbol,
-          iconBg: '#111',
-          daily: parseFloat(a.dailyReturn),
-          roi: `${a.annualReturn}%`,
-          dur: a.category === 'Crypto' ? 14 : a.category === 'Stocks' ? 90 : 180,
-          min: a.minInvestment,
-          risk: a.riskLevel,
-          investors: Math.floor(Math.random() * 10000) + 500,
-          spots: null,
-          badge: a.change24h > 5 ? 'Hot' : null,
-          spark: a.spark && a.spark.length > 0 ? a.spark : Array.from({length: 20}, () => Math.random() * 100),
-          image: a.image,
-          change24h: a.change24h
-        }))
-        setLiveAssets(mapped)
+        const allVariants: PlanType[] = []
+        (data.assets || []).forEach((a: any) => {
+          const variants = generateVariantPlans(a, 3)
+          allVariants.push(...variants)
+        })
+        setAllPlans(allVariants)
         if (category === 'All') {
-          setLiveHot(mapped.filter((a: any) => Math.abs(a.change24h) > 3).slice(0, 10))
+          setLiveHot(allVariants.filter((p: any) => p.badge === 'Hot').slice(0, 10))
         }
         setFetchingLive(false)
       })
@@ -110,6 +142,19 @@ function InvestContent() {
       })
     }
   }, [tab])
+
+  const filteredPlans = useMemo(() => {
+    let plans = allPlans
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      plans = plans.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        p.description?.toLowerCase().includes(q) ||
+        p.class.toLowerCase().includes(q)
+      )
+    }
+    return plans
+  }, [allPlans, searchQuery])
 
   function openInvestSheet(plan: PlanType) {
     setSelected(plan)
@@ -162,10 +207,21 @@ function InvestContent() {
 
       {tab === 'marketplace' ? (
         <div>
+          {/* ── Search ── */}
+          <div style={{ marginBottom: 16 }}>
+            <input 
+              type="text" 
+              placeholder="Search plans..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}
+            />
+          </div>
+
           {/* ── Categories ── */}
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 14, marginBottom: 4, scrollbarWidth: 'none' }}>
             {categories.map(c => (
-              <button key={c} onClick={() => setCategory(c)} style={{ padding: '8px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, border: '1px solid var(--border)', background: category === c ? 'var(--brand-primary)' : 'var(--bg-card)', color: category === c ? '#000' : 'var(--text-secondary)', whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all .2s' }}>{c}</button>
+              <button key={c} onClick={() => { setCategory(c); setSearchQuery('') }} style={{ padding: '8px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, border: '1px solid var(--border)', background: category === c ? 'var(--brand-primary)' : 'var(--bg-card)', color: category === c ? '#000' : 'var(--text-secondary)', whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all .2s' }}>{c}</button>
             ))}
           </div>
 
@@ -188,7 +244,7 @@ function InvestContent() {
                       </div>
                     </div>
                     <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{plan.name}</div>
-                    <Sparkline data={plan.spark} color={plan.change24h >= 0 ? '#0ECB81' : '#F6465D'} width={132} height={32} />
+                    <Sparkline data={plan.spark} color={plan.change24h && plan.change24h >= 0 ? '#0ECB81' : '#F6465D'} width={132} height={32} />
                   </div>
                 ))}
               </div>
@@ -199,11 +255,13 @@ function InvestContent() {
           <div style={{ display: 'grid', gap: 12 }}>
             {fetchingLive ? (
               <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading live market data...</div>
+            ) : filteredPlans.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No plans found matching your search.</div>
             ) : (
-              liveAssets.map(plan => (
+              filteredPlans.map(plan => (
                 <div key={plan.id} onClick={() => openInvestSheet(plan)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 18, padding: 16, cursor: 'pointer', position: 'relative', overflow: 'hidden' }} className="pressable">
                   {plan.badge && <div style={{ position: 'absolute', top: 0, right: 0, background: 'var(--brand-primary)', color: '#000', fontSize: 9, fontWeight: 900, padding: '3px 10px', borderRadius: '0 0 0 10px', textTransform: 'uppercase' }}>{plan.badge}</div>}
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 12 }}>
                     <div style={{ width: 44, height: 44, borderRadius: 12, background: `${plan.iconBg}1A`, border: `1px solid ${plan.iconBg}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <img src={plan.image} alt={plan.name} style={{ width: 26, height: 26, objectFit: 'contain' }} />
                     </div>
@@ -212,6 +270,7 @@ function InvestContent() {
                         <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--success)', background: 'rgba(14,203,129,0.1)', padding: '1px 6px', borderRadius: 4 }}>{plan.class}</span>
                       </div>
                       <div style={{ fontWeight: 800, fontSize: 16, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{plan.name}</div>
+                      {plan.description && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{plan.description}</div>}
                     </div>
                     <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                       <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--brand-primary)', lineHeight: 1 }}>{plan.daily}%</div>
@@ -285,6 +344,7 @@ function InvestContent() {
                 <div style={{ width: 48, height: 48, borderRadius: 14, background: `${selected.iconBg}1A`, border: `1px solid ${selected.iconBg}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><img src={selected.image} alt={selected.name} style={{ width: 28, height: 28, objectFit: 'contain' }} /></div>
                 <div><div style={{ fontWeight: 800, fontSize: 18 }}>{selected.name}</div><div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>{selected.class} · {selected.dur} days · {selected.daily}% daily</div></div>
               </div>
+              {selected.description && <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 12, marginBottom: 16, fontSize: 13, color: 'var(--text-secondary)' }}>{selected.description}</div>}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
                 {[{ l: 'Daily ROI', v: `${selected.daily}%`, c: 'var(--brand-primary)' }, { l: 'Annual ROI', v: selected.roi }, { l: 'Min', v: `$${selected.min}` }].map(({ l, v, c }) => (
                   <div key={l} style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 12, textAlign: 'center' }}><div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 4 }}>{l}</div><div style={{ fontWeight: 800, fontSize: 16, color: c || 'var(--text-primary)' }}>{v}</div></div>

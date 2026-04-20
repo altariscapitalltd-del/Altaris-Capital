@@ -99,7 +99,7 @@ export default function RewardsPage() {
 
   async function shareLink() {
     const link = data?.referralLink
-    const text = `I'm using Altaris Capital — an investment platform that grows your wealth. Join with my referral link and get a $100 bonus when you start investing!`
+    const text = `I'm using Altaris Capital — an investment platform that grows your wealth. Join with my referral link and get a $40 bonus when you start investing!`
     if (navigator.share) {
       try { await navigator.share({ title: 'Join Altaris Capital', text, url: link }) } catch {}
     } else {
@@ -176,7 +176,7 @@ export default function RewardsPage() {
           </button>
         </div>
         <div style={{ marginTop:12, fontSize:11, color:'#555', lineHeight:1.5 }}>
-          Friends who sign up using your link get $100 · You earn $200 per qualified referral
+          Friends who sign up using your link get $40 · You earn $200 per qualified referral
         </div>
       </div>
 
@@ -455,7 +455,7 @@ export default function RewardsPage() {
               { step:'1', title:'Share your code', desc:'Send your referral link to friends via any channel', color:'#A78BFA' },
               { step:'2', title:'Friend signs up', desc:'They create an account using your unique link', color:'#F2BA0E' },
               { step:'3', title:'They verify & deposit', desc:'Complete KYC and make their first deposit', color:'#0ECB81' },
-              { step:'4', title:'Both earn bonuses', desc:'You get $200 · They get $100 · Credited instantly', color:'#F2BA0E' },
+              { step:'4', title:'Both earn bonuses', desc:'You get $200 · They get $40 · Credited instantly', color:'#F2BA0E' },
             ].map(s => (
               <div key={s.step} style={{ display:'flex', gap:12, padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
                 <div style={{ width:28, height:28, borderRadius:'50%', background:`${s.color}15`, border:`1.5px solid ${s.color}`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:13, color:s.color, flexShrink:0 }}>{s.step}</div>
