@@ -104,7 +104,7 @@ function InvestContent() {
 
   useEffect(() => {
     if (tab === 'my') {
-      fetch('/api/user/investments').then(r => r.json()).then(d => {
+      fetch('/api/investments').then(r => r.json()).then(d => {
         setUserInvestments(d.investments || [])
         setSummary(d.summary)
       })
@@ -129,7 +129,12 @@ function InvestContent() {
       const res = await fetch('/api/investments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: selected.id, amount: parseFloat(amount) })
+        body: JSON.stringify({ 
+          planId: selected.id, 
+          planName: selected.name,
+          amount: parseFloat(amount),
+          dailyRoi: selected.daily / 100
+        })
       })
       const data = await res.json()
       if (!res.ok) { setMsg({ type: 'error', text: data.error || 'Investment failed' }) }
