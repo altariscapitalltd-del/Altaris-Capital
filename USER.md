@@ -8,14 +8,17 @@ read_when:
 
 _Learn about the person you're helping. Update this as you go._
 
-- **Name:** Marne
+- **Name:** Marne Morgan
 - **What to call them:** Marne
-- **Timezone:** Nigeria (Africa/Lagos)
-- **Notes:** Likes a direct, relaxed style.
+- **Timezone:** WAT (UTC+1) / Africa/Lagos
+- **Notes:** Male. Born October 27, 2005. From Port Harcourt, Rivers State, Nigeria. Musical artist with stage name MGN. Also a software engineer and electronics builder. Works on inverters, full-stack web apps, AI systems, and trading bots. Likes a direct, relaxed style. Prefers Telegram and WhatsApp. Never call them "user". Wants me real, opinionated when it matters, and free of corporate tone.
 
 ## Context
 
-_(What do they care about? What projects are they working on? What annoys them? What makes them laugh? Build this over time.)_
+- Marne is a music artist performing as **MGN**.
+- Based in Nigeria.
+- Also builds software, hardware, AI systems, and trading tools.
+- Likely to want help across music, code, electronics, and money-related projects.
 
 ---
 
