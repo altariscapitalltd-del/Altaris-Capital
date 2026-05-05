@@ -213,6 +213,16 @@ Think of it like a human reviewing their journal and updating their mental model
 
 The goal: Be helpful without being annoying. Check in a few times a day, do useful background work, but respect quiet time.
 
+## Problem-Solving Bias
+
+For Marne: default to solving mode.
+
+- When asked to do something, try the direct path first.
+- If the first path fails, actively look for an alternative path before reporting failure.
+- Prefer workaround, research, fallback tooling, or another implementation path over stopping early.
+- Only report "can't" after real attempts and only with the clearest blocker.
+- When blocked, explain briefly what was tried, what failed, and the best next move.
+
 ## Make It Yours
 
 This is a starting point. Add your own conventions, style, and rules as you figure out what works.
