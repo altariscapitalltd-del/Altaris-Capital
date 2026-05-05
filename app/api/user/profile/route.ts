@@ -27,19 +27,94 @@ function normalizeProfilePicture<T extends { profilePicture: string | null }>(re
   return record
 }
 
+function buildMockUser(user: { id: string; email: string; name: string; role: string; kycStatus: string; bonusClaimed: boolean }) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    kycStatus: 'APPROVED',
+    isActive: true,
+    withdrawEnabled: true,
+    bonusClaimed: false,
+    profilePicture: null,
+    phone: '+234 000 000 0000',
+    balances: [
+      { id: 'mock-usd', userId: user.id, currency: 'USD', amount: 12580.42 },
+      { id: 'mock-btc', userId: user.id, currency: 'BTC', amount: 0.1842 },
+      { id: 'mock-eth', userId: user.id, currency: 'ETH', amount: 2.75 },
+      { id: 'mock-usdt', userId: user.id, currency: 'USDT', amount: 3400.0 },
+    ],
+    investments: [
+      {
+        id: 'mock-invest-1',
+        userId: user.id,
+        planId: 'defi-accelerator',
+        planName: 'DeFi Accelerator',
+        amount: 3000,
+        dailyRoi: 0.035,
+        startDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'ACTIVE',
+        totalEarned: 420,
+      },
+      {
+        id: 'mock-invest-2',
+        userId: user.id,
+        planId: 'smart-yield',
+        planName: 'Smart Yield',
+        amount: 1800,
+        dailyRoi: 0.028,
+        startDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'ACTIVE',
+        totalEarned: 100.8,
+      },
+    ],
+    notifications: [
+      {
+        id: 'mock-notify-1',
+        userId: user.id,
+        title: 'Welcome to Altaris Capital',
+        body: 'Your demo dashboard is ready.',
+        type: 'info',
+        read: false,
+        url: '/home',
+        createdAt: new Date().toISOString(),
+      },
+    ],
+    createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
+  }
+}
+
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const full = await prisma.user.findUnique({
-    where: { id: user.id },
-    include: {
-      balances: true,
-      investments: { where: { status: 'ACTIVE' }, orderBy: { startDate: 'desc' } },
-      notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
-    },
-  })
-  return NextResponse.json({ user: full ? normalizeProfilePicture(full) : null })
+  try {
+    const full = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        balances: true,
+        investments: { where: { status: 'ACTIVE' }, orderBy: { startDate: 'desc' } },
+        notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
+      },
+    })
+    return NextResponse.json({ user: full ? normalizeProfilePicture(full) : null })
+  } catch {
+    if (process.env.NODE_ENV !== 'production') {
+      return NextResponse.json({ user: buildMockUser({
+        id: String(user.id),
+        email: (user as any).email || 'demo@altariscapital.ltd',
+        name: String(user.name || 'Demo User'),
+        role: String((user as any).role || 'USER'),
+        kycStatus: String((user as any).kycStatus || 'APPROVED'),
+        bonusClaimed: Boolean((user as any).bonusClaimed),
+      }) })
+    }
+    return NextResponse.json({ error: 'Profile unavailable' }, { status: 503 })
+  }
 }
 
 export async function PUT(req: NextRequest) {
