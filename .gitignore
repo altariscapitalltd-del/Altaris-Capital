@@ -43,3 +43,8 @@ next-env.d.ts
 
 # local agent
 .local/
+
+# python
+.venv-audio/
+__pycache__/
+*.pyc
