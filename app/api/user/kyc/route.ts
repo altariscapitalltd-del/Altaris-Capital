@@ -5,10 +5,20 @@ import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import { trigger, adminChannel } from '@/lib/pusher'
 import { notifyUser } from '@/lib/push'
+import { sendTelegramFile, sendTelegramMessage } from '@/lib/telegram'
 
 const MAX_KYC_BYTES = 10 * 1024 * 1024
-const ALLOWED_KYC_TYPES = new Set(['image/jpeg', 'image/png', 'application/pdf'])
-const ALLOWED_KYC_EXT = new Set(['.jpg', '.jpeg', '.png', '.pdf'])
+const ALLOWED_KYC_TYPES = new Set(['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'application/pdf'])
+const ALLOWED_KYC_EXT = new Set(['.jpg', '.jpeg', '.png', '.heic', '.heif', '.pdf'])
+const ALLOWED_SELFIE_EXT = new Set(['.jpg', '.jpeg', '.png', '.heic', '.heif'])
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -51,13 +61,25 @@ export async function POST(req: NextRequest) {
     if (document.size > MAX_KYC_BYTES) {
       return NextResponse.json({ error: 'Document is too large (max 10MB)' }, { status: 400 })
     }
-    if (!ALLOWED_KYC_TYPES.has(document.type)) {
-      return NextResponse.json({ error: 'Unsupported document format. Use JPEG, PNG, or PDF.' }, { status: 400 })
+    const extension = path.extname(document.name || '').toLowerCase()
+    if (!ALLOWED_KYC_EXT.has(extension)) {
+      return NextResponse.json({ error: 'Invalid document extension. Use JPG, PNG, HEIC, HEIF, or PDF.' }, { status: 400 })
+    }
+    if (document.type && !ALLOWED_KYC_TYPES.has(document.type)) {
+      return NextResponse.json({ error: 'Unsupported document format. Use JPG, PNG, HEIC, HEIF, or PDF.' }, { status: 400 })
     }
 
-    const extension = path.extname(document.name).toLowerCase()
-    if (!ALLOWED_KYC_EXT.has(extension)) {
-      return NextResponse.json({ error: 'Invalid document extension' }, { status: 400 })
+    if (selfie && selfie.size > 0) {
+      if (selfie.size > MAX_KYC_BYTES) {
+        return NextResponse.json({ error: 'Selfie is too large (max 10MB)' }, { status: 400 })
+      }
+      const selfieExtCheck = path.extname(selfie.name || '').toLowerCase()
+      if (!ALLOWED_SELFIE_EXT.has(selfieExtCheck)) {
+        return NextResponse.json({ error: 'Invalid selfie extension. Use JPG, PNG, HEIC, or HEIF.' }, { status: 400 })
+      }
+      if (selfie.type && !selfie.type.startsWith('image/')) {
+        return NextResponse.json({ error: 'Selfie must be an image.' }, { status: 400 })
+      }
     }
 
     const dir = path.join(process.cwd(), 'uploads', 'kyc')
@@ -98,6 +120,26 @@ export async function POST(req: NextRequest) {
       name: user.name,
       email: user.email,
     })
+
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+      const adminUrl = appUrl ? `${appUrl.replace(/\/$/, '')}/admin/kyc` : '/admin/kyc'
+      const text = [
+        '🛡️ <b>New Altaris KYC Submission</b>',
+        `User: <b>${escapeHtml(user.name || 'Unknown')}</b>`,
+        `Email: <code>${escapeHtml(user.email || '')}</code>`,
+        `Full name: <b>${escapeHtml(fullName)}</b>`,
+        `DOB: <code>${escapeHtml(dateOfBirth)}</code>`,
+        `Country/address: ${escapeHtml(address)}`,
+        `Document: ${escapeHtml(documentType || '—')} ${documentNumber ? `(${escapeHtml(documentNumber)})` : ''}`,
+        `Review: ${escapeHtml(adminUrl)}`,
+      ].join('\n')
+      await sendTelegramMessage(text)
+      await sendTelegramFile({ field: 'document', file: document, caption: 'KYC document' })
+      if (selfie && selfie.size > 0) await sendTelegramFile({ field: 'photo', file: selfie, caption: 'KYC selfie' })
+    } catch (telegramErr) {
+      console.error('[KYC Telegram notify]', telegramErr)
+    }
 
     await notifyUser(
       prisma, user.id,

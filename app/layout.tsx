@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/lib/theme'
+import LanguageTranslator from '@/components/LanguageTranslator'
 
 export const metadata: Metadata = {
   title: 'Altaris Capital — Premium Investment Platform',
@@ -63,6 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="root-shell">
             {children}
           </div>
+          <LanguageTranslator />
         </ThemeProvider>
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {

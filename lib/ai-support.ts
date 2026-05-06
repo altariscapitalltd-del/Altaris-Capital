@@ -5,15 +5,21 @@ import { trigger, userChannel } from './pusher'
 const GROQ_API_KEY = process.env.GROQ_API_KEY
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 
-const groq = new OpenAI({
-  apiKey: GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-})
+function createGroqClient() {
+  if (!GROQ_API_KEY) return null
+  return new OpenAI({
+    apiKey: GROQ_API_KEY,
+    baseURL: 'https://api.groq.com/openai/v1',
+  })
+}
 
-const openrouter = new OpenAI({
-  apiKey: OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
-})
+function createOpenRouterClient() {
+  if (!OPENROUTER_API_KEY) return null
+  return new OpenAI({
+    apiKey: OPENROUTER_API_KEY,
+    baseURL: 'https://openrouter.ai/api/v1',
+  })
+}
 
 export async function getAIResponse(userId: string, conversationId: string, userMessage: string) {
   const systemPrompt = `You are the Altaris Capital AI Support Assistant. 
@@ -33,6 +39,8 @@ Current User Message: ${userMessage}`
 
   try {
     // Try Groq first (fastest)
+    const groq = createGroqClient()
+    if (!groq) throw new Error('GROQ_API_KEY is not configured')
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
@@ -44,6 +52,8 @@ Current User Message: ${userMessage}`
     provider = 'openrouter'
     try {
       // Fallback to OpenRouter
+      const openrouter = createOpenRouterClient()
+      if (!openrouter) throw new Error('OPENROUTER_API_KEY is not configured')
       const completion = await openrouter.chat.completions.create({
         model: 'google/gemini-2.0-flash-001',
         messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],

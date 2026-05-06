@@ -120,7 +120,7 @@ function InvestContent() {
     fetch(`/api/markets/live?category=${category}`)
       .then(r => r.json())
       .then(data => {
-        const allVariants: PlanType[] = []
+        const allVariants: PlanType[] = [];
         (data.assets || []).forEach((a: any) => {
           const variants = generateVariantPlans(a, 3)
           allVariants.push(...variants)

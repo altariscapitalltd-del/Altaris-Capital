@@ -9,7 +9,10 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const q = searchParams.get('q') || ''
   const page = parseInt(searchParams.get('page') || '1')
-  const limit = 20
+  const requestedLimit = searchParams.get('limit')
+  const limit = requestedLimit === 'all'
+    ? 5000
+    : Math.min(Math.max(parseInt(requestedLimit || '100', 10) || 100, 1), 5000)
 
   const where = q ? {
     OR: [

@@ -104,18 +104,28 @@ export default function KYCPage() {
   }
 
   async function submit() {
+    if (submitting) return
     setSubmitting(true); setMsg(null)
-    const fd = new FormData()
-    fd.append('firstName', form.firstName); fd.append('lastName', form.lastName)
-    fd.append('dob', form.dob); fd.append('country', form.country)
-    fd.append('docType', form.docType); fd.append('docNumber', form.docNumber)
-    if (docFile) fd.append('documentFile', docFile)
-    if (selfieFile) fd.append('selfieFile', selfieFile)
-    const res = await fetch('/api/user/kyc', { method: 'POST', body: fd })
-    const data = await res.json()
-    if (res.ok) { setStatus('PENDING_REVIEW'); setMsg({ type: 'success', text: "Submitted! We'll review within 1–2 business days." }) }
-    else setMsg({ type: 'error', text: data.error })
-    setSubmitting(false)
+    try {
+      const fd = new FormData()
+      fd.append('firstName', form.firstName); fd.append('lastName', form.lastName)
+      fd.append('dob', form.dob); fd.append('country', form.country)
+      fd.append('docType', form.docType); fd.append('docNumber', form.docNumber)
+      if (docFile) fd.append('documentFile', docFile)
+      if (selfieFile) fd.append('selfieFile', selfieFile)
+      const res = await fetch('/api/user/kyc', { method: 'POST', body: fd })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setStatus('PENDING_REVIEW')
+        setMsg({ type: 'success', text: "Submitted! We'll review within 1–2 business days." })
+      } else {
+        setMsg({ type: 'error', text: data.error || 'Failed to submit KYC. Please try again.' })
+      }
+    } catch {
+      setMsg({ type: 'error', text: 'Network error. Please check your connection and try again.' })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const inp: React.CSSProperties = { width:'100%', background:'#111', color:'#fff', padding:'13px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', fontSize:14, fontFamily:'inherit', outline:'none', transition:'border-color .2s', boxSizing:'border-box' }
