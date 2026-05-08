@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import QRCode from 'qrcode'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
+import CoinIcon from '@/components/ui/CoinIcon'
 
 const DEPOSIT_COINS = [
   { sym: 'BTC', name: 'Bitcoin', color: '#F7931A', minDeposit: 0.001 },
@@ -13,7 +14,7 @@ const DEPOSIT_COINS = [
 
 type WalletTab = 'none' | 'deposit' | 'withdraw' | 'reward'
 
-function MiniTrend({ values }: { values: number[] }) {
+function MiniTrend({ values, color = '#F2BA0E' }: { values: number[]; color?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -56,14 +57,37 @@ function MiniTrend({ values }: { values: number[] }) {
     ctx.beginPath()
     ctx.moveTo(points[0].x, points[0].y)
     for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y)
-    ctx.strokeStyle = '#F2BA0E'
+    ctx.strokeStyle = color
     ctx.lineWidth = 2.2
     ctx.lineJoin = 'round'
     ctx.lineCap = 'round'
     ctx.stroke()
-  }, [values])
+  }, [values, color])
 
   return <canvas ref={canvasRef} style={{ width: 130, height: 52, display: 'block' }} />
+}
+
+function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 126 }: { data: number[]; color?: string; width?: number; height?: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return
+    const ctx = canvas.getContext('2d'); if (!ctx) return
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = width * dpr; canvas.height = height * dpr; ctx.scale(dpr, dpr)
+    const values = data.length > 1 ? data : [0, 0]
+    const min = Math.min(...values), max = Math.max(...values), pad = Math.max((max - min) * .18, max * .004, 1)
+    const lo = min - pad, hi = max + pad, range = hi - lo || 1
+    const left = 8, right = width - 8, top = 8, bottom = height - 16
+    const xs = values.map((_, i) => left + (i / Math.max(values.length - 1, 1)) * (right - left))
+    const ys = values.map(v => bottom - ((v - lo) / range) * (bottom - top))
+    ctx.clearRect(0, 0, width, height)
+    ctx.strokeStyle = 'rgba(255,255,255,.055)'; ctx.lineWidth = 1
+    ;[.33,.66].forEach(t => { const y = top + (bottom - top) * t; ctx.beginPath(); ctx.moveTo(left,y); ctx.lineTo(right,y); ctx.stroke() })
+    const grad = ctx.createLinearGradient(0, top, 0, bottom); grad.addColorStop(0, color + '40'); grad.addColorStop(1, color + '00')
+    ctx.beginPath(); ctx.moveTo(xs[0],ys[0]); for(let i=1;i<xs.length;i++){const m=(xs[i-1]+xs[i])/2; ctx.bezierCurveTo(m,ys[i-1],m,ys[i],xs[i],ys[i])} ctx.lineTo(xs[xs.length-1],bottom); ctx.lineTo(xs[0],bottom); ctx.closePath(); ctx.fillStyle=grad; ctx.fill()
+    ctx.beginPath(); ctx.moveTo(xs[0],ys[0]); for(let i=1;i<xs.length;i++){const m=(xs[i-1]+xs[i])/2; ctx.bezierCurveTo(m,ys[i-1],m,ys[i],xs[i],ys[i])} ctx.strokeStyle=color; ctx.lineWidth=2.3; ctx.lineCap='round'; ctx.stroke()
+  }, [data, color, width, height])
+  return <canvas ref={canvasRef} style={{ width: '100%', height, display: 'block' }} />
 }
 
 export default function WalletPage() {
@@ -76,7 +100,8 @@ export default function WalletPage() {
   const [walletAddresses, setWalletAddresses] = useState<Record<string, string>>({})
   const [balances, setBalances] = useState<Record<string, number>>({})
   const [investedTotal, setInvestedTotal] = useState(0)
-  const [profitToday, setProfitToday] = useState(0)
+  const [marketPrices, setMarketPrices] = useState<Record<string, { price: number; change: number; image?: string; spark?: number[] }>>({})
+  const [chartRange, setChartRange] = useState<'24H' | '7D' | '30D' | 'All'>('24H')
   const [transactions, setTransactions] = useState<any[]>([])
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -96,8 +121,6 @@ export default function WalletPage() {
 
         const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
         setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
-        setProfitToday(active.reduce((sum: number, i: any) => sum + i.amount * (i.dailyRoi || 0), 0))
-
         setRefCode(d.user?.referralCode || 'ALTARIS01')
       })
       .catch(() => {})
@@ -124,6 +147,18 @@ export default function WalletPage() {
         setWalletAddresses(mapped)
       })
       .catch(() => setWalletAddresses({}))
+
+    fetch('/api/markets/list?per_page=40')
+      .then((r) => r.json())
+      .then((d) => {
+        const mapped: Record<string, { price: number; change: number; image?: string; spark?: number[] }> = { USDT: { price: 1, change: 0 } }
+        ;(d.list || []).forEach((c: any) => {
+          const sym = String(c.symbol || '').toUpperCase()
+          if (sym) mapped[sym] = { price: Number(c.price || 0), change: Number(c.change24h || 0), image: c.image || '', spark: Array.isArray(c.spark) ? c.spark : [] }
+        })
+        setMarketPrices(mapped)
+      })
+      .catch(() => setMarketPrices({ USDT: { price: 1, change: 0 } }))
   }, [])
 
   useEffect(() => {
@@ -156,7 +191,15 @@ export default function WalletPage() {
   }, [coin, walletAddresses, tab, depositMode])
 
   const usdBalance = balances.USD || 0
-  const totalBalance = usdBalance + investedTotal
+  const cryptoValue = ['BTC', 'ETH', 'USDT'].reduce((sum, sym) => sum + (balances[sym] || 0) * (marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)), 0)
+  const totalBalance = usdBalance + cryptoValue + investedTotal
+  const cryptoPL = ['BTC', 'ETH', 'USDT'].reduce((sum, sym) => {
+    const amountHeld = balances[sym] || 0
+    const price = marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)
+    const change = marketPrices[sym]?.change || 0
+    const previous = price && change !== -100 ? price / (1 + change / 100) : price
+    return sum + amountHeld * (price - previous)
+  }, 0)
 
   const paybisUrl = process.env.NEXT_PUBLIC_PAYBIS_URL || 'https://paybis.com'
 
@@ -164,11 +207,16 @@ export default function WalletPage() {
     const tx = transactions
       .slice()
       .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-      .slice(-24)
+      .filter((a: any) => {
+        if (chartRange === 'All') return true
+        const hours = chartRange === '24H' ? 24 : chartRange === '7D' ? 168 : 720
+        return Date.now() - new Date(a.createdAt).getTime() <= hours * 60 * 60 * 1000
+      })
+      .slice(-40)
 
     if (tx.length === 0) {
-      const base = totalBalance || 1
-      return Array.from({ length: 24 }, (_, i) => Number((base * (0.96 + (i / 24) * 0.04)).toFixed(2)))
+      const base = totalBalance || 0
+      return Array.from({ length: 24 }, () => Number(base.toFixed(2)))
     }
 
     let running = Math.max(0, totalBalance)
@@ -186,7 +234,16 @@ export default function WalletPage() {
     const padded = result.slice(-24)
     while (padded.length < 24) padded.unshift(padded[0] ?? totalBalance)
     return padded
-  }, [transactions, totalBalance])
+  }, [transactions, totalBalance, chartRange])
+
+  const chartPerformance = useMemo(() => {
+    const start = trendData[0] || totalBalance
+    const end = trendData[trendData.length - 1] || totalBalance
+    const pnl = end - start
+    const percent = start ? (pnl / start) * 100 : 0
+    const previous = trendData[trendData.length - 2] || start
+    return { pnl, percent, daily: end - previous }
+  }, [trendData, totalBalance])
 
   const txSummary = useMemo(() => {
     return {
@@ -262,8 +319,17 @@ export default function WalletPage() {
 
   function copyAddress() {
     if (!activeAddress) return
-    navigator.clipboard.writeText(activeAddress)
+    copyWalletAddress(activeAddress, coin)
+  }
+
+  function copyWalletAddress(address: string, symbol: string) {
+    if (!address) {
+      setMsg({ type: 'error', text: `${symbol} address unavailable` })
+      return
+    }
+    navigator.clipboard.writeText(address)
     setCopied(true)
+    setMsg({ type: 'success', text: `${symbol} address copied` })
     setTimeout(() => setCopied(false), 1800)
   }
 
@@ -304,6 +370,12 @@ export default function WalletPage() {
     setDepositMode('select')
     setMsg(null)
   }
+
+  const walletCurrencies = [
+    { sym: 'BTC', name: 'Bitcoin', image: marketPrices.BTC?.image, value: `$${((balances.BTC || 0) * (marketPrices.BTC?.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, amount: balances.BTC || 0, color: '#F7931A', mark: '₿', note: walletAddresses.BTC ? `${walletAddresses.BTC.slice(0, 8)}...${walletAddresses.BTC.slice(-6)}` : 'Admin address required' },
+    { sym: 'ETH', name: 'Ethereum', image: marketPrices.ETH?.image, value: `$${((balances.ETH || 0) * (marketPrices.ETH?.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, amount: balances.ETH || 0, color: '#627EEA', mark: '◆', note: walletAddresses.ETH ? `${walletAddresses.ETH.slice(0, 8)}...${walletAddresses.ETH.slice(-6)}` : 'Admin address required' },
+    { sym: 'USDT', name: 'Tether USD', image: marketPrices.USDT?.image, value: `$${((balances.USDT || 0) * (marketPrices.USDT?.price || 1)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, amount: balances.USDT || 0, color: '#26A17B', mark: '₮', note: walletAddresses.USDT ? `${walletAddresses.USDT.slice(0, 8)}...${walletAddresses.USDT.slice(-6)}` : 'Admin address required' },
+  ]
 
   const ActionButton = ({
     active,
@@ -349,7 +421,7 @@ export default function WalletPage() {
     <div style={{ padding: '6px 16px 22px' }}>
       <div style={{ marginBottom: 10 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>Wallet</h1>
-        <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Funds, providers, and recent activity</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Funds, currencies, and wallet addresses</div>
       </div>
       <div style={{ marginBottom: 16 }}>
         <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
@@ -359,14 +431,14 @@ export default function WalletPage() {
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: '-1.2px', lineHeight: 1 }}>${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <div style={{ marginTop: 8, color: 'var(--success)', fontWeight: 700, fontSize: 14 }}>
-              +${profitToday.toFixed(2)} today
+              {cryptoPL >= 0 ? '+' : '-'}${Math.abs(cryptoPL).toFixed(2)} crypto P/L
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 6 }}>
               Available ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <MiniTrend values={trendData} />
+            <MiniTrend values={trendData} color={chartPerformance.pnl >= 0 ? '#0ECB81' : '#F6465D'} />
           </div>
         </div>
       </div>
@@ -460,7 +532,25 @@ export default function WalletPage() {
                         <strong>{c.name}</strong>
                         <em>{addr ? `${addr.slice(0, 10)}...${addr.slice(-7)}` : `${c.sym.toLowerCase()} address unavailable`}</em>
                       </span>
-                      <span className="network-icons" aria-hidden="true">
+                      <span
+                        className="network-icons network-copy-action"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Copy ${c.sym} wallet address`}
+                        title={`Copy ${c.sym} address`}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          copyWalletAddress(addr, c.sym)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            copyWalletAddress(addr, c.sym)
+                          }
+                        }}
+                      >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm11 1h2v2h-2v-2Zm3 0h2v5h-5v-2h3v-3Z" stroke="currentColor" strokeWidth="1.7"/></svg>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="1.8"/></svg>
                       </span>
@@ -509,34 +599,39 @@ export default function WalletPage() {
         </div>
       )}
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>Recent activity</div>
-          <Link href="/transactions" style={{ color: 'var(--brand-primary)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>View all →</Link>
+      <section className="wallet-currency-panel">
+        <div className="wallet-currency-head">
+          <div>
+            <span>Wallet currencies</span>
+            <strong>Assets</strong>
+          </div>
+          <button
+            type="button"
+            aria-label="Add currency"
+            onClick={() => setMsg({ type: 'success', text: 'Currency request noted. Admin must add the wallet address before deposits can work.' })}
+          >
+            +
+          </button>
         </div>
 
-        {txSummary.latest.length === 0 ? (
-          <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>No transactions yet.</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {txSummary.latest.slice(0, 4).map((t: any) => (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 12 }}>{String(t.type).replace(/_/g, ' ')}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{new Date(t.createdAt).toLocaleString()}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, fontSize: 12 }}>${Number(t.amount || 0).toFixed(2)}</div>
-                  <div style={{ color: t.status === 'SUCCESS' ? 'var(--success)' : t.status === 'PENDING' ? 'var(--warning)' : 'var(--danger)', fontSize: 10, fontWeight: 700 }}>{t.status}</div>
-                </div>
-              </div>
-            ))}
-            <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>
-              {txSummary.totalCount} total · {txSummary.pending} pending
-            </div>
-          </div>
-        )}
-      </div>
+        <div className="wallet-currency-list">
+          {walletCurrencies.map((asset) => (
+            <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} className="wallet-currency-card">
+              <span className="wallet-currency-icon" style={{ background: asset.image ? '#111' : asset.color }}>
+                {asset.image ? <img src={asset.image} alt={`${asset.name} logo`} /> : <CoinIcon symbol={asset.sym} size={34} />}
+              </span>
+              <span className="wallet-currency-copy">
+                <strong>{asset.name}</strong>
+                <em>{asset.note}</em>
+              </span>
+              <span className="wallet-currency-value">
+                <strong>{asset.amount.toLocaleString('en-US', { maximumFractionDigits: asset.sym === 'USDT' ? 2 : 6 })}</strong>
+                <em>{asset.value}</em>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
 
       {tab === 'withdraw' && (

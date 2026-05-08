@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { ArrowDownLeft, ArrowUpRight, Gift, LineChart, RefreshCw, Users, WalletCards } from 'lucide-react'
 
 type Tx = {
   id: string
@@ -11,16 +12,16 @@ type Tx = {
   createdAt: string
 }
 
-const TYPE_CONFIG: Record<string, { icon: string; color: string; label: string; isCredit: boolean }> = {
-  DEPOSIT:    { icon: '⬇', color: '#0ECB81', label: 'Deposit',        isCredit: true  },
-  WITHDRAWAL: { icon: '⬆', color: '#F6465D', label: 'Withdrawal',     isCredit: false },
-  INVESTMENT: { icon: '📈', color: '#F2BA0E', label: 'Investment',     isCredit: false },
-  PROFIT:     { icon: '💰', color: '#0ECB81', label: 'Profit Credit',  isCredit: true  },
-  ROI:        { icon: '💰', color: '#0ECB81', label: 'ROI Credit',     isCredit: true  },
-  BONUS:      { icon: '🎁', color: '#F2BA0E', label: 'Bonus',          isCredit: true  },
-  REFERRAL_BONUS: { icon: '👥', color: '#A78BFA', label: 'Referral Bonus', isCredit: true  },
-  REFERRAL:   { icon: '👥', color: '#A78BFA', label: 'Referral Bonus', isCredit: true  },
-  ADJUSTMENT: { icon: '↕', color: '#94A3B8', label: 'Balance Update',  isCredit: true  },
+const TYPE_CONFIG: Record<string, { Icon: any; color: string; label: string; isCredit: boolean }> = {
+  DEPOSIT:    { Icon: ArrowDownLeft, color: '#0ECB81', label: 'Deposit',        isCredit: true  },
+  WITHDRAWAL: { Icon: ArrowUpRight, color: '#F6465D', label: 'Withdrawal',     isCredit: false },
+  INVESTMENT: { Icon: LineChart, color: '#F2BA0E', label: 'Investment',     isCredit: false },
+  PROFIT:     { Icon: WalletCards, color: '#0ECB81', label: 'Profit Credit',  isCredit: true  },
+  ROI:        { Icon: WalletCards, color: '#0ECB81', label: 'ROI Credit',     isCredit: true  },
+  BONUS:      { Icon: Gift, color: '#F2BA0E', label: 'Bonus',          isCredit: true  },
+  REFERRAL_BONUS: { Icon: Users, color: '#A78BFA', label: 'Referral Bonus', isCredit: true  },
+  REFERRAL:   { Icon: Users, color: '#A78BFA', label: 'Referral Bonus', isCredit: true  },
+  ADJUSTMENT: { Icon: RefreshCw, color: '#94A3B8', label: 'Balance Update',  isCredit: true  },
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -94,14 +95,17 @@ export default function TransactionsPage() {
 
       {paged.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ fontSize: 48, marginBottom: 14 }}>📋</div>
+          <div style={{ width: 54, height: 54, margin: '0 auto 14px', borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <WalletCards size={24} color="var(--text-muted)" />
+          </div>
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>No transactions yet</div>
           <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Your transaction history will appear here</div>
         </div>
       ) : (
         <div style={{ padding: '0 16px' }}>
           {paged.map((tx, i) => {
-            const cfg = TYPE_CONFIG[tx.type] || { icon: '•', color: 'var(--text-muted)', label: tx.type, isCredit: false }
+            const cfg = TYPE_CONFIG[tx.type] || { Icon: WalletCards, color: 'var(--text-muted)', label: tx.type, isCredit: false }
+            const Icon = cfg.Icon
             const date = new Date(tx.createdAt)
             const prevDate = i > 0 ? new Date(paged[i - 1].createdAt) : null
             const isNewDay = !prevDate || prevDate.toDateString() !== date.toDateString()
@@ -117,7 +121,7 @@ export default function TransactionsPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: '1px solid var(--border)' }}>
                   {/* Icon */}
                   <div style={{ width: 44, height: 44, borderRadius: 13, background: `${cfg.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, border: `1px solid ${cfg.color}25` }}>
-                    {cfg.icon}
+                    <Icon size={19} strokeWidth={2.2} color={cfg.color} />
                   </div>
 
                   {/* Details */}
