@@ -158,8 +158,8 @@ function BalanceChart({ usdBalance, transactions }: { usdBalance: number; transa
   }
 
   return (
-    <section className="portfolio-performance-card" style={{ margin: '18px 16px 0' }}>
-      <div className="portfolio-range-tabs compact" style={{ marginBottom: 8 }}>
+    <section style={{ margin: '14px 16px 0' }}>
+      <div className="portfolio-range-tabs compact" style={{ marginBottom: 6 }}>
         {(['24H', '7D', '30D', 'All'] as const).map((item) => (
           <button key={item} type="button" onClick={() => setRange(item)} className={range === item ? 'active' : ''}>{item === 'All' ? 'All-time' : item}</button>
         ))}

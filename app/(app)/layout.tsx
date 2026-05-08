@@ -129,9 +129,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       }
     } catch {}
 
+    const fetchWithTimeout = (url: string, timeoutMs = 6000) => {
+      const controller = new AbortController()
+      const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+      return fetch(url, { signal: controller.signal }).finally(() => window.clearTimeout(timer))
+    }
+
     const run = async () => {
       try {
-        const meRes = await fetch('/api/auth/me')
+        const meRes = await fetchWithTimeout('/api/auth/me', 6000)
         if (!meRes.ok) {
           router.push('/login')
           return
@@ -144,9 +150,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(merged)) } catch {}
             return merged
           })
+          setSplashVisible(false)
         }
 
-        const profileRes = await fetch('/api/user/profile').catch(() => null)
+        const profileRes = await fetchWithTimeout('/api/user/profile', 6000).catch(() => null)
         if (!profileRes || !profileRes.ok) return
         const profileData = await profileRes.json().catch(() => null)
         if (cancelled || !profileData?.user) return
@@ -154,6 +161,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         setBonusUnclaimed(!profileData.user?.bonusClaimed)
         setUnread(profileData.user?.notifications?.length || 0)
         try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(profileData.user)) } catch {}
+      } catch {
+        try {
+          if (!cancelled && window.localStorage.getItem('altaris_user_cache')) setSplashVisible(false)
+        } catch {}
       } finally {
         if (!cancelled) setSplashVisible(false)
       }
