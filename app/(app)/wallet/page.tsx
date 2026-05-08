@@ -345,140 +345,198 @@ export default function WalletPage() {
     </button>
   )
 
-  const tokenRows = [
-    { symbol: 'AP', name: 'Attention Points', amount: '0', value: '$0.00', icon: 'A', color: '#FF7A18' },
-    { symbol: 'USDT', name: 'Tether USD', amount: (balances.USDT || 0).toLocaleString('en-US', { maximumFractionDigits: 2 }), value: `$${((balances.USDT || 0) * 1).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: '₮', color: '#26A17B' },
-    { symbol: 'BTC', name: 'Bitcoin', amount: (balances.BTC || 0).toLocaleString('en-US', { maximumFractionDigits: 6 }), value: '$0.00', icon: '₿', color: '#F7931A' },
-    { symbol: 'ETH', name: 'Ethereum', amount: (balances.ETH || 0).toLocaleString('en-US', { maximumFractionDigits: 6 }), value: '$0.00', icon: '◆', color: '#627EEA' },
-  ]
-
   return (
-    <div className="million-wallet-screen">
-      <header className="million-wallet-header">
-        <div>
-          <p>Altaris Wallet</p>
-          <h1>Wallet</h1>
+    <div style={{ padding: '6px 16px 22px' }}>
+      <div style={{ marginBottom: 10 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>Wallet</h1>
+        <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Funds, providers, and recent activity</div>
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
+          TOTAL BALANCE
         </div>
-        <button type="button" className="million-wallet-menu" aria-label="Wallet menu">•••</button>
-      </header>
-
-      <section className="million-balance-card">
-        <div className="million-balance-orb"><AltarisLogoMark size={34} /></div>
-        <p>Total portfolio</p>
-        <h2>${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
-        <span>Available ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · +${profitToday.toFixed(2)} today</span>
-      </section>
-
-      <section className="million-wallet-actions" aria-label="Wallet actions">
-        <button type="button" onClick={() => { setTab('withdraw'); setDepositMode('select'); setMsg(null) }} className="pressable">
-          <span>↑</span>
-          Send
-        </button>
-        <button type="button" onClick={() => { setTab('deposit'); setDepositMode('select'); setMsg(null) }} className="pressable primary">
-          <span>↓</span>
-          Receive
-        </button>
-        <button type="button" onClick={() => { window.location.href = '/markets' }} className="pressable">
-          <span>⇄</span>
-          Swap
-        </button>
-      </section>
-
-      {tab === 'deposit' && depositMode === 'select' && (
-        <section className="million-deposit-switch animate-slide-up">
-          <button type="button" onClick={() => setDepositMode('network')} className="pressable">
-            <strong>Crypto</strong>
-            <span>Receive to your wallet address</span>
-          </button>
-          <button type="button" onClick={() => setDepositMode('fiat')} className="pressable">
-            <strong>Fiat</strong>
-            <span>Buy crypto through Paybis</span>
-          </button>
-        </section>
-      )}
-
-      <section className="million-promo-card">
-        <div>
-          <p>PRIVATE MARKET ACCESS</p>
-          <h3>Premium crypto deposits are live</h3>
-          <span>Fund your Altaris wallet with crypto or buy through Paybis in seconds.</span>
-        </div>
-        <button type="button" onClick={() => { setTab('deposit'); setDepositMode('select') }}>Deposit</button>
-      </section>
-
-      <section className="million-token-section">
-        <div className="million-token-tabs">
-          <button className="active">Tokens</button>
-          <button>NFTs</button>
-          <button>History</button>
-        </div>
-        <div className="million-token-list">
-          {tokenRows.map((token) => (
-            <div key={token.symbol} className="million-token-row">
-              <span className="million-token-icon" style={{ background: token.color }}>{token.icon}</span>
-              <span className="million-token-copy">
-                <strong>{token.name}</strong>
-                <em>{token.symbol}</em>
-              </span>
-              <span className="million-token-value">
-                <strong>{token.amount}</strong>
-                <em>{token.value}</em>
-              </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-end' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: '-1.2px', lineHeight: 1 }}>${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style={{ marginTop: 8, color: 'var(--success)', fontWeight: 700, fontSize: 14 }}>
+              +${profitToday.toFixed(2)} today
             </div>
-          ))}
-        </div>
-      </section>
-
-      {depositMode === 'network' && tab === 'deposit' && (
-        <div className="network-sheet">
-          <div className="network-sheet-head">
-            <h2>Change network</h2>
-            <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
+            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 6 }}>
+              Available ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
           </div>
-          <div className="network-list">
-            {DEPOSIT_COINS.map((c) => {
-              const addr = walletAddresses[c.sym] || ''
-              return (
-                <button key={c.sym} type="button" onClick={() => { setCoin(c.sym); setDepositMode('crypto') }} className="network-row pressable">
-                  <span className="network-logo" style={{ background: c.color }}>{c.sym === 'BTC' ? '₿' : c.sym === 'ETH' ? '◆' : '₮'}</span>
-                  <span className="network-copy">
-                    <strong>{c.name}</strong>
-                    <em>{addr ? `${addr.slice(0, 10)}...${addr.slice(-7)}` : `${c.sym.toLowerCase()} address unavailable`}</em>
-                  </span>
-                  <span className="network-icons" aria-hidden="true">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm11 1h2v2h-2v-2Zm3 0h2v5h-5v-2h3v-3Z" stroke="currentColor" strokeWidth="1.7"/></svg>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="1.8"/></svg>
-                  </span>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <MiniTrend values={trendData} />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
+        <ActionButton
+          active={tab === 'deposit'}
+          onClick={() => {
+            setTab('deposit')
+            setDepositMode('select')
+            setMsg(null)
+          }}
+          label="Deposit"
+          color="var(--success)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>}
+        />
+        <ActionButton
+          active={tab === 'withdraw'}
+          onClick={() => {
+            setTab('withdraw')
+            setDepositMode('select')
+            setMsg(null)
+          }}
+          label="Withdraw"
+          color="var(--danger)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>}
+        />
+        <ActionButton
+          active={false}
+          onClick={() => (window.location.href = '/invest?tab=my')}
+          label="Invested"
+          color="var(--brand-primary)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>}
+        />
+        <ActionButton
+          active={tab === 'reward'}
+          onClick={() => {
+            setTab('reward')
+            setMsg(null)
+          }}
+          label="Rewards"
+          color="var(--brand-primary)"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>}
+        />
+      </div>
+
+      {tab === 'deposit' && (
+        <div style={{ marginBottom: 14 }}>
+          {depositMode === 'select' && (
+            <div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>Deposit with</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <button
+                  onClick={() => setDepositMode('network')}
+                  className="pressable"
+                  style={{ padding: 16, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  Crypto
                 </button>
-              )
-            })}
-          </div>
+                <button
+                  onClick={() => setDepositMode('fiat')}
+                  className="pressable"
+                  style={{ textAlign: 'center', padding: 16, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  Fiat
+                </button>
+              </div>
+            </div>
+          )}
+
+          {depositMode === 'network' && (
+            <div className="network-sheet">
+              <div className="network-sheet-head">
+                <h2>Change network</h2>
+                <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
+              </div>
+              <div className="network-list">
+                {DEPOSIT_COINS.map((c) => {
+                  const addr = walletAddresses[c.sym] || ''
+                  return (
+                    <button
+                      key={c.sym}
+                      type="button"
+                      onClick={() => { setCoin(c.sym); setDepositMode('crypto') }}
+                      className="network-row pressable"
+                    >
+                      <span className="network-logo" style={{ background: c.color }}>
+                        {c.sym === 'BTC' ? '₿' : c.sym === 'ETH' ? '◆' : '₮'}
+                      </span>
+                      <span className="network-copy">
+                        <strong>{c.name}</strong>
+                        <em>{addr ? `${addr.slice(0, 10)}...${addr.slice(-7)}` : `${c.sym.toLowerCase()} address unavailable`}</em>
+                      </span>
+                      <span className="network-icons" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm11 1h2v2h-2v-2Zm3 0h2v5h-5v-2h3v-3Z" stroke="currentColor" strokeWidth="1.7"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="1.8"/></svg>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {depositMode === 'fiat' && (
+            <div className="network-sheet fiat-sheet">
+              <div className="network-sheet-head">
+                <h2>Select payment method</h2>
+                <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
+              </div>
+              <div className="paybis-hero-row">
+                <span className="paybis-mark">P</span>
+                <span>
+                  <strong>Paybis</strong>
+                  <em>Buy crypto with fiat, then send to your Altaris wallet</em>
+                </span>
+              </div>
+              <div className="fiat-logo-grid" aria-label="Supported fiat payment methods">
+                <span className="visa-logo">VISA</span>
+                <span className="mc-logo"><i></i><b></b></span>
+                <span className="apple-logo"> Pay</span>
+                <span className="gpay-logo"><b>G</b> Pay</span>
+              </div>
+              <div className="paybis-flow">
+                <div><strong>1</strong><span>Redirect to Paybis</span></div>
+                <div><strong>2</strong><span>Complete purchase with card or wallet pay</span></div>
+                <div><strong>3</strong><span>Crypto sent to your wallet</span></div>
+              </div>
+              <a href={paybisUrl} target="_blank" rel="noopener noreferrer" className="paybis-button pressable">
+                Continue to Paybis →
+              </a>
+            </div>
+          )}
         </div>
       )}
 
-      {depositMode === 'fiat' && tab === 'deposit' && (
-        <div className="network-sheet fiat-sheet">
-          <div className="network-sheet-head">
-            <h2>Select payment method</h2>
-            <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
-          </div>
-          <div className="paybis-hero-row">
-            <span className="paybis-mark">P</span>
-            <span><strong>Paybis</strong><em>Buy crypto with fiat, then send to your Altaris wallet</em></span>
-          </div>
-          <div className="fiat-logo-grid" aria-label="Supported fiat payment methods">
-            <span className="visa-logo">VISA</span><span className="mc-logo"><i></i><b></b></span><span className="apple-logo"> Pay</span><span className="gpay-logo"><b>G</b> Pay</span>
-          </div>
-          <div className="paybis-flow">
-            <div><strong>1</strong><span>Redirect to Paybis</span></div>
-            <div><strong>2</strong><span>Complete purchase with card or wallet pay</span></div>
-            <div><strong>3</strong><span>Crypto sent to your wallet</span></div>
-          </div>
-          <a href={paybisUrl} target="_blank" rel="noopener noreferrer" className="paybis-button pressable">Continue to Paybis →</a>
+      {msg && (
+        <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 10, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)', fontSize: 12, fontWeight: 700 }}>
+          {msg.text}
         </div>
       )}
 
-      {msg && <div className={`million-wallet-alert ${msg.type}`}>{msg.text}</div>}
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>Recent activity</div>
+          <Link href="/transactions" style={{ color: 'var(--brand-primary)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>View all →</Link>
+        </div>
+
+        {txSummary.latest.length === 0 ? (
+          <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>No transactions yet.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {txSummary.latest.slice(0, 4).map((t: any) => (
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 12 }}>{String(t.type).replace(/_/g, ' ')}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{new Date(t.createdAt).toLocaleString()}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, fontSize: 12 }}>${Number(t.amount || 0).toFixed(2)}</div>
+                  <div style={{ color: t.status === 'SUCCESS' ? 'var(--success)' : t.status === 'PENDING' ? 'var(--warning)' : 'var(--danger)', fontSize: 10, fontWeight: 700 }}>{t.status}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>
+              {txSummary.totalCount} total · {txSummary.pending} pending
+            </div>
+          </div>
+        )}
+      </div>
 
 
       {tab === 'withdraw' && (
