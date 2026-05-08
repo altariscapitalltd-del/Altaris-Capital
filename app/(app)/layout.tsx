@@ -175,6 +175,48 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   }, [router])
 
   useEffect(() => {
+    // Some mobile webviews (notably in-app browsers) can drop the synthetic click
+    // after touchend when fixed/animated layers are present. Bridge short taps on
+    // real interactive elements into a normal click so links/buttons don't feel dead.
+    let tapStart: { x: number; y: number; t: number; el: Element | null } | null = null
+    const isInteractive = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return null
+      return target.closest('a,button,[role="button"],input,select,textarea,label') as HTMLElement | null
+    }
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return
+      const touch = e.touches[0]
+      tapStart = { x: touch.clientX, y: touch.clientY, t: Date.now(), el: isInteractive(e.target) }
+    }
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!tapStart || e.changedTouches.length !== 1) return
+      const touch = e.changedTouches[0]
+      const dx = Math.abs(touch.clientX - tapStart.x)
+      const dy = Math.abs(touch.clientY - tapStart.y)
+      const elapsed = Date.now() - tapStart.t
+      const el = isInteractive(e.target) || (tapStart.el as HTMLElement | null)
+      tapStart = null
+      if (!el || dx > 14 || dy > 14 || elapsed > 800) return
+      if (el.matches('input,select,textarea,label')) return
+      e.preventDefault()
+      const anchor = el.closest('a[href]') as HTMLAnchorElement | null
+      if (anchor) {
+        const href = anchor.getAttribute('href') || ''
+        if (href.startsWith('/')) window.location.assign(href)
+        else if (anchor.href) window.location.href = anchor.href
+        return
+      }
+      window.requestAnimationFrame(() => el.click())
+    }
+    document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true })
+    document.addEventListener('touchend', onTouchEnd, { capture: true, passive: false })
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart, true)
+      document.removeEventListener('touchend', onTouchEnd, true)
+    }
+  }, [])
+
+  useEffect(() => {
     // Capture PWA install prompt event for later (Android / Chrome)
     const handler = (e: any) => {
       e.preventDefault()

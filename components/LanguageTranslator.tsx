@@ -70,6 +70,7 @@ export function applyAltarisLanguage(code: string, reloadEnglish = false) {
 export default function LanguageTranslator() {
   useEffect(() => {
     const saved = getSavedLanguage()
+    let scriptRequested = false
 
     window.googleTranslateElementInit = () => {
       if (!window.google?.translate?.TranslateElement) return
@@ -86,23 +87,30 @@ export default function LanguageTranslator() {
       setTimeout(() => applyAltarisLanguage(saved), 500)
     }
 
-    const onChangeLanguage = (event: Event) => {
-      const detail = (event as CustomEvent<{ language?: string; reloadEnglish?: boolean }>).detail
-      if (!detail?.language) return
-      applyAltarisLanguage(detail.language, Boolean(detail.reloadEnglish))
-    }
-
-    window.addEventListener('altaris:set-language', onChangeLanguage as EventListener)
-
-    if (!document.querySelector('script[data-altaris-google-translate]')) {
+    const loadTranslate = () => {
+      if (window.google?.translate?.TranslateElement) {
+        window.googleTranslateElementInit?.()
+        return
+      }
+      if (scriptRequested || document.querySelector('script[data-altaris-google-translate]')) return
+      scriptRequested = true
       const script = document.createElement('script')
       script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
       script.async = true
       script.setAttribute('data-altaris-google-translate', 'true')
       document.body.appendChild(script)
-    } else if (window.google?.translate?.TranslateElement) {
-      window.googleTranslateElementInit?.()
     }
+
+    const onChangeLanguage = (event: Event) => {
+      const detail = (event as CustomEvent<{ language?: string; reloadEnglish?: boolean }>).detail
+      if (!detail?.language) return
+      if (detail.language !== 'en') loadTranslate()
+      applyAltarisLanguage(detail.language, Boolean(detail.reloadEnglish))
+    }
+
+    window.addEventListener('altaris:set-language', onChangeLanguage as EventListener)
+
+    if (saved !== 'en') loadTranslate()
 
     return () => window.removeEventListener('altaris:set-language', onChangeLanguage as EventListener)
   }, [])
