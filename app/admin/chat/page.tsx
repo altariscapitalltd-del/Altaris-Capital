@@ -1,146 +1,273 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Pusher from 'pusher-js'
+import { ArrowLeft, CheckCheck, MessageCircle, Paperclip, Search, Send, ShieldCheck, X } from 'lucide-react'
+
+type Conversation = any
+type ChatMessage = any
+
+function initials(name?: string) {
+  return (name || 'Unknown')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || '?'
+}
+
+function formatTime(value?: string) {
+  if (!value) return ''
+  return new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+}
+
+function formatDay(value?: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  const today = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(today.getDate() - 1)
+  if (date.toDateString() === today.toDateString()) return 'Today'
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
 
 export default function AdminChatPage() {
-  const [conversations, setConversations] = useState<any[]>([])
-  const [selected, setSelected]           = useState<any>(null)
-  const [messages, setMessages]           = useState<any[]>([])
-  const [input, setInput]                 = useState('')
-  const [sending, setSending]             = useState(false)
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [selected, setSelected] = useState<Conversation | null>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const [query, setQuery] = useState('')
+  const [listOpen, setListOpen] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  useEffect(()=>{
-    fetch('/api/admin/chat').then(r=>r.json()).then(d=>setConversations(d.conversations||[]))
-    // Subscribe to admin channel for real-time updates
+  const refreshConversations = () => {
+    fetch('/api/admin/chat')
+      .then((r) => r.json())
+      .then((d) => setConversations(d.conversations || []))
+      .catch(() => setConversations([]))
+  }
+
+  useEffect(() => {
+    refreshConversations()
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', { cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '' })
     const channel = pusher.subscribe('private-admin')
-    channel.bind('chat:message', (msg:any) => {
-      // Refresh conversation list and append message if currently selected
-      fetch('/api/admin/chat').then(r=>r.json()).then(d=>setConversations(d.conversations||[]))
-      if (selected && msg.userId === selected.user?.id) {
-        setMessages(m => [...m, msg])
-      }
+    channel.bind('chat:message', (msg: ChatMessage) => {
+      refreshConversations()
+      setMessages((current) => {
+        if (!selected || msg.userId !== selected.user?.id) return current
+        if (current.some((m) => m.id === msg.id)) return current
+        return [...current, msg]
+      })
     })
-    return () => { try { channel.unbind_all(); pusher.unsubscribe('private-admin'); pusher.disconnect() } catch(e){} }
-  },[])
+    return () => {
+      try {
+        channel.unbind_all()
+        pusher.unsubscribe('private-admin')
+        pusher.disconnect()
+      } catch {}
+    }
+  }, [selected?.id, selected?.user?.id])
 
-  useEffect(()=>{
-    if(!selected)return
-    fetch(`/api/admin/chat?conversationId=${selected.id}`).then(r=>r.json()).then(d=>setMessages(d.messages||[]))
-  },[selected])
+  useEffect(() => {
+    if (!selected) return
+    fetch(`/api/admin/chat?conversationId=${selected.id}`)
+      .then((r) => r.json())
+      .then((d) => setMessages(d.messages || []))
+      .catch(() => setMessages([]))
+  }, [selected])
 
-  useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:'smooth'}) },[messages])
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [messages])
+
+  const filteredConversations = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    if (!needle) return conversations
+    return conversations.filter((c) => {
+      const haystack = `${c.user?.name || ''} ${c.user?.email || ''} ${c.messages?.[0]?.content || ''}`.toLowerCase()
+      return haystack.includes(needle)
+    })
+  }, [conversations, query])
+
+  const groupedMessages = useMemo(() => {
+    const groups: { day: string; messages: ChatMessage[] }[] = []
+    for (const message of messages) {
+      const day = formatDay(message.createdAt)
+      const last = groups[groups.length - 1]
+      if (last?.day === day) last.messages.push(message)
+      else groups.push({ day, messages: [message] })
+    }
+    return groups
+  }, [messages])
+
+  function openConversation(conversation: Conversation) {
+    setSelected(conversation)
+    setListOpen(false)
+  }
 
   async function reply() {
-    if(!input.trim()||!selected||sending) return
-    const text=input.trim(); setInput(''); setSending(true)
-    const res = await fetch('/api/admin/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversationId:selected.id,content:text,userId:selected.user?.id})})
-    const data = await res.json()
-    if(res.ok) setMessages(m=>[...m,data.message])
-    setSending(false)
+    if (!input.trim() || !selected || sending || selected.status === 'ended') return
+    const text = input.trim()
+    setInput('')
+    setSending(true)
+    try {
+      const res = await fetch('/api/admin/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: selected.id, content: text, userId: selected.user?.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.message) setMessages((current) => [...current, data.message])
+      refreshConversations()
+    } finally {
+      setSending(false)
+    }
   }
 
   async function endSession() {
-    if(!selected||sending) return
-    if(!confirm('End this support session? The user will no longer be able to send messages.')) return
+    if (!selected || sending) return
+    if (!confirm('End this support session? The user will no longer be able to send messages.')) return
     setSending(true)
-    const res = await fetch('/api/admin/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversationId:selected.id,action:'end_session'})})
-    if(res.ok) { setSelected((s: any)=>s ? { ...s, status: 'ended' } : null); fetch('/api/admin/chat').then(r=>r.json()).then(d=>setConversations(d.conversations||[])) }
-    setSending(false)
+    try {
+      const res = await fetch('/api/admin/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: selected.id, action: 'end_session' }),
+      })
+      if (res.ok) {
+        setSelected((current: Conversation | null) => (current ? { ...current, status: 'ended' } : null))
+        refreshConversations()
+      }
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
-    <div style={{display:'flex',height:'calc(100vh - 52px)',overflow:'hidden'}}>
-      {/* Conversation list */}
-      <div style={{width:280,borderRight:'1px solid rgba(255,255,255,0.06)',display:'flex',flexDirection:'column',background:'#0E0E0E',flexShrink:0}}>
-        <div style={{padding:'16px 16px 12px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
-          <h2 style={{fontSize:14,fontWeight:700}}>Support Chats</h2>
-          <p style={{color:'#444',fontSize:11,marginTop:2}}>{conversations.length} conversations</p>
+    <div className="admin-messenger-shell">
+      <aside className={`admin-chat-list ${listOpen ? 'open' : ''}`}>
+        <div className="admin-chat-list-head">
+          <div>
+            <p>Inbox</p>
+            <h1>Support chats</h1>
+          </div>
+          <span>{conversations.length}</span>
         </div>
-        <div style={{flex:1,overflowY:'auto'}}>
-          {conversations.length===0 ? (
-            <div style={{padding:32,textAlign:'center',color:'#333',fontSize:13}}>No conversations yet</div>
-          ) : conversations.map((c:any)=>(
-            <div key={c.id} onClick={()=>setSelected(c)}
-              style={{padding:'14px 16px',borderBottom:'1px solid rgba(255,255,255,0.04)',cursor:'pointer',background:selected?.id===c.id?'rgba(242,186,14,0.06)':'transparent',borderLeft:selected?.id===c.id?'2px solid #F2BA0E':'2px solid transparent',transition:'all .15s'}}>
-              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:5}}>
-                <div style={{width:30,height:30,borderRadius:'50%',background:'linear-gradient(135deg,#F2BA0E40,#FF950030)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'#F2BA0E',flexShrink:0}}>
-                  {c.user?.name?.[0]?.toUpperCase()||'?'}
-                </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:600,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.user?.name||'Unknown'}</div>
-                  <div style={{color:'#444',fontSize:10}}>{c.user?.email}</div>
-                </div>
-              </div>
-              {c.messages?.[0] && (
-                <div style={{color:'#444',fontSize:11,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingLeft:40}}>
-                  {c.messages[0].content}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Chat window */}
-      {selected ? (
-        <div style={{flex:1,display:'flex',flexDirection:'column',minWidth:0}}>
-          {/* Chat header */}
-          <div style={{padding:'12px 20px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,background:'#0E0E0E',flexShrink:0}}>
-            <div style={{display:'flex',alignItems:'center',gap:12}}>
-              <div style={{width:34,height:34,borderRadius:'50%',background:'linear-gradient(135deg,#F2BA0E,#FF9500)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:14,color:'#000',flexShrink:0}}>
-                {selected.user?.name?.[0]?.toUpperCase()||'?'}
-              </div>
-              <div>
-                <div style={{fontWeight:700,fontSize:14}}>{selected.user?.name}</div>
-                <div style={{color:'#444',fontSize:11}}>{selected.user?.email}</div>
-              </div>
+        <label className="admin-chat-search">
+          <Search size={16} />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, email, message…" />
+          {query ? <button type="button" onClick={() => setQuery('')}><X size={14} /></button> : null}
+        </label>
+
+        <div className="admin-chat-conversations">
+          {filteredConversations.length === 0 ? (
+            <div className="admin-chat-empty-list">
+              <MessageCircle size={28} />
+              <strong>No conversations</strong>
+              <span>New support messages will appear here.</span>
             </div>
-            {selected.status !== 'ended' && (
-              <button onClick={endSession} disabled={sending} style={{padding:'8px 14px',borderRadius:8,border:'1px solid rgba(246,70,93,0.3)',background:'rgba(246,70,93,0.1)',color:'#F6465D',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-                End session
+          ) : filteredConversations.map((conversation) => {
+            const active = selected?.id === conversation.id
+            const lastMessage = conversation.messages?.[0]
+            return (
+              <button
+                key={conversation.id}
+                type="button"
+                onClick={() => openConversation(conversation)}
+                className={`admin-chat-thread ${active ? 'active' : ''}`}
+              >
+                <span className="admin-chat-avatar">{initials(conversation.user?.name)}</span>
+                <span className="admin-chat-thread-copy">
+                  <span className="admin-chat-thread-top">
+                    <strong>{conversation.user?.name || 'Unknown user'}</strong>
+                    <em>{formatTime(lastMessage?.createdAt)}</em>
+                  </span>
+                  <span className="admin-chat-thread-meta">{conversation.user?.email || 'No email'}</span>
+                  <span className="admin-chat-thread-preview">{lastMessage?.content || 'No messages yet'}</span>
+                </span>
+                {conversation.status === 'ended' ? <span className="admin-chat-ended-dot">Ended</span> : null}
               </button>
-            )}
-            {selected.status === 'ended' && <span style={{color:'#444',fontSize:11}}>Session ended</span>}
-          </div>
+            )
+          })}
+        </div>
+      </aside>
 
-          {/* Messages */}
-          <div style={{flex:1,overflowY:'auto',padding:16,display:'flex',flexDirection:'column',gap:8}}>
-            {messages.map((m:any)=>(
-              <div key={m.id} style={{display:'flex',justifyContent:m.isAdmin?'flex-end':'flex-start'}}>
-                {!m.isAdmin && (
-                  <div style={{width:26,height:26,borderRadius:'50%',background:'linear-gradient(135deg,#F2BA0E40,#FF950030)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:11,color:'#F2BA0E',flexShrink:0,marginRight:8,alignSelf:'flex-end'}}>
-                    {selected.user?.name?.[0]?.toUpperCase()||'?'}
-                  </div>
-                )}
-                <div style={{maxWidth:'70%',padding:'10px 14px',borderRadius:m.isAdmin?'14px 4px 14px 14px':'4px 14px 14px 14px',background:m.isAdmin?'#F2BA0E':'#1A1A1A',color:m.isAdmin?'#000':'#ddd',fontSize:13,lineHeight:1.5}}>
-                  {m.content}
-                  <div style={{fontSize:10,opacity:.5,marginTop:4,textAlign:'right'}}>{new Date(m.createdAt).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div>
-                </div>
+      <section className={`admin-chat-room ${selected ? 'has-selected' : ''}`}>
+        {selected ? (
+          <>
+            <header className="admin-chat-room-head">
+              <button type="button" className="admin-chat-mobile-back" onClick={() => setListOpen(true)} aria-label="Back to conversations">
+                <ArrowLeft size={20} />
+              </button>
+              <span className="admin-chat-avatar large">{initials(selected.user?.name)}</span>
+              <div className="admin-chat-room-person">
+                <strong>{selected.user?.name || 'Unknown user'}</strong>
+                <span>{selected.user?.email || 'No email'} · {selected.status === 'ended' ? 'Session ended' : 'Active now'}</span>
               </div>
-            ))}
-            <div ref={bottomRef}/>
-          </div>
+              {selected.status !== 'ended' ? (
+                <button type="button" onClick={endSession} disabled={sending} className="admin-chat-end-button">End session</button>
+              ) : (
+                <span className="admin-chat-ended-pill">Session ended</span>
+              )}
+            </header>
 
-          {/* Input — disabled when session ended */}
-          <div style={{padding:'12px 16px',borderTop:'1px solid rgba(255,255,255,0.06)',display:'flex',gap:8,background:'#0E0E0E',flexShrink:0}}>
-            <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&selected?.status!=='ended'&&reply()}
-              disabled={selected?.status==='ended'}
-              style={{flex:1,background:'#1A1A1A',color:'#fff',padding:'11px 14px',borderRadius:99,border:'1px solid rgba(255,255,255,0.07)',fontSize:13,fontFamily:'inherit',outline:'none',opacity:selected?.status==='ended'?0.5:1}}
-              placeholder={selected?.status==='ended'?'Session ended' : `Reply to ${selected.user?.name}…`}/>
-            <button onClick={reply} disabled={sending||!input.trim()||selected?.status==='ended'}
-              style={{width:42,height:42,borderRadius:'50%',background:'#F2BA0E',border:'none',cursor:selected?.status==='ended'?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,opacity:sending||!input.trim()||selected?.status==='ended'?0.4:1}}>
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#000" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" strokeLinecap="round"/><polygon points="22 2 15 22 11 13 2 9 22 2" strokeLinejoin="round"/></svg>
-            </button>
+            <div className="admin-chat-messages" aria-live="polite">
+              {groupedMessages.length === 0 ? (
+                <div className="admin-chat-empty-room">
+                  <MessageCircle size={38} />
+                  <strong>No messages yet</strong>
+                  <span>Start the conversation when this user needs help.</span>
+                </div>
+              ) : groupedMessages.map((group) => (
+                <div key={group.day} className="admin-chat-day-group">
+                  <div className="admin-chat-day-divider"><span>{group.day}</span></div>
+                  {group.messages.map((message) => (
+                    <div key={message.id} className={`admin-chat-message-row ${message.isAdmin ? 'admin' : 'user'}`}>
+                      {!message.isAdmin ? <span className="admin-chat-avatar tiny">{initials(selected.user?.name)}</span> : null}
+                      <div className="admin-chat-bubble">
+                        <p>{message.content}</p>
+                        <span>{formatTime(message.createdAt)} {message.isAdmin ? <CheckCheck size={13} /> : null}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+              <div ref={bottomRef} />
+            </div>
+
+            <footer className="admin-chat-composer">
+              <button type="button" className="admin-chat-attach" aria-label="Attach file" disabled>
+                <Paperclip size={18} />
+              </button>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    reply()
+                  }
+                }}
+                rows={1}
+                disabled={selected.status === 'ended'}
+                placeholder={selected.status === 'ended' ? 'Session ended' : `Message ${selected.user?.name || 'user'}…`}
+              />
+              <button type="button" onClick={reply} disabled={sending || !input.trim() || selected.status === 'ended'} className="admin-chat-send">
+                <Send size={18} />
+              </button>
+            </footer>
+          </>
+        ) : (
+          <div className="admin-chat-empty-room desktop-empty">
+            <ShieldCheck size={46} />
+            <strong>Select a conversation</strong>
+            <span>Pick a user from the inbox to start replying like a real messenger.</span>
           </div>
-        </div>
-      ) : (
-        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:12,color:'#2A2A2A'}}>
-          <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" strokeLinecap="round"/></svg>
-          <p style={{fontSize:14}}>Select a conversation</p>
-        </div>
-      )}
+        )}
+      </section>
     </div>
   )
 }

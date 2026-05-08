@@ -20,6 +20,7 @@ export default function UserDetailPage() {
   const [tab, setTab]           = useState<'overview'|'transactions'|'investments'|'chat'>('overview')
   const [balanceAdj, setBalanceAdj] = useState('')
   const [adjNote, setAdjNote]   = useState('')
+  const [adjTemplate, setAdjTemplate] = useState<'ADJUSTMENT'|'DEPOSIT'|'WITHDRAWAL'>('ADJUSTMENT')
   const [notifText, setNotifText] = useState('')
   const [loading, setLoading]   = useState(true)
   const [actionLoading, setActionLoading] = useState('')
@@ -113,7 +114,22 @@ export default function UserDetailPage() {
           <div style={{background:'#111',border:'1px solid rgba(255,255,255,0.06)',borderRadius:14,padding:18}}>
             <h3 style={{fontSize:14,fontWeight:700,marginBottom:14}}>Balance Adjustment</h3>
             <div style={{marginBottom:10}}>
-              <label style={{display:'block',color:'#444',fontSize:11,fontWeight:600,marginBottom:6,letterSpacing:'0.06em'}}>AMOUNT (USD) — use negative to debit</label>
+              <label style={{display:'block',color:'#444',fontSize:11,fontWeight:600,marginBottom:6,letterSpacing:'0.06em'}}>TEMPLATE</label>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
+                {(['ADJUSTMENT','DEPOSIT','WITHDRAWAL'] as const).map(template => (
+                  <button key={template} type="button" onClick={() => {
+                    setAdjTemplate(template)
+                    if (template === 'DEPOSIT') setAdjNote('Deposit approved by admin')
+                    if (template === 'WITHDRAWAL') setAdjNote('Withdrawal processed by admin')
+                    if (template === 'ADJUSTMENT') setAdjNote('Admin adjustment')
+                  }} style={{padding:'9px 6px',borderRadius:8,border:`1px solid ${adjTemplate===template?'rgba(242,186,14,0.35)':'rgba(255,255,255,0.07)'}`,background:adjTemplate===template?'rgba(242,186,14,0.1)':'#1A1A1A',color:adjTemplate===template?'#F2BA0E':'#777',fontSize:11,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+                    {template === 'ADJUSTMENT' ? 'Adjust' : template.charAt(0) + template.slice(1).toLowerCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <label style={{display:'block',color:'#444',fontSize:11,fontWeight:600,marginBottom:6,letterSpacing:'0.06em'}}>AMOUNT (USD) {adjTemplate === 'WITHDRAWAL' ? '— debits user' : adjTemplate === 'DEPOSIT' ? '— credits user' : '— use negative to debit'}</label>
               <input value={balanceAdj} onChange={e=>setBalanceAdj(e.target.value)} type="number"
                 style={{width:'100%',background:'#1A1A1A',color:'#fff',padding:'11px 12px',borderRadius:9,border:'1px solid rgba(255,255,255,0.07)',fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}
                 placeholder="e.g. 500 or -200"
@@ -126,7 +142,7 @@ export default function UserDetailPage() {
                 placeholder="Reason for adjustment"
                 onFocus={e=>e.target.style.borderColor='rgba(242,186,14,0.4)'} onBlur={e=>e.target.style.borderColor='rgba(255,255,255,0.07)'}/>
             </div>
-            <button onClick={()=>{if(!balanceAdj)return;action('adjust_balance',{amount:parseFloat(balanceAdj),note:adjNote});setBalanceAdj('');setAdjNote('')}} disabled={!balanceAdj||actionLoading==='adjust_balance'}
+            <button onClick={()=>{if(!balanceAdj)return;const raw=Math.abs(parseFloat(balanceAdj));const amount=adjTemplate==='WITHDRAWAL'?-raw:adjTemplate==='DEPOSIT'?raw:parseFloat(balanceAdj);action('adjust_balance',{amount,template:adjTemplate,note:adjNote});setBalanceAdj('');setAdjNote('')}} disabled={!balanceAdj||actionLoading==='adjust_balance'}
               style={{width:'100%',padding:'11px',background:'#F2BA0E',color:'#000',border:'none',borderRadius:9,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',opacity:!balanceAdj?0.4:1}}>
               {actionLoading==='adjust_balance'?'Applying...':'Apply Adjustment'}
             </button>

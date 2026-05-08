@@ -49,43 +49,41 @@ function SectionCard({ children }: { children:React.ReactNode }) {
 
 const COUNTRY_LANGUAGE: Record<string, string> = {
   NG: 'en', FR: 'fr', BE: 'fr', CA: 'fr', ES: 'es', MX: 'es', AR: 'es', CO: 'es', CL: 'es', PE: 'es',
-  BR: 'pt', PT: 'pt', DE: 'de', AT: 'de', IT: 'it', RU: 'ru', CN: 'zh-CN', HK: 'zh-CN', TW: 'zh-CN',
-  JP: 'ja', KR: 'ko', IN: 'hi', PK: 'ur', BD: 'bn', ID: 'id', TR: 'tr', VN: 'vi', SA: 'ar', AE: 'ar',
-  EG: 'ar', MA: 'ar', KE: 'sw', TZ: 'sw', UG: 'sw',
+  BR: 'pt', PT: 'pt', DE: 'de', AT: 'de', IT: 'it', RU: 'ru', PL: 'pl', NL: 'nl', BG: 'bg', GR: 'el',
+  RO: 'ro', HU: 'hu', SE: 'sv', TH: 'th', CN: 'zh-CN', HK: 'zh-CN', TW: 'zh-CN', JP: 'ja', KR: 'ko',
+  IN: 'hi', PK: 'ur', BD: 'bn', ID: 'id', TR: 'tr', VN: 'vi', SA: 'ar', AE: 'ar', EG: 'ar', MA: 'ar', KE: 'sw', TZ: 'sw', UG: 'sw',
 }
 
 function LanguageRow({ language, country, detecting, onLanguageChange, onDetect }:
   { language:string; country:string; detecting:boolean; onLanguageChange:(code:string)=>void; onDetect:()=>void }) {
   const selected = ALTARIS_LANGUAGES.find(item => item.code === language)?.label || 'English'
   return (
-    <div className="row-item" style={{ background:'transparent', borderBottom:'1px solid var(--border)', alignItems:'flex-start' }}>
+    <div className="row-item" style={{ background:'transparent', borderBottom:'1px solid var(--border)' }}>
       <div style={{ width:34, height:34, borderRadius:10, background:'var(--bg-elevated)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'var(--text-secondary)' }}>
         <Globe2 size={18} strokeWidth={2} />
       </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontWeight:600, fontSize:14, color:'var(--text-primary)' }}>Language</div>
-        <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:1 }}>Full app translation · {country ? `Detected: ${country}` : `Current: ${selected}`}</div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:8, marginTop:10 }}>
-          <select
-            value={language}
-            onChange={(event) => onLanguageChange(event.target.value)}
-            style={{ minWidth:0, background:'var(--bg-input)', color:'var(--text-primary)', border:'1px solid var(--border)', borderRadius:10, padding:'10px 11px', fontSize:13, fontWeight:700, fontFamily:'inherit', outline:'none' }}
-            aria-label="Choose app language"
-          >
-            {ALTARIS_LANGUAGES.map(item => <option key={item.code} value={item.code}>{item.label}</option>)}
-          </select>
-          <button
-            type="button"
-            onClick={onDetect}
-            disabled={detecting}
-            aria-label="Auto-detect language from IP"
-            title="Auto-detect from IP"
-            style={{ width:42, borderRadius:10, border:'1px solid var(--border)', background:'var(--bg-elevated)', color:'var(--text-primary)', display:'flex', alignItems:'center', justifyContent:'center', opacity:detecting?.6:1 }}
-          >
-            <MapPin size={16} strokeWidth={2} />
-          </button>
-        </div>
+        <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:1 }}>{country ? `Detected: ${country}` : selected}</div>
       </div>
+      <select
+        value={language}
+        onChange={(event) => onLanguageChange(event.target.value)}
+        style={{ maxWidth:118, background:'transparent', color:'var(--text-secondary)', border:'none', fontSize:12, fontWeight:700, fontFamily:'inherit', outline:'none', textAlign:'right' }}
+        aria-label="Choose app language"
+      >
+        {ALTARIS_LANGUAGES.map(item => <option key={item.code} value={item.code}>{item.label}</option>)}
+      </select>
+      <button
+        type="button"
+        onClick={onDetect}
+        disabled={detecting}
+        aria-label="Auto-detect language from IP"
+        title="Auto-detect from IP"
+        style={{ border:'none', background:'transparent', color:'var(--text-muted)', display:'flex', alignItems:'center', justifyContent:'center', padding:0, opacity:detecting?.6:1 }}
+      >
+        <MapPin size={16} strokeWidth={2} />
+      </button>
     </div>
   )
 }

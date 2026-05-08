@@ -15,9 +15,12 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string; label: string; 
   DEPOSIT:    { icon: '⬇', color: '#0ECB81', label: 'Deposit',        isCredit: true  },
   WITHDRAWAL: { icon: '⬆', color: '#F6465D', label: 'Withdrawal',     isCredit: false },
   INVESTMENT: { icon: '📈', color: '#F2BA0E', label: 'Investment',     isCredit: false },
+  PROFIT:     { icon: '💰', color: '#0ECB81', label: 'Profit Credit',  isCredit: true  },
   ROI:        { icon: '💰', color: '#0ECB81', label: 'ROI Credit',     isCredit: true  },
   BONUS:      { icon: '🎁', color: '#F2BA0E', label: 'Bonus',          isCredit: true  },
+  REFERRAL_BONUS: { icon: '👥', color: '#A78BFA', label: 'Referral Bonus', isCredit: true  },
   REFERRAL:   { icon: '👥', color: '#A78BFA', label: 'Referral Bonus', isCredit: true  },
+  ADJUSTMENT: { icon: '↕', color: '#94A3B8', label: 'Balance Update',  isCredit: true  },
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -38,15 +41,13 @@ export default function TransactionsPage() {
     fetch('/api/transactions')
       .then(r => r.json())
       .then(d => {
-        // Filter out ADJUSTMENT — internal admin entries never shown to users
-        const visible = (d.transactions || []).filter((t: Tx) => t.type !== 'ADJUSTMENT')
-        setTxs(visible)
+        setTxs(d.transactions || [])
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [])
 
-  const FILTERS = ['ALL', 'DEPOSIT', 'WITHDRAWAL', 'INVESTMENT', 'ROI', 'BONUS', 'REFERRAL']
+  const FILTERS = ['ALL', 'DEPOSIT', 'WITHDRAWAL', 'INVESTMENT', 'PROFIT', 'BONUS', 'REFERRAL_BONUS']
   const filtered = txs.filter(t => filter === 'ALL' || t.type === filter)
   const paged = filtered.slice(0, page * 20)
 

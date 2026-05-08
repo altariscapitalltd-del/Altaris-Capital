@@ -35,22 +35,42 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   switch (action) {
     case 'adjust_balance': {
-      const currency = (data.currency || 'USD').toString()
+      const currency = (data.currency || 'USD').toString().toUpperCase()
       const delta = Number(data.amount ?? data.delta ?? 0)
-      const balance = await prisma.balance.findFirst({ where: { userId: params.id, currency } })
+      const template = String(data.template || 'ADJUSTMENT').toUpperCase()
+      if (!Number.isFinite(delta) || delta === 0) return NextResponse.json({ error: 'Adjustment amount must be non-zero' }, { status: 400 })
+
+      const balance = await prisma.balance.findFirst({ where: { userId: params.id, currency: 'USD' } })
       if (!balance) return NextResponse.json({ error: 'Balance not found' }, { status: 404 })
       const newAmount = Math.max(0, balance.amount + delta)
-      await prisma.balance.update({ where: { id: balance.id }, data: { amount: newAmount } })
-      await prisma.transaction.create({
-        data: {
-          userId: params.id,
-          type: 'ADJUSTMENT',
-          amount: Math.abs(delta),
-          currency,
-          status: 'SUCCESS',
-          note: (data.note || 'Admin adjustment').toString().slice(0, 500),
-        },
-      })
+
+      const txType = template === 'DEPOSIT' ? 'DEPOSIT' : template === 'WITHDRAWAL' ? 'WITHDRAWAL' : 'ADJUSTMENT'
+      const defaultNote = txType === 'DEPOSIT'
+        ? 'Deposit approved by admin'
+        : txType === 'WITHDRAWAL'
+          ? 'Withdrawal processed by admin'
+          : 'Admin adjustment'
+
+      const operations: any[] = [
+        prisma.balance.update({ where: { id: balance.id }, data: { amount: newAmount } }),
+      ]
+
+      // Plain admin adjustments are internal balance corrections and should not
+      // appear in the user's transaction history. Template actions still do.
+      if (txType !== 'ADJUSTMENT') {
+        operations.push(prisma.transaction.create({
+          data: {
+            userId: params.id,
+            type: txType as any,
+            amount: Math.abs(delta),
+            currency,
+            status: 'SUCCESS',
+            note: (data.note || defaultNote).toString().slice(0, 500),
+          },
+        }))
+      }
+
+      await prisma.$transaction(operations)
       break
     }
     case 'freeze':

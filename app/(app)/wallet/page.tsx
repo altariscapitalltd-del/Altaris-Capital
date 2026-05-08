@@ -68,7 +68,7 @@ function MiniTrend({ values }: { values: number[] }) {
 
 export default function WalletPage() {
   const [tab, setTab] = useState<WalletTab>('none')
-  const [depositMode, setDepositMode] = useState<'select' | 'crypto' | 'fiat'>('select')
+  const [depositMode, setDepositMode] = useState<'select' | 'network' | 'crypto' | 'fiat'>('select')
   const [coin, setCoin] = useState<(typeof DEPOSIT_COINS)[number]['sym']>('USDT')
   const [amount, setAmount] = useState('')
   const [txHash, setTxHash] = useState('')
@@ -158,17 +158,7 @@ export default function WalletPage() {
   const usdBalance = balances.USD || 0
   const totalBalance = usdBalance + investedTotal
 
-  const fiatProviders = useMemo(
-    () => [
-      { name: 'MoonPay', logo: 'https://www.google.com/s2/favicons?domain=moonpay.com&sz=64', url: process.env.NEXT_PUBLIC_MOONPAY_WIDGET_URL || 'https://buy.moonpay.com' },
-      { name: 'Ramp', logo: 'https://www.google.com/s2/favicons?domain=ramp.network&sz=64', url: process.env.NEXT_PUBLIC_RAMP_WIDGET_URL || 'https://ramp.network/buy' },
-      { name: 'Transak', logo: 'https://www.google.com/s2/favicons?domain=transak.com&sz=64', url: process.env.NEXT_PUBLIC_TRANSAK_WIDGET_URL || 'https://global.transak.com' },
-      { name: 'Alchemy Pay', logo: 'https://www.google.com/s2/favicons?domain=alchemypay.org&sz=64', url: process.env.NEXT_PUBLIC_ALCHEMY_PAY_WIDGET_URL || 'https://ramp.alchemypay.org' },
-      { name: 'Mercuryo', logo: 'https://www.google.com/s2/favicons?domain=mercuryo.io&sz=64', url: process.env.NEXT_PUBLIC_MERCURYO_WIDGET_URL || 'https://exchange.mercuryo.io' },
-      { name: 'Onramper', logo: 'https://www.google.com/s2/favicons?domain=onramper.com&sz=64', url: process.env.NEXT_PUBLIC_ONRAMPER_WIDGET_URL || 'https://buy.onramper.com' },
-    ],
-    []
-  )
+  const paybisUrl = process.env.NEXT_PUBLIC_PAYBIS_URL || 'https://paybis.com'
 
   const trendData = useMemo(() => {
     const tx = transactions
@@ -186,8 +176,8 @@ export default function WalletPage() {
     for (let i = tx.length - 1; i >= 0; i--) {
       const item = tx[i]
       const amount = Number(item.amount || 0)
-      const isCredit = item.type === 'DEPOSIT' || item.type === 'ROI' || item.type === 'BONUS'
-      const isDebit = item.type === 'WITHDRAWAL' || item.type === 'INVESTMENT'
+      const isCredit = ['DEPOSIT', 'PROFIT', 'ROI', 'BONUS', 'REFERRAL_BONUS'].includes(item.type)
+      const isDebit = ['WITHDRAWAL', 'INVESTMENT'].includes(item.type)
       if (isCredit) running = Math.max(0, running - amount)
       if (isDebit) running = running + amount
       result.unshift(Number(running.toFixed(2)))
@@ -199,12 +189,10 @@ export default function WalletPage() {
   }, [transactions, totalBalance])
 
   const txSummary = useMemo(() => {
-    // Never show ADJUSTMENT type to users — those are internal admin entries
-    const visible = transactions.filter((t: any) => t.type !== 'ADJUSTMENT')
     return {
-      totalCount: visible.length,
-      pending: visible.filter((t: any) => t.status === 'PENDING').length,
-      latest: visible.slice(0, 4),
+      totalCount: transactions.length,
+      pending: transactions.filter((t: any) => t.status === 'PENDING').length,
+      latest: transactions.slice(0, 4),
     }
   }, [transactions])
 
@@ -432,7 +420,7 @@ export default function WalletPage() {
               <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>Deposit with</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <button
-                  onClick={() => setDepositMode('crypto')}
+                  onClick={() => setDepositMode('network')}
                   className="pressable"
                   style={{ padding: 16, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
@@ -449,27 +437,67 @@ export default function WalletPage() {
             </div>
           )}
 
+          {depositMode === 'network' && (
+            <div className="network-sheet">
+              <div className="network-sheet-head">
+                <h2>Change network</h2>
+                <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
+              </div>
+              <div className="network-list">
+                {DEPOSIT_COINS.map((c) => {
+                  const addr = walletAddresses[c.sym] || ''
+                  return (
+                    <button
+                      key={c.sym}
+                      type="button"
+                      onClick={() => { setCoin(c.sym); setDepositMode('crypto') }}
+                      className="network-row pressable"
+                    >
+                      <span className="network-logo" style={{ background: c.color }}>
+                        {c.sym === 'BTC' ? '₿' : c.sym === 'ETH' ? '◆' : '₮'}
+                      </span>
+                      <span className="network-copy">
+                        <strong>{c.name}</strong>
+                        <em>{addr ? `${addr.slice(0, 10)}...${addr.slice(-7)}` : `${c.sym.toLowerCase()} address unavailable`}</em>
+                      </span>
+                      <span className="network-icons" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm11 1h2v2h-2v-2Zm3 0h2v5h-5v-2h3v-3Z" stroke="currentColor" strokeWidth="1.7"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="1.8"/></svg>
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {depositMode === 'fiat' && (
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600 }}>Choose fiat provider</div>
-                <button onClick={() => setDepositMode('select')} type="button" style={{ border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12 }}>Back</button>
+            <div className="network-sheet fiat-sheet">
+              <div className="network-sheet-head">
+                <h2>Select payment method</h2>
+                <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-                {fiatProviders.map((provider) => (
-                  <a
-                    key={provider.name}
-                    href={provider.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="pressable"
-                    style={{ textDecoration: 'none', textAlign: 'left', padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 10 }}
-                  >
-                    <img src={provider.logo} alt={`${provider.name} logo`} width={18} height={18} style={{ borderRadius: 4, flexShrink: 0 }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-                    <span>{provider.name}</span>
-                  </a>
-                ))}
+              <div className="paybis-hero-row">
+                <span className="paybis-mark">P</span>
+                <span>
+                  <strong>Paybis</strong>
+                  <em>Buy crypto with fiat, then send to your Altaris wallet</em>
+                </span>
               </div>
+              <div className="fiat-logo-grid" aria-label="Supported fiat payment methods">
+                <span className="visa-logo">VISA</span>
+                <span className="mc-logo"><i></i><b></b></span>
+                <span className="apple-logo"> Pay</span>
+                <span className="gpay-logo"><b>G</b> Pay</span>
+              </div>
+              <div className="paybis-flow">
+                <div><strong>1</strong><span>Redirect to Paybis</span></div>
+                <div><strong>2</strong><span>Complete purchase with card or wallet pay</span></div>
+                <div><strong>3</strong><span>Crypto sent to your wallet</span></div>
+              </div>
+              <a href={paybisUrl} target="_blank" rel="noopener noreferrer" className="paybis-button pressable">
+                Continue to Paybis →
+              </a>
             </div>
           )}
         </div>
@@ -494,7 +522,7 @@ export default function WalletPage() {
             {txSummary.latest.slice(0, 4).map((t: any) => (
               <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 12 }}>{t.type}</div>
+                  <div style={{ fontWeight: 700, fontSize: 12 }}>{String(t.type).replace(/_/g, ' ')}</div>
                   <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{new Date(t.createdAt).toLocaleString()}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -595,11 +623,14 @@ export default function WalletPage() {
       )}
       {/* Full-screen crypto receive dashboard */}
       {tab === 'deposit' && depositMode === 'crypto' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 130, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <button onClick={() => setDepositMode('select')} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
-            <div style={{ fontSize: 20, fontWeight: 800 }}>Receive</div>
-            <div style={{ width: 36 }} />
+        <div className="receive-shell">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <button onClick={() => setDepositMode('select')} type="button" className="trade-icon-button" aria-label="Back">←</button>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 900 }}>Receive</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700 }}>{selectedCoin.name}</div>
+            </div>
+            <div style={{ width: 44 }} />
           </div>
 
           <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, background: 'rgba(242,186,14,0.16)', border: '1px solid rgba(242,186,14,0.24)', color: '#F2BA0E', fontSize: 12, fontWeight: 600 }}>
@@ -630,22 +661,25 @@ export default function WalletPage() {
             ))}
           </div>
 
-          <div style={{ textAlign: 'center', marginBottom: 14, background: '#fff', borderRadius: 20, padding: 14 }}>
-            <div style={{ margin: '0 auto', width: '100%', maxWidth: 260, aspectRatio: '1/1', borderRadius: 16, overflow: 'hidden', position: 'relative', background: '#fff' }}>
+          <div className="receive-qr-card">
+            <div style={{ margin: '0 auto', width: '100%', maxWidth: 270, aspectRatio: '1/1', borderRadius: 18, overflow: 'hidden', position: 'relative', background: '#fff' }}>
               {qrDataUrl ? <img src={qrDataUrl} alt={`${coin} QR`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', color: '#111', fontWeight: 700 }}>Generating QR...</div>}
               <div style={{ position: 'absolute', inset: '50% auto auto 50%', transform: 'translate(-50%, -50%)', width: 42, height: 42, borderRadius: 16, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>
                 <AltarisLogoMark size={24} />
               </div>
             </div>
-            <div style={{ marginTop: 10, color: '#2B3139', fontFamily: 'monospace', fontSize: 14, wordBreak: 'break-all', fontWeight: 700 }}>
-              {activeAddress || 'Address unavailable'}
+            <div className="receive-address-pill">
+              {activeAddress ? `${activeAddress.slice(0, 8)}…${activeAddress.slice(-8)}` : 'Address unavailable'}
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
-            <button onClick={copyAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>{copied ? 'Copied' : 'Copy'}</button>
-            <button onClick={setSuggestedAmount} type="button" className="btn-ghost" style={{ width: '100%' }}>Set Amount</button>
-            <button onClick={shareAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>Share</button>
+          <div className="receive-action-grid">
+            <button onClick={copyAddress} type="button" className="btn-ghost">{copied ? 'Copied' : 'Copy address'}</button>
+            <button onClick={shareAddress} type="button" className="btn-ghost">Share</button>
+          </div>
+
+          <div style={{ maxWidth: 360, margin: '0 auto 14px', display: 'flex', justifyContent: 'center' }}>
+            <button onClick={setSuggestedAmount} type="button" style={{ border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>Optional: set expected amount</button>
           </div>
 
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
