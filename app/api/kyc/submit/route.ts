@@ -34,29 +34,28 @@ export async function POST(req: NextRequest) {
     await prisma.user.update({ where: { id: user.id }, data: { kycStatus: 'PENDING_REVIEW' } })
 
     const telegram = [
-      '*🛡️ New KYC Submission*',
-      `*User:* ${esc(user.name || 'Unknown')}`,
-      `*Email:* ${esc(user.email || '')}`,
-      `*Full Name:* ${esc(fullName)}`,
-      `*DOB:* ${esc(dob)}`,
-      `*Country:* ${esc(country)}`,
-      `*Document Type:* ${esc(docType)}`,
-      `*Front:* [Open image](${frontUrl})`,
-      `*Back:* [Open image](${backUrl})`,
+      '<b>🛡️ New KYC Submission</b>',
+      `<b>User:</b> ${esc(user.name || 'Unknown')}`,
+      `<b>Email:</b> ${esc(user.email || '')}`,
+      `<b>Full Name:</b> ${esc(fullName)}`,
+      `<b>DOB:</b> ${esc(dob)}`,
+      `<b>Country:</b> ${esc(country)}`,
+      `<b>Document Type:</b> ${esc(docType)}`,
+      `<b>Front:</b> <a href="${esc(frontUrl)}">Open image</a>`,
+      `<b>Back:</b> <a href="${esc(backUrl)}">Open image</a>`,
     ].join('\n')
 
     const token = process.env.TELEGRAM_BOT_TOKEN
     const chatId = process.env.TELEGRAM_CHAT_ID
-    if (token && chatId) {
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const telegramSend = token && chatId ? fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: telegram, parse_mode: 'Markdown' }),
-      })
-    }
+        body: JSON.stringify({ chat_id: chatId, text: telegram, parse_mode: 'HTML', disable_web_page_preview: true }),
+      }) : Promise.resolve()
 
-    try { await trigger(adminChannel, 'admin:kyc_submitted', { userId: user.id, name: user.name, email: user.email }) } catch {}
-    try { await notifyUser(prisma, user.id, 'KYC Submitted', 'Your documents are under review.', '/kyc') } catch {}
+    void telegramSend.catch(() => {})
+    void trigger(adminChannel, 'admin:kyc_submitted', { userId: user.id, name: user.name, email: user.email }).catch(() => {})
+    void notifyUser(prisma, user.id, 'KYC Submitted', 'Your documents are under review.', '/kyc').catch(() => {})
 
     return NextResponse.json({ success: true })
   } catch (e: any) {
