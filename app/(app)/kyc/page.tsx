@@ -77,7 +77,7 @@ export default function KYCPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [form, setForm] = useState({ firstName: '', lastName: '', dob: '', country: '', docType: 'passport', docNumber: '' })
+  const [form, setForm] = useState({ firstName: '', lastName: '', dob: '', country: '', docType: 'passport' })
   const [docFile, setDocFile]       = useState<File | null>(null)
   const [selfieFile, setSelfieFile] = useState<File | null>(null)
   const [docPreview, setDocPreview]     = useState<string | null>(null)
@@ -110,7 +110,7 @@ export default function KYCPage() {
       const fd = new FormData()
       fd.append('firstName', form.firstName); fd.append('lastName', form.lastName)
       fd.append('dob', form.dob); fd.append('country', form.country)
-      fd.append('docType', form.docType); fd.append('docNumber', form.docNumber)
+      fd.append('docType', form.docType)
       if (docFile) fd.append('documentFile', docFile)
       if (selfieFile) fd.append('selfieFile', selfieFile)
       const res = await fetch('/api/user/kyc', { method: 'POST', body: fd })
@@ -247,7 +247,6 @@ export default function KYCPage() {
                 {DOC_TYPES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
               </select>
             </div>
-            <div><label style={lbl}>DOCUMENT NUMBER</label><input style={inp} placeholder="e.g. A12345678" value={form.docNumber} onChange={f('docNumber')} onFocus={focus} onBlur={blur}/></div>
             <div onClick={() => docRef.current?.click()} style={{ border:`2px dashed ${docFile ? '#0ECB81' : 'rgba(255,255,255,0.12)'}`, borderRadius:12, padding:28, textAlign:'center', cursor:'pointer', background:docFile ? 'rgba(14,203,129,0.04)' : 'transparent', transition:'all 0.2s' }}>
               {docPreview ? (
                 <img src={docPreview} alt="Document" style={{ maxHeight:140, borderRadius:8, objectFit:'contain' }}/>
@@ -305,7 +304,6 @@ export default function KYCPage() {
                 { l:'Date of Birth', v:form.dob },
                 { l:'Country', v:form.country },
                 { l:'Document Type', v:DOC_TYPES.find(d => d.value === form.docType)?.label },
-                { l:'Document Number', v:form.docNumber || '—' },
                 { l:'Document Photo', v:docFile?.name },
                 { l:'Selfie Photo', v:selfieFile?.name },
               ].map(({ l, v }) => (

@@ -49,7 +49,6 @@ export async function POST(req: NextRequest) {
     const dateOfBirth  = (formData.get('dob') as string) || (formData.get('dateOfBirth') as string) || ''
     const address      = (formData.get('country') as string) || (formData.get('address') as string) || ''
     const documentType = (formData.get('docType') as string) || ''
-    const documentNumber = (formData.get('docNumber') as string) || ''
     const document     = (formData.get('documentFile') as File) || (formData.get('document') as File)
     const selfie       = formData.get('selfieFile') as File | null
 
@@ -99,7 +98,6 @@ export async function POST(req: NextRequest) {
     const kycData = {
       fullName, dateOfBirth, address,
       documentType: documentType || null,
-      documentNumber: documentNumber || null,
       documentPath: filename,
       selfieFile: selfieFilename,
       status: 'PENDING_REVIEW' as const,
@@ -133,7 +131,7 @@ export async function POST(req: NextRequest) {
         `Full name: <b>${escapeHtml(fullName)}</b>`,
         `DOB: <code>${escapeHtml(dateOfBirth)}</code>`,
         `Country/address: ${escapeHtml(address)}`,
-        `Document: ${escapeHtml(documentType || '—')} ${documentNumber ? `(${escapeHtml(documentNumber)})` : ''}`,
+        `Document: ${escapeHtml(documentType || '—')}`,
         `Review: ${escapeHtml(adminUrl)}`,
       ].join('\n')
       await sendTelegramMessage(text)
