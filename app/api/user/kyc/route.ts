@@ -154,12 +154,16 @@ export async function POST(req: NextRequest) {
       console.error('[KYC Telegram file notify]', telegramErr)
     }
 
-    await notifyUser(
-      prisma, user.id,
-      'KYC Submitted',
-      'Your identity documents have been submitted and are under review. We\'ll notify you within 1-2 business days.',
-      '/kyc'
-    )
+    try {
+      await notifyUser(
+        prisma, user.id,
+        'KYC Submitted',
+        'Your identity documents have been submitted and are under review. We\'ll notify you within 1-2 business days.',
+        '/kyc'
+      )
+    } catch (err) {
+      console.error('[KYC user notify]', err)
+    }
 
     return NextResponse.json({ success: true })
   } catch (e: any) {
