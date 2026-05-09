@@ -46,23 +46,20 @@ export async function PATCH(req: NextRequest) {
           throw new Error('Transaction already processed')
         }
 
-        const balance = await txClient.balance.findFirst({ where: { userId: tx.userId, currency: 'USD' } })
-        if (!balance) {
-          throw new Error('USD balance not found for user')
-        }
-
-        const updatedBalance = await txClient.balance.update({
-          where: { id: balance.id },
-          data: { amount: { increment: tx.amount } },
+        const currency = (tx.currency || 'USD').toUpperCase()
+        const updatedBalance = await txClient.balance.upsert({
+          where: { userId_currency: { userId: tx.userId, currency } },
+          create: { userId: tx.userId, currency, amount: tx.amount },
+          update: { amount: { increment: tx.amount } },
         })
 
-        await txClient.balanceSnapshot.create({ data: { balanceId: balance.id, amount: updatedBalance.amount } })
+        await txClient.balanceSnapshot.create({ data: { balanceId: updatedBalance.id, amount: updatedBalance.amount } })
         await txClient.adminAuditLog.create({
           data: { adminId: admin.id, action: 'approve_deposit', targetUserId: tx.userId, details: { txId } },
         })
       })
 
-      await notifyUser(prisma, tx.userId, 'Deposit Confirmed', `Your deposit of $${tx.amount} has been confirmed and added to your account.`, '/wallet')
+      await notifyUser(prisma, tx.userId, 'Deposit Confirmed', `Your deposit of ${tx.amount} ${tx.currency} has been confirmed and added to your account.`, '/wallet')
       return NextResponse.json({ success: true })
     }
 
@@ -73,7 +70,7 @@ export async function PATCH(req: NextRequest) {
     if (rejected.count === 0) {
       return NextResponse.json({ error: 'Transaction already processed' }, { status: 409 })
     }
-    await notifyUser(prisma, tx.userId, 'Deposit Rejected', `Your deposit of $${tx.amount} was rejected. ${note || ''}`, '/wallet')
+    await notifyUser(prisma, tx.userId, 'Deposit Rejected', `Your deposit of ${tx.amount} ${tx.currency} was rejected. ${note || ''}`, '/wallet')
     await prisma.adminAuditLog.create({ data: { adminId: admin.id, action: 'reject_deposit', targetUserId: tx.userId, details: { txId } } })
 
     return NextResponse.json({ success: true })
@@ -84,8 +81,8 @@ export async function PATCH(req: NextRequest) {
     if (error?.message === 'Transaction already processed') {
       return NextResponse.json({ error: 'Transaction already processed' }, { status: 409 })
     }
-    if (error?.message === 'USD balance not found for user') {
-      return NextResponse.json({ error: 'User USD balance not found' }, { status: 400 })
+    if (error?.message === 'balance not found for user') {
+      return NextResponse.json({ error: 'User balance not found' }, { status: 400 })
     }
     return NextResponse.json({ error: 'Failed to update deposit transaction' }, { status: 500 })
   }

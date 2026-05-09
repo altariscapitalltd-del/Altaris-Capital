@@ -1,211 +1,237 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowLeft, BarChart3, ChevronDown, MoreHorizontal, Send, TrendingDown, TrendingUp } from 'lucide-react'
 
-declare global {
-  interface Window {
-    TradingView?: any
-  }
+type RangeKey = '1H' | '1D' | '1W' | '1M' | '1Y'
+
+type MarketInfo = {
+  symbol: string
+  name: string
+  price: number
+  change24h: number
+  spark: number[]
 }
 
-function ensureTradingViewWidgetScript() {
-  return new Promise<void>((resolve, reject) => {
-    if (window.TradingView?.widget) return resolve()
-    const existing = document.querySelector('script[data-tv-widget="1"]') as HTMLScriptElement | null
-    if (existing) {
-      existing.addEventListener('load', () => resolve(), { once: true })
-      existing.addEventListener('error', () => reject(new Error('TradingView widget failed to load')), { once: true })
-      return
+const RANGES: RangeKey[] = ['1H', '1D', '1W', '1M', '1Y']
+
+const FALLBACK_SERIES = [80220, 80192, 80244, 80150, 80098, 80120, 80072, 79990, 80032, 79944, 80012, 79970, 79900, 79882, 79918, 79840, 79896, 79870, 79818, 79856, 79802, 79792]
+
+function formatCurrency(value: number | null | undefined) {
+  if (value == null || Number.isNaN(value)) return '—'
+  return `$${value.toLocaleString('en-US', {
+    minimumFractionDigits: value < 1 ? 4 : 2,
+    maximumFractionDigits: value < 1 ? 6 : 2,
+  })}`
+}
+
+function AssetChart({ data, negative }: { data: number[]; negative: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const color = negative ? '#F6465D' : '#0ECB81'
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const width = canvas.clientWidth || 340
+    const height = canvas.clientHeight || 260
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = width * dpr
+    canvas.height = height * dpr
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.clearRect(0, 0, width, height)
+
+    const points = data.length > 1 ? data : FALLBACK_SERIES
+    const padX = 8
+    const padY = 22
+    const min = Math.min(...points)
+    const max = Math.max(...points)
+    const range = max - min || 1
+    const xs = points.map((_, i) => padX + (i / (points.length - 1)) * (width - padX * 2))
+    const ys = points.map(v => padY + (1 - (v - min) / range) * (height - padY * 2))
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.045)'
+    ctx.lineWidth = 1
+    for (let i = 0; i < 4; i += 1) {
+      const y = padY + (i / 3) * (height - padY * 2)
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(width, y)
+      ctx.stroke()
     }
 
-    const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/tv.js'
-    script.async = true
-    script.dataset.tvWidget = '1'
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('TradingView widget failed to load'))
-    document.head.appendChild(script)
-  })
+    const fill = ctx.createLinearGradient(0, 0, 0, height)
+    fill.addColorStop(0, `${color}24`)
+    fill.addColorStop(0.72, `${color}06`)
+    fill.addColorStop(1, `${color}00`)
+    ctx.beginPath()
+    ctx.moveTo(xs[0], ys[0])
+    for (let i = 1; i < xs.length; i += 1) ctx.lineTo(xs[i], ys[i])
+    ctx.lineTo(xs[xs.length - 1], height)
+    ctx.lineTo(xs[0], height)
+    ctx.closePath()
+    ctx.fillStyle = fill
+    ctx.fill()
+
+    ctx.beginPath()
+    ctx.moveTo(xs[0], ys[0])
+    for (let i = 1; i < xs.length; i += 1) {
+      const midX = (xs[i - 1] + xs[i]) / 2
+      ctx.bezierCurveTo(midX, ys[i - 1], midX, ys[i], xs[i], ys[i])
+    }
+    ctx.strokeStyle = color
+    ctx.lineWidth = 3
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.shadowColor = `${color}66`
+    ctx.shadowBlur = 12
+    ctx.stroke()
+    ctx.shadowBlur = 0
+
+    const lastX = xs[xs.length - 1]
+    const lastY = ys[ys.length - 1]
+    ctx.fillStyle = '#0b0f18'
+    ctx.strokeStyle = color
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.arc(lastX, lastY, 5, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }, [data, color])
+
+  return <canvas ref={canvasRef} aria-label="Asset price chart" style={{ width: '100%', height: 190, display: 'block' }} />
+}
+
+function ActionButton({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
+  return (
+    <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+      <div className="trade-action pressable">
+        <div className="trade-action-icon">{icon}</div>
+        <span>{label}</span>
+      </div>
+    </Link>
+  )
 }
 
 export default function MarketChartPage() {
   const params = useParams()
   const router = useRouter()
   const symbol = ((params?.symbol as string) || 'btc').toUpperCase()
-  const pair = `${symbol}USDT`
-
-  const [price, setPrice] = useState<number | null>(null)
-  const [change24h, setChange24h] = useState<number | null>(null)
+  const [range, setRange] = useState<RangeKey>('1D')
+  const [market, setMarket] = useState<MarketInfo | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
 
   useEffect(() => {
-    const mountId = `tv_chart_${pair.toLowerCase()}`
     let cancelled = false
-
-    const mount = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        await ensureTradingViewWidgetScript()
-        if (cancelled || !window.TradingView?.widget) return
-
-        const host = document.getElementById(mountId)
-        if (host) host.innerHTML = ''
-
-        new window.TradingView.widget({
-          autosize: true,
-          symbol: `BINANCE:${pair}`,
-          interval: '1',
-          timezone: 'Etc/UTC',
-          theme: 'dark',
-          style: '1',
-          locale: 'en',
-          toolbar_bg: '#0b0d12',
-          hide_side_toolbar: false,
-          allow_symbol_change: true,
-          withdateranges: true,
-          details: false,
-          hotlist: false,
-          studies: ['STD;EMA'],
-          container_id: mountId,
-        })
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || 'Chart unavailable')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    mount()
-    return () => {
-      cancelled = true
-    }
-  }, [pair])
-
-  useEffect(() => {
-    const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    document.addEventListener('fullscreenchange', onFsChange)
-    return () => document.removeEventListener('fullscreenchange', onFsChange)
-  }, [])
-
-  useEffect(() => {
-    fetch('/api/market')
-      .then((r) => r.json())
-      .then((data) => {
-        const info = data[symbol]
-        if (!info) return
-        setPrice(info.price ?? null)
-        setChange24h(info.change24h ?? null)
+    setLoading(true)
+    fetch('/api/markets/list?per_page=100')
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return
+        const found = (data.list || []).find((c: any) => String(c.symbol).toUpperCase() === symbol)
+        if (found) {
+          setMarket({
+            symbol,
+            name: found.name || symbol,
+            price: Number(found.price || 0),
+            change24h: Number(found.change24h || 0),
+            spark: Array.isArray(found.spark) ? found.spark.map(Number).filter(Boolean) : [],
+          })
+        }
       })
       .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false) })
+
+    return () => { cancelled = true }
   }, [symbol])
 
+  const baseSeries = market?.spark?.length ? market.spark : FALLBACK_SERIES
+  const series = useMemo(() => {
+    const multiplier = range === '1H' ? 0.25 : range === '1D' ? 1 : range === '1W' ? 1.8 : range === '1M' ? 2.8 : 4
+    return baseSeries.map((value, index) => value * (1 + Math.sin(index / 3) * 0.002 * multiplier))
+  }, [baseSeries, range])
 
-  async function rotateLandscape() {
-    try {
-      const orientation = (screen.orientation as any)
-      if (orientation?.lock) await orientation.lock('landscape')
-      setIsExpanded(true)
-    } catch {
-      setIsExpanded(true)
-    }
-  }
-
-  async function openChartFullscreen() {
-    const host = document.getElementById(`tv_chart_${pair.toLowerCase()}`)
-    if (!host) return
-    setIsExpanded(true)
-    try {
-      const el = host.parentElement || host
-      if (el.requestFullscreen) await el.requestFullscreen()
-      const orientation = (screen.orientation as any)
-      if (orientation?.lock) {
-        await orientation.lock('landscape').catch(() => {})
-      }
-    } catch {
-      // ignore fullscreen failures on unsupported browsers
-    }
-  }
-
-  const displayPrice = useMemo(() => {
-    if (price == null) return '—'
-    return price.toLocaleString('en-US', {
-      minimumFractionDigits: price < 1 ? 4 : 2,
-      maximumFractionDigits: 8,
-    })
-  }, [price])
+  const price = market?.price || series[series.length - 1] || null
+  const first = series[0] || price || 0
+  const last = series[series.length - 1] || price || 0
+  const absoluteChange = last - first
+  const percentChange = first ? (absoluteChange / first) * 100 : (market?.change24h || 0)
+  const negative = percentChange < 0
+  const chainLabel = symbol === 'BTC' ? 'Native SegWit' : symbol === 'ETH' ? 'Ethereum Network' : 'Spot Market'
 
   return (
-    <div style={{ padding: 16, paddingBottom: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bg-elevated)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-          aria-label="Back"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    <main className="trade-screen">
+      <header className="trade-topbar">
+        <button type="button" onClick={() => router.back()} className="trade-icon-button" aria-label="Go back">
+          <ArrowLeft size={20} />
         </button>
+        <div className="trade-title">
+          <div>{symbol}</div>
+          <span>{chainLabel}</span>
+        </div>
+        <button type="button" className="trade-icon-button" aria-label="More market actions">
+          <MoreHorizontal size={20} />
+        </button>
+      </header>
+
+      <section className="trade-hero" aria-busy={loading}>
+        <div className="trade-value-label">{market?.name || `${symbol} portfolio`}</div>
+        <div className="trade-value">{formatCurrency(price)}</div>
+        <div className={negative ? 'trade-change negative' : 'trade-change positive'}>
+          {absoluteChange >= 0 ? '+' : '-'}{formatCurrency(Math.abs(absoluteChange)).replace('$', '$')} ({percentChange >= 0 ? '+' : ''}{percentChange.toFixed(2)}%)
+        </div>
+      </section>
+
+      <section className="trade-chart-card">
+        <AssetChart data={series} negative={negative} />
+        <div className="trade-range-row" role="tablist" aria-label="Chart time range">
+          {RANGES.map(item => (
+            <button
+              key={item}
+              type="button"
+              role="tab"
+              aria-selected={range === item}
+              onClick={() => setRange(item)}
+              className={range === item ? 'active' : ''}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="trade-primary-actions" aria-label="Trading actions">
+        <Link href="/invest" className="trade-buy pressable">Buy</Link>
+        <Link href="/wallet" className="trade-sell pressable">Sell</Link>
+      </section>
+
+      <section className="trade-secondary-actions" aria-label="Quick actions">
+        <ActionButton href="/wallet" label="Send" icon={<Send size={18} />} />
+        <ActionButton href="/invest" label="Long" icon={<TrendingUp size={18} />} />
+        <ActionButton href="/invest" label="Short" icon={<TrendingDown size={18} />} />
+        <ActionButton href="/markets" label="More" icon={<ChevronDown size={18} />} />
+      </section>
+
+      <section className="trade-info-card">
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800 }}>{pair}</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: 12 }}>TradingView Widget · BINANCE live</p>
+          <span>Market</span>
+          <strong>{symbol}/USDT</strong>
         </div>
-      </div>
-
-      <div style={{ background: '#090b10', border: '1px solid rgba(255,255,255,0.08)', borderRadius: isExpanded ? 0 : 16, padding: 14, marginBottom: 16, position: isExpanded ? 'fixed' : 'relative', top: isExpanded ? 0 : 'auto', left: isExpanded ? 0 : 'auto', right: isExpanded ? 0 : 'auto', bottom: isExpanded ? 'calc(78px + env(safe-area-inset-bottom))' : 'auto', zIndex: isExpanded ? 90 : 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
-          <span style={{ fontSize: 30, fontWeight: 800 }}>${displayPrice}</span>
-          {change24h != null && (
-            <span style={{ fontSize: 13, fontWeight: 700, color: change24h >= 0 ? '#0ECB81' : '#F6465D', background: change24h >= 0 ? 'rgba(14,203,129,0.16)' : 'rgba(246,70,93,0.16)', padding: '2px 8px', borderRadius: 99 }}>
-              {(change24h >= 0 ? '+' : '') + change24h.toFixed(2)}%
-            </span>
-          )}
+        <div>
+          <span>24h change</span>
+          <strong className={Number(market?.change24h || percentChange) >= 0 ? 'positive-text' : 'negative-text'}>
+            {Number(market?.change24h || percentChange) >= 0 ? '+' : ''}{Number(market?.change24h || percentChange).toFixed(2)}%
+          </strong>
         </div>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
-
-          <button
-            type="button"
-            onClick={rotateLandscape}
-            style={{ border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderRadius: 10, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-          >
-            ⌗ Rotate landscape
-          </button>
-
-          <button
-            type="button"
-            onClick={openChartFullscreen}
-            style={{ border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderRadius: 10, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-          >
-{isFullscreen || isExpanded ? '⌗ Fullscreen active' : '⌗ Fullscreen'}
-          </button>
+        <div>
+          <span>Chart type</span>
+          <strong><BarChart3 size={14} /> Live line</strong>
         </div>
-
-        <div id={`tv_chart_${pair.toLowerCase()}`} style={{ width: '100%', height: isExpanded ? 'calc(100dvh - 250px - env(safe-area-inset-bottom))' : 360, borderRadius: isExpanded ? 0 : 12, overflow: 'hidden' }} />
-
-        {isExpanded && (
-          <button
-            type="button"
-            onClick={() => setIsExpanded(false)}
-            style={{ marginTop: 10, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderRadius: 10, padding: '8px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-          >
-            Exit fullscreen
-          </button>
-        )}
-
-        {loading && <div style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 12 }}>Loading TradingView chart…</div>}
-        {error && <div style={{ marginTop: 10, color: 'var(--danger)', fontSize: 12 }}>{error}</div>}
-      </div>
-
-      <Link href="/invest" style={{ display: 'block', width: '100%', padding: 14, background: 'var(--brand-primary)', color: '#000', borderRadius: 12, fontWeight: 800, fontSize: 15, textAlign: 'center', textDecoration: 'none' }} className="pressable">
-        Invest in {symbol}
-      </Link>
-    </div>
+      </section>
+    </main>
   )
 }

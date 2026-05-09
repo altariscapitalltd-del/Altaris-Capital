@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const FINNHUB_KEY = process.env.FINNHUB_API_KEY
 const ALPHA_VANTAGE_KEY = process.env.ALPHA_VANTAGE_KEY
 const FRED_KEY = process.env.FRED_API_KEY

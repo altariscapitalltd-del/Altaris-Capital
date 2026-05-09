@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { createAndSendOTP } from '@/lib/otp'
 import { trigger, adminChannel } from '@/lib/pusher'
+import { notifyAdminTelegram } from '@/lib/push'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -91,6 +92,7 @@ export async function POST(req: NextRequest) {
     await createAndSendOTP(user.id, email, name, 'SIGNUP')
 
     await trigger(adminChannel, 'admin:new_user', { id: user.id, name, email, createdAt: user.createdAt })
+    await notifyAdminTelegram(`🆕 <b>New Signup</b>\nName: ${name}\nEmail: ${email}\nPhone: ${phone || '—'}`)
 
     return NextResponse.json({ success: true, userId: user.id })
   } catch (e: any) {

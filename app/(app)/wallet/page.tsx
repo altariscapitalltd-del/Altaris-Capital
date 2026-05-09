@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import QRCode from 'qrcode'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
+import CoinIcon from '@/components/ui/CoinIcon'
 
 const DEPOSIT_COINS = [
   { sym: 'BTC', name: 'Bitcoin', color: '#F7931A', minDeposit: 0.001 },
@@ -13,7 +14,7 @@ const DEPOSIT_COINS = [
 
 type WalletTab = 'none' | 'deposit' | 'withdraw' | 'reward'
 
-function MiniTrend({ values }: { values: number[] }) {
+function MiniTrend({ values, color = '#F2BA0E' }: { values: number[]; color?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -56,19 +57,42 @@ function MiniTrend({ values }: { values: number[] }) {
     ctx.beginPath()
     ctx.moveTo(points[0].x, points[0].y)
     for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y)
-    ctx.strokeStyle = '#F2BA0E'
+    ctx.strokeStyle = color
     ctx.lineWidth = 2.2
     ctx.lineJoin = 'round'
     ctx.lineCap = 'round'
     ctx.stroke()
-  }, [values])
+  }, [values, color])
 
   return <canvas ref={canvasRef} style={{ width: 130, height: 52, display: 'block' }} />
 }
 
+function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 96 }: { data: number[]; color?: string; width?: number; height?: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return
+    const ctx = canvas.getContext('2d'); if (!ctx) return
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = width * dpr; canvas.height = height * dpr; ctx.scale(dpr, dpr)
+    const values = data.length > 1 ? data : [0, 0]
+    const min = Math.min(...values), max = Math.max(...values), pad = Math.max((max - min) * .18, max * .004, 1)
+    const lo = min - pad, hi = max + pad, range = hi - lo || 1
+    const left = 8, right = width - 8, top = 8, bottom = height - 16
+    const xs = values.map((_, i) => left + (i / Math.max(values.length - 1, 1)) * (right - left))
+    const ys = values.map(v => bottom - ((v - lo) / range) * (bottom - top))
+    ctx.clearRect(0, 0, width, height)
+    ctx.strokeStyle = 'rgba(255,255,255,.055)'; ctx.lineWidth = 1
+    ;[.33,.66].forEach(t => { const y = top + (bottom - top) * t; ctx.beginPath(); ctx.moveTo(left,y); ctx.lineTo(right,y); ctx.stroke() })
+    const grad = ctx.createLinearGradient(0, top, 0, bottom); grad.addColorStop(0, color + '40'); grad.addColorStop(1, color + '00')
+    ctx.beginPath(); ctx.moveTo(xs[0],ys[0]); for(let i=1;i<xs.length;i++){const m=(xs[i-1]+xs[i])/2; ctx.bezierCurveTo(m,ys[i-1],m,ys[i],xs[i],ys[i])} ctx.lineTo(xs[xs.length-1],bottom); ctx.lineTo(xs[0],bottom); ctx.closePath(); ctx.fillStyle=grad; ctx.fill()
+    ctx.beginPath(); ctx.moveTo(xs[0],ys[0]); for(let i=1;i<xs.length;i++){const m=(xs[i-1]+xs[i])/2; ctx.bezierCurveTo(m,ys[i-1],m,ys[i],xs[i],ys[i])} ctx.strokeStyle=color; ctx.lineWidth=2.3; ctx.lineCap='round'; ctx.stroke()
+  }, [data, color, width, height])
+  return <canvas ref={canvasRef} style={{ width: '100%', height, display: 'block' }} />
+}
+
 export default function WalletPage() {
   const [tab, setTab] = useState<WalletTab>('none')
-  const [depositMode, setDepositMode] = useState<'select' | 'crypto' | 'fiat'>('select')
+  const [depositMode, setDepositMode] = useState<'select' | 'network' | 'crypto' | 'fiat'>('select')
   const [coin, setCoin] = useState<(typeof DEPOSIT_COINS)[number]['sym']>('USDT')
   const [amount, setAmount] = useState('')
   const [txHash, setTxHash] = useState('')
@@ -76,13 +100,15 @@ export default function WalletPage() {
   const [walletAddresses, setWalletAddresses] = useState<Record<string, string>>({})
   const [balances, setBalances] = useState<Record<string, number>>({})
   const [investedTotal, setInvestedTotal] = useState(0)
-  const [profitToday, setProfitToday] = useState(0)
+  const [marketPrices, setMarketPrices] = useState<Record<string, { price: number; change: number; image?: string; spark?: number[] }>>({})
+  const [chartRange, setChartRange] = useState<'24H' | '7D' | '30D' | 'All'>('24H')
   const [transactions, setTransactions] = useState<any[]>([])
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
   const [refCode, setRefCode] = useState('')
+  const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
 
   function loadProfile() {
     fetch('/api/user/profile')
@@ -96,8 +122,6 @@ export default function WalletPage() {
 
         const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
         setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
-        setProfitToday(active.reduce((sum: number, i: any) => sum + i.amount * (i.dailyRoi || 0), 0))
-
         setRefCode(d.user?.referralCode || 'ALTARIS01')
       })
       .catch(() => {})
@@ -124,6 +148,18 @@ export default function WalletPage() {
         setWalletAddresses(mapped)
       })
       .catch(() => setWalletAddresses({}))
+
+    fetch('/api/markets/list?per_page=40')
+      .then((r) => r.json())
+      .then((d) => {
+        const mapped: Record<string, { price: number; change: number; image?: string; spark?: number[] }> = { USDT: { price: 1, change: 0 } }
+        ;(d.list || []).forEach((c: any) => {
+          const sym = String(c.symbol || '').toUpperCase()
+          if (sym) mapped[sym] = { price: Number(c.price || 0), change: Number(c.change24h || 0), image: c.image || '', spark: Array.isArray(c.spark) ? c.spark : [] }
+        })
+        setMarketPrices(mapped)
+      })
+      .catch(() => setMarketPrices({ USDT: { price: 1, change: 0 } }))
   }, [])
 
   useEffect(() => {
@@ -156,55 +192,66 @@ export default function WalletPage() {
   }, [coin, walletAddresses, tab, depositMode])
 
   const usdBalance = balances.USD || 0
-  const totalBalance = usdBalance + investedTotal
+  const cryptoValue = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'USDT'].reduce((sum, sym) => sum + (balances[sym] || 0) * (marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)), 0)
+  const walletBalance = usdBalance + cryptoValue
+  const portfolioBalance = walletBalance + investedTotal
+  const cryptoPL = ['BTC', 'ETH', 'USDT'].reduce((sum, sym) => {
+    const amountHeld = balances[sym] || 0
+    const price = marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)
+    const change = marketPrices[sym]?.change || 0
+    const previous = price && change !== -100 ? price / (1 + change / 100) : price
+    return sum + amountHeld * (price - previous)
+  }, 0)
 
-  const fiatProviders = useMemo(
-    () => [
-      { name: 'MoonPay', logo: 'https://www.google.com/s2/favicons?domain=moonpay.com&sz=64', url: process.env.NEXT_PUBLIC_MOONPAY_WIDGET_URL || 'https://buy.moonpay.com' },
-      { name: 'Ramp', logo: 'https://www.google.com/s2/favicons?domain=ramp.network&sz=64', url: process.env.NEXT_PUBLIC_RAMP_WIDGET_URL || 'https://ramp.network/buy' },
-      { name: 'Transak', logo: 'https://www.google.com/s2/favicons?domain=transak.com&sz=64', url: process.env.NEXT_PUBLIC_TRANSAK_WIDGET_URL || 'https://global.transak.com' },
-      { name: 'Alchemy Pay', logo: 'https://www.google.com/s2/favicons?domain=alchemypay.org&sz=64', url: process.env.NEXT_PUBLIC_ALCHEMY_PAY_WIDGET_URL || 'https://ramp.alchemypay.org' },
-      { name: 'Mercuryo', logo: 'https://www.google.com/s2/favicons?domain=mercuryo.io&sz=64', url: process.env.NEXT_PUBLIC_MERCURYO_WIDGET_URL || 'https://exchange.mercuryo.io' },
-      { name: 'Onramper', logo: 'https://www.google.com/s2/favicons?domain=onramper.com&sz=64', url: process.env.NEXT_PUBLIC_ONRAMPER_WIDGET_URL || 'https://buy.onramper.com' },
-    ],
-    []
-  )
+  const paybisUrl = process.env.NEXT_PUBLIC_PAYBIS_URL || 'https://paybis.com'
 
   const trendData = useMemo(() => {
     const tx = transactions
       .slice()
       .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-      .slice(-24)
+      .filter((a: any) => {
+        if (chartRange === 'All') return true
+        const hours = chartRange === '24H' ? 24 : chartRange === '7D' ? 168 : 720
+        return Date.now() - new Date(a.createdAt).getTime() <= hours * 60 * 60 * 1000
+      })
+      .slice(-40)
 
     if (tx.length === 0) {
-      const base = totalBalance || 1
-      return Array.from({ length: 24 }, (_, i) => Number((base * (0.96 + (i / 24) * 0.04)).toFixed(2)))
+      const base = walletBalance || 0
+      return Array.from({ length: 24 }, () => Number(base.toFixed(2)))
     }
 
-    let running = Math.max(0, totalBalance)
+    let running = Math.max(0, walletBalance)
     const result: number[] = []
     for (let i = tx.length - 1; i >= 0; i--) {
       const item = tx[i]
       const amount = Number(item.amount || 0)
-      const isCredit = item.type === 'DEPOSIT' || item.type === 'ROI' || item.type === 'BONUS'
-      const isDebit = item.type === 'WITHDRAWAL' || item.type === 'INVESTMENT'
+      const isCredit = ['DEPOSIT', 'PROFIT', 'ROI', 'BONUS', 'REFERRAL_BONUS'].includes(item.type)
+      const isDebit = ['WITHDRAWAL', 'INVESTMENT'].includes(item.type)
       if (isCredit) running = Math.max(0, running - amount)
       if (isDebit) running = running + amount
       result.unshift(Number(running.toFixed(2)))
     }
 
     const padded = result.slice(-24)
-    while (padded.length < 24) padded.unshift(padded[0] ?? totalBalance)
+    while (padded.length < 24) padded.unshift(padded[0] ?? walletBalance)
     return padded
-  }, [transactions, totalBalance])
+  }, [transactions, walletBalance, chartRange])
+
+  const chartPerformance = useMemo(() => {
+    const start = trendData[0] || walletBalance
+    const end = trendData[trendData.length - 1] || walletBalance
+    const pnl = end - start
+    const percent = start ? (pnl / start) * 100 : 0
+    const previous = trendData[trendData.length - 2] || start
+    return { pnl, percent, daily: end - previous }
+  }, [trendData, walletBalance])
 
   const txSummary = useMemo(() => {
-    // Never show ADJUSTMENT type to users — those are internal admin entries
-    const visible = transactions.filter((t: any) => t.type !== 'ADJUSTMENT')
     return {
-      totalCount: visible.length,
-      pending: visible.filter((t: any) => t.status === 'PENDING').length,
-      latest: visible.slice(0, 4),
+      totalCount: transactions.length,
+      pending: transactions.filter((t: any) => t.status === 'PENDING').length,
+      latest: transactions.slice(0, 4),
     }
   }, [transactions])
 
@@ -274,8 +321,17 @@ export default function WalletPage() {
 
   function copyAddress() {
     if (!activeAddress) return
-    navigator.clipboard.writeText(activeAddress)
+    copyWalletAddress(activeAddress, coin)
+  }
+
+  function copyWalletAddress(address: string, symbol: string) {
+    if (!address) {
+      setMsg({ type: 'error', text: `${symbol} address unavailable` })
+      return
+    }
+    navigator.clipboard.writeText(address)
     setCopied(true)
+    setMsg({ type: 'success', text: `${symbol} address copied` })
     setTimeout(() => setCopied(false), 1800)
   }
 
@@ -316,6 +372,30 @@ export default function WalletPage() {
     setDepositMode('select')
     setMsg(null)
   }
+
+  const walletCurrencies = marketCoins.map((sym) => ({
+    sym,
+    name: sym === 'BTC' ? 'Bitcoin' : sym === 'ETH' ? 'Ethereum' : sym === 'BNB' ? 'BNB' : sym === 'SOL' ? 'Solana' : 'XRP',
+    image: marketPrices[sym]?.image,
+    price: marketPrices[sym]?.price || 0,
+    value: `$${((balances[sym] || 0) * (marketPrices[sym]?.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    amount: balances[sym] || 0,
+    color: sym === 'BTC' ? '#F7931A' : sym === 'ETH' ? '#627EEA' : sym === 'BNB' ? '#F3BA2F' : sym === 'SOL' ? '#14F195' : '#E74C3C',
+    note: walletAddresses[sym] ? `${walletAddresses[sym].slice(0, 8)}...${walletAddresses[sym].slice(-6)}` : 'Admin address required',
+  }))
+
+  const trendingTokens = [
+    { sym: 'ETH', name: 'Ethereum', price: marketPrices.ETH?.price || 0, change: marketPrices.ETH?.change || 0, color: '#627EEA' },
+    { sym: 'USDC', name: 'USDC', price: 1, change: 0, color: '#2775CA' },
+    { sym: 'SOL', name: 'Solana', price: marketPrices.SOL?.price || 0, change: marketPrices.SOL?.change || 0, color: '#14F195' },
+  ]
+
+  const shortcutTabs = [
+    { label: 'Deposit', tone: 'var(--success)', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>, onClick: () => { setTab('deposit'); setDepositMode('select'); setMsg(null) } },
+    { label: 'Withdraw', tone: 'var(--danger)', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>, onClick: () => { setTab('withdraw'); setDepositMode('select'); setMsg(null) } },
+    { label: 'Invested', tone: 'var(--brand-primary)', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>, onClick: () => { window.location.href = '/invest?tab=my' } },
+    { label: 'Reward', tone: 'var(--brand-primary)', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>, onClick: () => { setTab('reward'); setMsg(null) } },
+  ]
 
   const ActionButton = ({
     active,
@@ -358,118 +438,194 @@ export default function WalletPage() {
   )
 
   return (
-    <div style={{ padding: '6px 16px 22px' }}>
-      <div style={{ marginBottom: 10 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>Wallet</h1>
-        <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Funds, providers, and recent activity</div>
-      </div>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>
-          TOTAL BALANCE
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-end' }}>
+    <div style={{ padding: '10px 16px 22px', background: '#000', minHeight: '100vh' }}>
+      <div style={{ marginBottom: 14, padding: '18px 16px', borderRadius: 22, background: '#000', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'none' }}>
+        <div style={{ color: 'rgba(255,255,255,0.68)', fontSize: 12, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Wallet balance</div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: '-1.2px', lineHeight: 1 }}>${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <div style={{ marginTop: 8, color: 'var(--success)', fontWeight: 700, fontSize: 14 }}>
-              +${profitToday.toFixed(2)} today
+            <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1, marginBottom: 8 }}>${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999, background: 'rgba(14,203,129,0.12)', color: 'var(--success)', fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
+              {cryptoPL >= 0 ? '+' : '-'}${Math.abs(cryptoPL).toFixed(2)} P/L today
             </div>
-            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 6 }}>
-              Available ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>Available ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <MiniTrend values={trendData} />
+          <div style={{ flexShrink: 0, width: 118, height: 54 }}>
+            <MiniTrend values={trendData} color={chartPerformance.pnl >= 0 ? '#0ECB81' : '#F6465D'} />
           </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 16 }}>
+          {shortcutTabs.map((item) => (
+            <button key={item.label} type="button" onClick={item.onClick} style={{ minHeight: 72, borderRadius: 18, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontFamily: 'inherit', fontWeight: 800, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <span style={{ width: 28, height: 28, borderRadius: 999, background: `${item.tone}22`, color: item.tone, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{item.icon}</span>
+              <span style={{ fontSize: 11 }}>{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
-        <ActionButton
-          active={tab === 'deposit'}
-          onClick={() => {
-            setTab('deposit')
-            setDepositMode('select')
-            setMsg(null)
-          }}
-          label="Deposit"
-          color="var(--success)"
-          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>}
-        />
-        <ActionButton
-          active={tab === 'withdraw'}
-          onClick={() => {
-            setTab('withdraw')
-            setDepositMode('select')
-            setMsg(null)
-          }}
-          label="Withdraw"
-          color="var(--danger)"
-          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>}
-        />
-        <ActionButton
-          active={false}
-          onClick={() => (window.location.href = '/invest?tab=my')}
-          label="Invested"
-          color="var(--brand-primary)"
-          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>}
-        />
-        <ActionButton
-          active={tab === 'reward'}
-          onClick={() => {
-            setTab('reward')
-            setMsg(null)
-          }}
-          label="Rewards"
-          color="var(--brand-primary)"
-          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>}
-        />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 2px 12px' }}>
+        <div>
+          <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>INVESTMENT PLANS</div>
+          <div style={{ color: '#fff', fontSize: 15, fontWeight: 900, marginTop: 4 }}>Top plans from Invest</div>
+        </div>
+        <Link href="/invest" style={{ fontSize: 12, fontWeight: 800, color: '#F2BA0E', textDecoration: 'none', padding: '8px 10px', borderRadius: 999, border: '1px solid rgba(242,186,14,0.16)', background: 'rgba(242,186,14,0.08)' }}>More →</Link>
+      </div>
+      {tab === 'deposit' && depositMode === 'select' && (
+        <div style={{ marginBottom: 12, padding: 12, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', marginBottom: 12 }}>DEPOSIT TYPE</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <button type="button" onClick={() => setDepositMode('network')} style={{ padding: '15px 12px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#0ECB81' }} />
+              Crypto
+            </button>
+            <button type="button" onClick={() => setDepositMode('fiat')} style={{ padding: '15px 12px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#F2BA0E' }} />
+              Fiat
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+        {[
+          { title: 'BTC Growth Plan', sub: 'Best for high conviction holders', roi: '2.4% daily', sym: 'BTC', color: '#F7931A' },
+          { title: 'ETH Builder Plan', sub: 'Balanced growth and stability', roi: '1.6% daily', sym: 'ETH', color: '#627EEA' },
+          { title: 'SOL Momentum Plan', sub: 'Aggressive short-term upside', roi: '1.3% daily', sym: 'SOL', color: '#14F195' },
+        ].map((p) => {
+          const img = marketPrices[p.sym]?.image
+          return (
+            <Link key={p.title} href="/invest" style={{ padding: 14, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }} className="pressable">
+              <div style={{ width: 42, height: 42, borderRadius: 14, background: img ? '#111' : p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                {img ? <img src={img} alt={`${p.sym} logo`} style={{ width: 28, height: 28, objectFit: 'contain' }} /> : <CoinIcon symbol={p.sym} size={26} />}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>{p.title}</div>
+                <div style={{ color: 'rgba(255,255,255,0.58)', fontSize: 12, marginTop: 2 }}>{p.sub}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: '#0ECB81', fontWeight: 900, fontSize: 13 }}>{p.roi}</div>
+                <div style={{ color: 'rgba(255,255,255,0.44)', fontSize: 11 }}>Open</div>
+              </div>
+            </Link>
+          )
+        })}
       </div>
 
+      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>CRYPTO LIST</div>
+          <div style={{ color: '#fff', fontSize: 15, fontWeight: 900, marginTop: 4 }}>Your held assets</div>
+        </div>
+        <Link href="/markets" style={{ fontSize: 12, fontWeight: 800, color: '#F2BA0E', textDecoration: 'none' }}>All markets</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+        {walletCurrencies.map((asset) => (
+          <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} className="wallet-currency-card" style={{ background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="wallet-currency-icon" style={{ background: asset.image ? '#111' : asset.color }}>
+              {asset.image ? <img src={asset.image} alt={`${asset.name} logo`} /> : <CoinIcon symbol={asset.sym} size={34} />}
+            </span>
+            <span className="wallet-currency-copy">
+              <strong>{asset.name}</strong>
+              <em>
+                Price <span style={{ color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D', fontVariantNumeric: 'tabular-nums' }}>${asset.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</span>
+              </em>
+            </span>
+            <span className="wallet-currency-value">
+              <strong>{asset.amount.toLocaleString('en-US', { maximumFractionDigits: asset.sym === 'USDT' ? 2 : 6 })}</strong>
+              <em>{asset.value}</em>
+            </span>
+            <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 800, color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D' }}>
+              {(marketPrices[asset.sym]?.change || 0) >= 0 ? '+' : ''}{(marketPrices[asset.sym]?.change || 0).toFixed(2)}%
+            </span>
+          </Link>
+        ))}
+      </div>
       {tab === 'deposit' && (
         <div style={{ marginBottom: 14 }}>
-          {depositMode === 'select' && (
-            <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>Deposit with</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <button
-                  onClick={() => setDepositMode('crypto')}
-                  className="pressable"
-                  style={{ padding: 16, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  Crypto
-                </button>
-                <button
-                  onClick={() => setDepositMode('fiat')}
-                  className="pressable"
-                  style={{ textAlign: 'center', padding: 16, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  Fiat
-                </button>
+          {depositMode === 'network' && (
+            <div className="network-sheet">
+              <div className="network-sheet-head">
+                <h2>Change network</h2>
+                <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
+              </div>
+              <div className="network-list">
+                {DEPOSIT_COINS.map((c) => {
+                  const addr = walletAddresses[c.sym] || ''
+                  return (
+                    <button
+                      key={c.sym}
+                      type="button"
+                      onClick={() => { setCoin(c.sym); setDepositMode('crypto') }}
+                      className="network-row pressable"
+                    >
+                      <span className="network-logo" style={{ background: c.color }}>
+                        {c.sym === 'BTC' ? '₿' : c.sym === 'ETH' ? '◆' : '₮'}
+                      </span>
+                      <span className="network-copy">
+                        <strong>{c.name}</strong>
+                        <em>{addr ? `${addr.slice(0, 10)}...${addr.slice(-7)}` : `${c.sym.toLowerCase()} address unavailable`}</em>
+                      </span>
+                      <span
+                        className="network-icons network-copy-action"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Copy ${c.sym} wallet address`}
+                        title={`Copy ${c.sym} address`}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          copyWalletAddress(addr, c.sym)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            copyWalletAddress(addr, c.sym)
+                          }
+                        }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm11 1h2v2h-2v-2Zm3 0h2v5h-5v-2h3v-3Z" stroke="currentColor" strokeWidth="1.7"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="1.8"/></svg>
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
 
           {depositMode === 'fiat' && (
-            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600 }}>Choose fiat provider</div>
-                <button onClick={() => setDepositMode('select')} type="button" style={{ border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12 }}>Back</button>
+            <div className="network-sheet fiat-sheet" style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="network-sheet-head">
+                <h2>Select payment method</h2>
+                <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-                {fiatProviders.map((provider) => (
-                  <a
-                    key={provider.name}
-                    href={provider.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="pressable"
-                    style={{ textDecoration: 'none', textAlign: 'left', padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 10 }}
-                  >
-                    <img src={provider.logo} alt={`${provider.name} logo`} width={18} height={18} style={{ borderRadius: 4, flexShrink: 0 }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
-                    <span>{provider.name}</span>
-                  </a>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, background: '#111', border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12 }}>
+                <span style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg,#F2BA0E,#FFDD7A)', color: '#000', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>P</span>
+                <span>
+                  <strong style={{ display: 'block', fontSize: 14 }}>Paybis</strong>
+                  <span style={{ color: 'rgba(255,255,255,0.58)', fontSize: 12 }}>Simple fiat on-ramp with card checkout</span>
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 12 }} aria-label="Supported fiat payment methods">
+                <span style={{ height: 42, borderRadius: 12, background: '#fff', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900 }}>VISA</span>
+                <span style={{ height: 42, borderRadius: 12, background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ width: 16, height: 16, borderRadius: 99, background: '#EB001B', marginRight: -5 }} /><span style={{ width: 16, height: 16, borderRadius: 99, background: '#F79E1B', opacity: 0.95 }} /></span>
+                <span style={{ height: 42, borderRadius: 12, background: '#111', border: '1px solid rgba(255,255,255,0.06)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900 }}> Pay</span>
+                <span style={{ height: 42, borderRadius: 12, background: '#111', border: '1px solid rgba(255,255,255,0.06)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900 }}><span style={{ color: '#4285F4', marginRight: 4 }}>G</span>Pay</span>
+              </div>
+              <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+                {[
+                  '1. Choose Paybis',
+                  '2. Pick card or Apple / Google Pay',
+                  '3. Crypto lands in your wallet',
+                ].map((step) => (
+                  <div key={step} style={{ padding: '10px 12px', borderRadius: 12, background: '#111', border: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.78)', fontSize: 12 }}>{step}</div>
                 ))}
               </div>
+              <a href={paybisUrl} target="_blank" rel="noopener noreferrer" className="paybis-button pressable" style={{ background: '#F2BA0E', color: '#000', fontWeight: 900, borderRadius: 14 }}>
+                Continue to Paybis
+              </a>
             </div>
           )}
         </div>
@@ -481,38 +637,8 @@ export default function WalletPage() {
         </div>
       )}
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>Recent activity</div>
-          <Link href="/transactions" style={{ color: 'var(--brand-primary)', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>View all →</Link>
-        </div>
-
-        {txSummary.latest.length === 0 ? (
-          <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>No transactions yet.</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {txSummary.latest.slice(0, 4).map((t: any) => (
-              <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 12 }}>{t.type}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{new Date(t.createdAt).toLocaleString()}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, fontSize: 12 }}>${Number(t.amount || 0).toFixed(2)}</div>
-                  <div style={{ color: t.status === 'SUCCESS' ? 'var(--success)' : t.status === 'PENDING' ? 'var(--warning)' : 'var(--danger)', fontSize: 10, fontWeight: 700 }}>{t.status}</div>
-                </div>
-              </div>
-            ))}
-            <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>
-              {txSummary.totalCount} total · {txSummary.pending} pending
-            </div>
-          </div>
-        )}
-      </div>
-
-
       {tab === 'withdraw' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 130, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(73px + env(safe-area-inset-bottom))', zIndex: 45, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
             <div style={{ fontSize: 20, fontWeight: 800 }}>Withdraw</div>
@@ -543,7 +669,7 @@ export default function WalletPage() {
       )}
 
       {tab === 'reward' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 130, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 80px)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(73px + env(safe-area-inset-bottom))', zIndex: 45, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
             <div style={{ fontSize: 20, fontWeight: 800 }}>Rewards & Referrals</div>
@@ -595,11 +721,14 @@ export default function WalletPage() {
       )}
       {/* Full-screen crypto receive dashboard */}
       {tab === 'deposit' && depositMode === 'crypto' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 130, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(env(safe-area-inset-bottom) + 20px)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <button onClick={() => setDepositMode('select')} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
-            <div style={{ fontSize: 20, fontWeight: 800 }}>Receive</div>
-            <div style={{ width: 36 }} />
+        <div className="receive-shell">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <button onClick={() => setDepositMode('select')} type="button" className="trade-icon-button" aria-label="Back">←</button>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 900 }}>Receive</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 700 }}>{selectedCoin.name}</div>
+            </div>
+            <div style={{ width: 44 }} />
           </div>
 
           <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, background: 'rgba(242,186,14,0.16)', border: '1px solid rgba(242,186,14,0.24)', color: '#F2BA0E', fontSize: 12, fontWeight: 600 }}>
@@ -630,22 +759,25 @@ export default function WalletPage() {
             ))}
           </div>
 
-          <div style={{ textAlign: 'center', marginBottom: 14, background: '#fff', borderRadius: 20, padding: 14 }}>
-            <div style={{ margin: '0 auto', width: '100%', maxWidth: 260, aspectRatio: '1/1', borderRadius: 16, overflow: 'hidden', position: 'relative', background: '#fff' }}>
+          <div className="receive-qr-card">
+            <div style={{ margin: '0 auto', width: '100%', maxWidth: 270, aspectRatio: '1/1', borderRadius: 18, overflow: 'hidden', position: 'relative', background: '#fff' }}>
               {qrDataUrl ? <img src={qrDataUrl} alt={`${coin} QR`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', color: '#111', fontWeight: 700 }}>Generating QR...</div>}
               <div style={{ position: 'absolute', inset: '50% auto auto 50%', transform: 'translate(-50%, -50%)', width: 42, height: 42, borderRadius: 16, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>
                 <AltarisLogoMark size={24} />
               </div>
             </div>
-            <div style={{ marginTop: 10, color: '#2B3139', fontFamily: 'monospace', fontSize: 14, wordBreak: 'break-all', fontWeight: 700 }}>
-              {activeAddress || 'Address unavailable'}
+            <div className="receive-address-pill">
+              {activeAddress ? `${activeAddress.slice(0, 8)}…${activeAddress.slice(-8)}` : 'Address unavailable'}
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
-            <button onClick={copyAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>{copied ? 'Copied' : 'Copy'}</button>
-            <button onClick={setSuggestedAmount} type="button" className="btn-ghost" style={{ width: '100%' }}>Set Amount</button>
-            <button onClick={shareAddress} type="button" className="btn-ghost" style={{ width: '100%' }}>Share</button>
+          <div className="receive-action-grid">
+            <button onClick={copyAddress} type="button" className="btn-ghost">{copied ? 'Copied' : 'Copy address'}</button>
+            <button onClick={shareAddress} type="button" className="btn-ghost">Share</button>
+          </div>
+
+          <div style={{ maxWidth: 360, margin: '0 auto 14px', display: 'flex', justifyContent: 'center' }}>
+            <button onClick={setSuggestedAmount} type="button" style={{ border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>Optional: set expected amount</button>
           </div>
 
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>

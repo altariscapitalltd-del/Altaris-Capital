@@ -23,11 +23,44 @@ export default function AdminNotificationsPage() {
     setLoading(false)
   }
 
+  async function sendPreset(cmd: { title: string; message: string; target: 'all' | 'kyc' | 'single' }) {
+    setTarget(cmd.target)
+    setTitle(cmd.title)
+    setMessage(cmd.message)
+    if (cmd.target !== 'single') {
+      setLoading(true)
+      setMsg(null)
+      const res = await fetch('/api/admin/notifications', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ target: cmd.target, title: cmd.title, body: cmd.message }) })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) setMsg({ type: 'success', text: `Sent to ${data.count ?? data.sent ?? 0} user(s)` })
+      else setMsg({ type: 'error', text: data.error || 'Failed to send' })
+      setLoading(false)
+    }
+  }
+
   const TEMPLATES = [
-    {t:'KYC Approved ',m:'Your identity verification has been approved! You can now withdraw funds and claim your $40 bonus.'},
-    {t:'Deposit Confirmed Verified',m:'Your deposit has been confirmed and credited to your account.'},
-    {t:'New Investment Plan ',m:'A new high-yield investment plan is now available. Log in to invest before spots run out!'},
-    {t:'Security Alert ',m:'A new login was detected on your account. If this was not you, please contact support immediately.'},
+    { group: 'Account', t:'Welcome Onboarding', m:'Welcome to Altaris Capital. Your dashboard is ready and you can start funding your wallet.' },
+    { group: 'Account', t:'KYC Approved', m:'Your identity verification has been approved. You can now unlock withdrawals and premium features.' },
+    { group: 'Account', t:'KYC Rejected', m:'Your submitted verification needs correction. Please resubmit a clearer document or selfie.' },
+    { group: 'Account', t:'Security Alert', m:'A new login was detected on your account. If this was not you, reset your password immediately.' },
+    { group: 'Wallet', t:'Deposit Confirmed', m:'Your deposit has been confirmed and added to your available wallet balance.' },
+    { group: 'Wallet', t:'Deposit Pending', m:'Your deposit is pending admin review. We will confirm it shortly.' },
+    { group: 'Wallet', t:'Withdrawal Approved', m:'Your withdrawal has been approved and is being processed.' },
+    { group: 'Wallet', t:'Withdrawal Rejected', m:'Your withdrawal request was rejected. Please review the reason and try again.' },
+    { group: 'Invest', t:'Investment Started', m:'Your investment plan is now active. Profit tracking has begun.' },
+    { group: 'Invest', t:'Investment Matured', m:'Your investment has matured. You can review your profit and available balance now.' },
+    { group: 'Invest', t:'New Hot Plan', m:'A new featured plan is now available. Open Invest to see the latest opportunities.' },
+    { group: 'Support', t:'Support Reply', m:'Your support request has been answered. Open the app to continue the conversation.' },
+    { group: 'Support', t:'Support Escalated', m:'Your issue has been escalated to a human admin for review.' },
+    { group: 'Promo', t:'Bonus Credited', m:'A bonus has been added to your account. Open your dashboard to view it.' },
+    { group: 'Promo', t:'Limited Offer', m:'A limited-time offer is live. Check the latest investment plans before it expires.' },
+  ]
+
+  const COMMANDS = [
+    { label: 'Broadcast Deposit Update', title: 'Deposit Update', message: 'We have a wallet update for you. Check your balance and transaction status in the app.', target: 'all' as const },
+    { label: 'Notify KYC Users', title: 'KYC Notice', message: 'Please complete your identity verification to unlock all wallet actions.', target: 'kyc' as const },
+    { label: 'User Security Ping', title: 'Security Notice', message: 'A security event was detected. Review your account activity immediately.', target: 'single' as const },
+    { label: 'Promo Blast', title: 'New Offer', message: 'A new promotion is live. Open the app to see what is available right now.', target: 'all' as const },
   ]
 
   return (
@@ -91,12 +124,22 @@ export default function AdminNotificationsPage() {
         {/* Templates */}
         <div style={{background:'#111',border:'1px solid rgba(255,255,255,0.06)',borderRadius:16,padding:20}}>
           <h2 style={{fontSize:14,fontWeight:700,marginBottom:16}}>Quick Templates</h2>
+          <div style={{display:'flex',flexDirection:'column',gap:8, marginBottom: 18}}>
+            {COMMANDS.map(cmd => (
+              <button key={cmd.label} onClick={()=>sendPreset(cmd)}
+                style={{background:'#141414',border:'1px solid rgba(242,186,14,0.12)',borderRadius:10,padding:12,textAlign:'left',cursor:'pointer',fontFamily:'inherit',transition:'border-color .15s'}}>
+                <div style={{fontWeight:800,fontSize:12,marginBottom:4,color:'#f5f5f5'}}>{cmd.label}</div>
+                <div style={{color:'#777',fontSize:11,lineHeight:1.4}}>{cmd.title} → {cmd.target}</div>
+              </button>
+            ))}
+          </div>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {TEMPLATES.map(t=>(
-              <button key={t.t} onClick={()=>{setTitle(t.t);setMessage(t.m)}}
+              <button key={t.group + t.t} onClick={()=>{setTitle(t.t);setMessage(t.m)}}
                 style={{background:'#1A1A1A',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,padding:14,textAlign:'left',cursor:'pointer',fontFamily:'inherit',transition:'border-color .15s'}}
                 onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(242,186,14,0.2)'} onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.06)'}>
-                <div style={{fontWeight:600,fontSize:13,marginBottom:4,color:'#ddd'}}>{t.t}</div>
+                <div style={{fontSize:10,fontWeight:800,letterSpacing:'0.08em',color:'#F2BA0E',marginBottom:4}}>{t.group}</div>
+                <div style={{fontWeight:700,fontSize:13,marginBottom:4,color:'#ddd'}}>{t.t}</div>
                 <div style={{color:'#555',fontSize:11,lineHeight:1.5,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{t.m}</div>
               </button>
             ))}

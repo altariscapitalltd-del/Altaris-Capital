@@ -77,7 +77,7 @@ export default function KYCPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [form, setForm] = useState({ firstName: '', lastName: '', dob: '', country: '', docType: 'passport', docNumber: '' })
+  const [form, setForm] = useState({ firstName: '', lastName: '', dob: '', country: '', docType: 'passport' })
   const [docFile, setDocFile]       = useState<File | null>(null)
   const [selfieFile, setSelfieFile] = useState<File | null>(null)
   const [docPreview, setDocPreview]     = useState<string | null>(null)
@@ -104,18 +104,28 @@ export default function KYCPage() {
   }
 
   async function submit() {
+    if (submitting) return
     setSubmitting(true); setMsg(null)
-    const fd = new FormData()
-    fd.append('firstName', form.firstName); fd.append('lastName', form.lastName)
-    fd.append('dob', form.dob); fd.append('country', form.country)
-    fd.append('docType', form.docType); fd.append('docNumber', form.docNumber)
-    if (docFile) fd.append('documentFile', docFile)
-    if (selfieFile) fd.append('selfieFile', selfieFile)
-    const res = await fetch('/api/user/kyc', { method: 'POST', body: fd })
-    const data = await res.json()
-    if (res.ok) { setStatus('PENDING_REVIEW'); setMsg({ type: 'success', text: "Submitted! We'll review within 1–2 business days." }) }
-    else setMsg({ type: 'error', text: data.error })
-    setSubmitting(false)
+    try {
+      const fd = new FormData()
+      fd.append('firstName', form.firstName); fd.append('lastName', form.lastName)
+      fd.append('dob', form.dob); fd.append('country', form.country)
+      fd.append('docType', form.docType)
+      if (docFile) fd.append('documentFile', docFile)
+      if (selfieFile) fd.append('selfieFile', selfieFile)
+      const res = await fetch('/api/user/kyc', { method: 'POST', body: fd })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setStatus('PENDING_REVIEW')
+        setMsg({ type: 'success', text: "Submitted! We'll review within 1–2 business days." })
+      } else {
+        setMsg({ type: 'error', text: data.error || 'Failed to submit KYC. Please try again.' })
+      }
+    } catch {
+      setMsg({ type: 'error', text: 'Network error. Please check your connection and try again.' })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const inp: React.CSSProperties = { width:'100%', background:'#111', color:'#fff', padding:'13px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', fontSize:14, fontFamily:'inherit', outline:'none', transition:'border-color .2s', boxSizing:'border-box' }
@@ -237,7 +247,6 @@ export default function KYCPage() {
                 {DOC_TYPES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
               </select>
             </div>
-            <div><label style={lbl}>DOCUMENT NUMBER</label><input style={inp} placeholder="e.g. A12345678" value={form.docNumber} onChange={f('docNumber')} onFocus={focus} onBlur={blur}/></div>
             <div onClick={() => docRef.current?.click()} style={{ border:`2px dashed ${docFile ? '#0ECB81' : 'rgba(255,255,255,0.12)'}`, borderRadius:12, padding:28, textAlign:'center', cursor:'pointer', background:docFile ? 'rgba(14,203,129,0.04)' : 'transparent', transition:'all 0.2s' }}>
               {docPreview ? (
                 <img src={docPreview} alt="Document" style={{ maxHeight:140, borderRadius:8, objectFit:'contain' }}/>
@@ -295,7 +304,6 @@ export default function KYCPage() {
                 { l:'Date of Birth', v:form.dob },
                 { l:'Country', v:form.country },
                 { l:'Document Type', v:DOC_TYPES.find(d => d.value === form.docType)?.label },
-                { l:'Document Number', v:form.docNumber || '—' },
                 { l:'Document Photo', v:docFile?.name },
                 { l:'Selfie Photo', v:selfieFile?.name },
               ].map(({ l, v }) => (

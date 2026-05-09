@@ -6,13 +6,14 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([])
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
 
   useEffect(() => {
-    fetch('/api/admin/users')
+    fetch('/api/admin/users?limit=all')
       .then((r) => r.json())
       .then((d) => {
         setUsers(d.users || [])
+        setTotal(d.total || d.users?.length || 0)
         setLoading(false)
       })
   }, [])
@@ -22,24 +23,19 @@ export default function AdminUsersPage() {
     [q, users]
   )
 
-  const paged = filtered.slice(0, page * 25)
-
   return (
     <div>
       <div className="admin-heading">
         <div>
           <h1>Users</h1>
-          <p className="admin-muted">{users.length.toLocaleString()} total users</p>
+          <p className="admin-muted">{total.toLocaleString()} total users · showing {users.length.toLocaleString()}</p>
         </div>
         <input
           className="input"
           style={{ maxWidth: 320, height: 40, padding: '8px 12px', fontSize: 13 }}
           placeholder="Search by name or email"
           value={q}
-          onChange={(e) => {
-            setQ(e.target.value)
-            setPage(1)
-          }}
+          onChange={(e) => setQ(e.target.value)}
         />
       </div>
 
@@ -58,12 +54,12 @@ export default function AdminUsersPage() {
                 <tr>
                   <td colSpan={6} style={{ padding: 30, textAlign: 'center', color: '#888' }}>Loading users...</td>
                 </tr>
-              ) : paged.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: 30, textAlign: 'center', color: '#666' }}>No users found</td>
                 </tr>
               ) : (
-                paged.map((u: any) => {
+                filtered.map((u: any) => {
                   const bal = u.balances?.find((b: any) => b.currency === 'USD')?.amount || 0
                   return (
                     <tr key={u.id} onClick={() => (window.location.href = `/admin/users/${u.id}`)} style={{ borderBottom: '1px solid rgba(255,255,255,.05)', cursor: 'pointer' }}>
@@ -82,7 +78,7 @@ export default function AdminUsersPage() {
                         })()}
                       </td>
                       <td style={{ padding: '12px 14px' }}>${bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                      <td style={{ padding: '12px 14px', color: u.isFrozen ? '#f6465d' : '#0ECB81' }}>{u.isFrozen ? 'Frozen' : 'Active'}</td>
+                      <td style={{ padding: '12px 14px', color: u.isActive ? '#0ECB81' : '#f6465d' }}>{u.isActive ? 'Active' : 'Suspended'}</td>
                       <td style={{ padding: '12px 14px', color: '#888' }}>{new Date(u.createdAt).toLocaleDateString()}</td>
                     </tr>
                   )
@@ -91,14 +87,6 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
-
-        {filtered.length > paged.length && (
-          <div style={{ padding: 14, borderTop: '1px solid rgba(255,255,255,.06)' }}>
-            <button className="btn-ghost" style={{ width: '100%' }} onClick={() => setPage((p) => p + 1)}>
-              Load more users ({filtered.length - paged.length} remaining)
-            </button>
-          </div>
-        )}
       </section>
     </div>
   )

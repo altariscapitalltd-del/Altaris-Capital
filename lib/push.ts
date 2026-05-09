@@ -1,5 +1,6 @@
 import { SignJWT, importPKCS8 } from 'jose'
 import { trigger, userChannel } from './pusher'
+import { sendAdminTelegramMessage } from './admin-notify'
 import { sendNotificationEmail } from './email'
 
 const FCM_SERVER_KEY = process.env.FIREBASE_SERVER_KEY || ''
@@ -231,4 +232,12 @@ export async function notifyUser(
   }
 
   await trigger(userChannel(userId), 'notification:new', { title, body, url })
+}
+
+export async function notifyAdminTelegram(text: string) {
+  try {
+    await sendAdminTelegramMessage(text)
+  } catch (err) {
+    console.error('[Admin Telegram notify]', err)
+  }
 }

@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   User, Key, UserCheck, Coins, Bell, Mail, TrendingUp, Fingerprint, Shield, Smartphone,
-  MessageCircle, HelpCircle, FileText, Lock, Info, LogOut,
+  MessageCircle, HelpCircle, FileText, Lock, Info, LogOut, Globe2, MapPin,
 } from 'lucide-react'
 import { getFirebaseMessagingToken } from '@/lib/firebaseClient'
+import { ALTARIS_LANGUAGES } from '@/components/LanguageTranslator'
 
 function SettingRow({ icon, label, value, href, onClick, danger, toggle, toggled, onToggle }:
   { icon: React.ReactNode; label: string; value?: string; href?: string; onClick?: () => void; danger?: boolean; toggle?: boolean; toggled?: boolean; onToggle?: () => void }) {
@@ -46,6 +47,47 @@ function SectionCard({ children }: { children:React.ReactNode }) {
   )
 }
 
+const COUNTRY_LANGUAGE: Record<string, string> = {
+  NG: 'en', FR: 'fr', BE: 'fr', CA: 'fr', ES: 'es', MX: 'es', AR: 'es', CO: 'es', CL: 'es', PE: 'es',
+  BR: 'pt', PT: 'pt', DE: 'de', AT: 'de', IT: 'it', RU: 'ru', PL: 'pl', NL: 'nl', BG: 'bg', GR: 'el',
+  RO: 'ro', HU: 'hu', SE: 'sv', TH: 'th', CN: 'zh-CN', HK: 'zh-CN', TW: 'zh-CN', JP: 'ja', KR: 'ko',
+  IN: 'hi', PK: 'ur', BD: 'bn', ID: 'id', TR: 'tr', VN: 'vi', SA: 'ar', AE: 'ar', EG: 'ar', MA: 'ar', KE: 'sw', TZ: 'sw', UG: 'sw',
+}
+
+function LanguageRow({ language, country, detecting, onLanguageChange, onDetect }:
+  { language:string; country:string; detecting:boolean; onLanguageChange:(code:string)=>void; onDetect:()=>void }) {
+  const selected = ALTARIS_LANGUAGES.find(item => item.code === language)?.label || 'English'
+  return (
+    <div className="row-item" style={{ background:'transparent', borderBottom:'1px solid var(--border)' }}>
+      <div style={{ width:34, height:34, borderRadius:10, background:'var(--bg-elevated)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'var(--text-secondary)' }}>
+        <Globe2 size={18} strokeWidth={2} />
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontWeight:600, fontSize:14, color:'var(--text-primary)' }}>Language</div>
+        <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:1 }}>{country ? `Detected: ${country}` : selected}</div>
+      </div>
+      <select
+        value={language}
+        onChange={(event) => onLanguageChange(event.target.value)}
+        style={{ maxWidth:118, background:'transparent', color:'var(--text-secondary)', border:'none', fontSize:12, fontWeight:700, fontFamily:'inherit', outline:'none', textAlign:'right' }}
+        aria-label="Choose app language"
+      >
+        {ALTARIS_LANGUAGES.map(item => <option key={item.code} value={item.code}>{item.label}</option>)}
+      </select>
+      <button
+        type="button"
+        onClick={onDetect}
+        disabled={detecting}
+        aria-label="Auto-detect language from IP"
+        title="Auto-detect from IP"
+        style={{ border:'none', background:'transparent', color:'var(--text-muted)', display:'flex', alignItems:'center', justifyContent:'center', padding:0, opacity:detecting?.6:1 }}
+      >
+        <MapPin size={16} strokeWidth={2} />
+      </button>
+    </div>
+  )
+}
+
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -55,6 +97,9 @@ export default function SettingsPage() {
   const [notifInvest, setNotifInvest] = useState(true)
   const [biometric, setBiometric] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [language, setLanguage] = useState('en')
+  const [country, setCountry] = useState('')
+  const [detectingLanguage, setDetectingLanguage] = useState(false)
 
   useEffect(() => {
     try {
@@ -74,6 +119,8 @@ export default function SettingsPage() {
       }
     }).catch(() => {})
     setBiometric(localStorage.getItem('altaris_biometric') === '1')
+    setLanguage(localStorage.getItem('altaris_language') || 'en')
+    setCountry(localStorage.getItem('altaris_country') || '')
   }, [])
 
   async function logout() {
@@ -149,6 +196,44 @@ export default function SettingsPage() {
     localStorage.setItem('altaris_biometric', next ? '1' : '0')
   }
 
+  function changeLanguage(code: string, reloadEnglish = false) {
+    setLanguage(code)
+    localStorage.setItem('altaris_language', code)
+    window.dispatchEvent(new CustomEvent('altaris:set-language', { detail: { language: code, reloadEnglish } }))
+  }
+
+  async function detectLanguageFromIp() {
+    setDetectingLanguage(true)
+    try {
+      const res = await fetch('https://ipapi.co/json/')
+      const data = await res.json().catch(() => null)
+      const countryCode = String(data?.country_code || '').toUpperCase()
+      const countryName = data?.country_name || countryCode
+      const detectedLanguage = COUNTRY_LANGUAGE[countryCode] || 'en'
+      if (countryName) {
+        setCountry(countryName)
+        localStorage.setItem('altaris_country', countryName)
+      }
+      changeLanguage(detectedLanguage)
+    } catch {
+      try {
+        const res = await fetch('https://ipwho.is/')
+        const data = await res.json().catch(() => null)
+        const countryCode = String(data?.country_code || '').toUpperCase()
+        const countryName = data?.country || countryCode
+        const detectedLanguage = COUNTRY_LANGUAGE[countryCode] || 'en'
+        if (countryName) {
+          setCountry(countryName)
+          localStorage.setItem('altaris_country', countryName)
+        }
+        changeLanguage(detectedLanguage)
+      } catch {
+      }
+    } finally {
+      setDetectingLanguage(false)
+    }
+  }
+
   return (
     <div style={{ paddingBottom:24 }}>
       <div style={{ margin:'0 16px 4px' }}>
@@ -207,6 +292,13 @@ export default function SettingsPage() {
           href="/kyc"
         />
         <SettingRow icon={<Coins size={18} strokeWidth={2} />} label="Claim $40 Bonus" value={user?.bonusClaimed ? 'Already claimed' : 'Tap to claim!'} href="/home" />
+        <LanguageRow
+          language={language}
+          country={country}
+          detecting={detectingLanguage}
+          onLanguageChange={(code) => changeLanguage(code, code === 'en')}
+          onDetect={detectLanguageFromIp}
+        />
       </SectionCard>
 
       <SectionLabel label="Notifications" />

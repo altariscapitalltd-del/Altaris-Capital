@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { trigger, adminChannel } from '@/lib/pusher'
+import { notifyAdminTelegram } from '@/lib/push'
 import { z } from 'zod'
 
 const depositSchema = z.object({
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
     })
 
     await trigger(adminChannel, 'admin:new_deposit', { userId: user.id, amount, currency: currency || 'BTC', txId: tx.id })
+    await notifyAdminTelegram(`💰 <b>New Deposit</b>\nUser: ${user.id}\nAmount: ${amount} ${String(currency || 'BTC').toUpperCase()}\nTx: ${tx.id}`)
 
     return NextResponse.json({ success: true, txId: tx.id })
   } catch (error: any) {

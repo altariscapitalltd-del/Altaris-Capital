@@ -33,77 +33,85 @@ function Sparkline({ data, color, width=64, height=28 }: { data:number[], color:
   return <canvas ref={canvasRef} style={{ width, height, display:'block' }} />
 }
 
-function useBalanceHistory(latest: number) {
+function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 150 }: { data: number[]; color?: string; width?: number; height?: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return
+    const ctx = canvas.getContext('2d'); if (!ctx) return
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = width * dpr; canvas.height = height * dpr; ctx.scale(dpr, dpr)
+    const values = data.length > 1 ? data : [0, 0]
+    const min = Math.min(...values), max = Math.max(...values), pad = Math.max((max - min) * 0.18, max * 0.004, 1)
+    const lo = min - pad, hi = max + pad, range = hi - lo || 1
+    const left = 8, right = width - 8, top = 10, bottom = height - 18
+    const xs = values.map((_, i) => left + (i / Math.max(values.length - 1, 1)) * (right - left))
+    const ys = values.map(v => bottom - ((v - lo) / range) * (bottom - top))
+    ctx.clearRect(0, 0, width, height)
+    ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1
+    ;[0.25, 0.5, 0.75].forEach(t => { const y = top + (bottom - top) * t; ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke() })
+    const grad = ctx.createLinearGradient(0, top, 0, bottom)
+    grad.addColorStop(0, color + '42'); grad.addColorStop(0.72, color + '10'); grad.addColorStop(1, color + '00')
+    ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
+    for (let i = 1; i < xs.length; i++) {
+      const midX = (xs[i - 1] + xs[i]) / 2
+      ctx.bezierCurveTo(midX, ys[i - 1], midX, ys[i], xs[i], ys[i])
+    }
+    ctx.lineTo(xs[xs.length - 1], bottom); ctx.lineTo(xs[0], bottom); ctx.closePath(); ctx.fillStyle = grad; ctx.fill()
+    ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
+    for (let i = 1; i < xs.length; i++) { const midX = (xs[i - 1] + xs[i]) / 2; ctx.bezierCurveTo(midX, ys[i - 1], midX, ys[i], xs[i], ys[i]) }
+    ctx.strokeStyle = color; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke()
+    const lastX = xs[xs.length - 1], lastY = ys[ys.length - 1]
+    ctx.fillStyle = '#050505'; ctx.beginPath(); ctx.arc(lastX, lastY, 5, 0, Math.PI * 2); ctx.fill()
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI * 2); ctx.stroke()
+  }, [data, color, width, height])
+  return <canvas ref={canvasRef} style={{ width: '100%', height, display: 'block' }} />
+}
+
+function useBalanceHistory(latest: number, transactions: any[] = []) {
   const [series, setSeries] = useState<{ times: number[]; values: number[] }>({ times: [], values: [] })
   useEffect(() => {
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('altaris_balance_history') : null
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        if (parsed?.times?.length && parsed?.values?.length) {
-          setSeries(parsed)
-          return
-        }
-      } catch {
-        // ignore
-      }
+    const ordered = transactions
+      .slice()
+      .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      .slice(-40)
+
+    if (ordered.length === 0) {
+      const base = latest || 0
+      const times = Array.from({ length: 32 }, (_, i) => Date.now() - (31 - i) * 60 * 1000)
+      setSeries({ times, values: times.map(() => Number(base.toFixed(2))) })
+      return
     }
 
-    const base = latest || 1000
-    const points = Array.from({ length: 32 }, (_, i) => {
-      const t = Date.now() - (31 - i) * 60 * 1000
-      const drift = 1 + (Math.sin(i / 5) * 0.02 + (Math.random() - 0.5) * 0.01)
-      return { t, v: Math.max(0, base * drift) }
-    })
-    setSeries({ times: points.map(p => p.t), values: points.map(p => p.v) })
-  }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    localStorage.setItem('altaris_balance_history', JSON.stringify(series))
-  }, [series])
-
-  useEffect(() => {
-    if (!latest) return
-    setSeries(prev => {
-      const last = prev.values[prev.values.length - 1] ?? latest
-      if (Math.abs(last - latest) < 0.01) return prev
-      const nextTimes = [...prev.times, Date.now()]
-      const nextValues = [...prev.values, latest]
-      const maxLen = 40
-      if (nextValues.length > maxLen) {
-        nextTimes.splice(0, nextValues.length - maxLen)
-        nextValues.splice(0, nextValues.length - maxLen)
-      }
-      return { times: nextTimes, values: nextValues }
-    })
-  }, [latest])
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSeries(prev => {
-        if (prev.values.length === 0) return prev
-        const last = prev.values[prev.values.length - 1]
-        const delta = last * ((Math.random() - 0.5) * 0.002)
-        const next = last + delta
-        const nextTimes = [...prev.times, Date.now()]
-        const nextValues = [...prev.values, next]
-        const maxLen = 40
-        if (nextValues.length > maxLen) {
-          nextTimes.splice(0, nextValues.length - maxLen)
-          nextValues.splice(0, nextValues.length - maxLen)
-        }
-        return { times: nextTimes, values: nextValues }
-      })
-    }, 8000)
-    return () => clearInterval(timer)
-  }, [])
+    let running = latest || 0
+    const values: number[] = []
+    const times: number[] = []
+    for (let i = ordered.length - 1; i >= 0; i--) {
+      const item = ordered[i]
+      const amount = Number(item.amount || 0)
+      const isCredit = ['DEPOSIT', 'PROFIT', 'ROI', 'BONUS', 'REFERRAL_BONUS', 'REFERRAL'].includes(item.type)
+      const isDebit = ['WITHDRAWAL', 'INVESTMENT'].includes(item.type)
+      if (isCredit) running = Math.max(0, running - amount)
+      if (isDebit) running += amount
+      values.unshift(Number(running.toFixed(2)))
+      times.unshift(new Date(item.createdAt).getTime())
+    }
+    values.push(Number((latest || 0).toFixed(2)))
+    times.push(Date.now())
+    while (values.length < 32) {
+      values.unshift(values[0] ?? 0)
+      times.unshift((times[0] || Date.now()) - 60 * 1000)
+    }
+    setSeries({ times: times.slice(-40), values: values.slice(-40) })
+  }, [latest, transactions])
 
   return series
 }
 
-function BalanceChart({ usdBalance }: { usdBalance: number }) {
-  const history = useBalanceHistory(usdBalance)
+function BalanceChart({ usdBalance, transactions }: { usdBalance: number; transactions: any[] }) {
+  const [range, setRange] = useState<'24H' | '7D' | '30D' | 'All'>('24H')
+  const rangeMs = range === '24H' ? 24 * 60 * 60 * 1000 : range === '7D' ? 7 * 24 * 60 * 60 * 1000 : range === '30D' ? 30 * 24 * 60 * 60 * 1000 : Infinity
+  const filteredTransactions = range === 'All' ? transactions : transactions.filter((tx: any) => Date.now() - new Date(tx.createdAt).getTime() <= rangeMs)
+  const history = useBalanceHistory(usdBalance, filteredTransactions)
   const [visible, setVisible] = useState(true)
 
   useEffect(() => {
@@ -118,12 +126,16 @@ function BalanceChart({ usdBalance }: { usdBalance: number }) {
     localStorage.setItem('altaris_hide_chart', visible ? '0' : '1')
   }, [visible])
 
-  const change = useMemo(() => {
-    if (history.values.length < 2) return 0
+  const performance = useMemo(() => {
+    if (history.values.length < 2) return { change: 0, pnl: 0, daily: 0 }
     const start = history.values[0]
     const end = history.values[history.values.length - 1]
-    return start === 0 ? 0 : ((end - start) / start) * 100
+    const pnl = end - start
+    const change = start === 0 ? 0 : (pnl / start) * 100
+    const previous = history.values[history.values.length - 2] ?? start
+    return { change, pnl, daily: end - previous }
   }, [history.values])
+  const chartColor = performance.pnl >= 0 ? '#0ECB81' : '#F6465D'
 
   if (!visible) {
     return (
@@ -146,28 +158,16 @@ function BalanceChart({ usdBalance }: { usdBalance: number }) {
   }
 
   return (
-    <div style={{ margin: '18px 16px 0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>Portfolio (USD)</div>
-        <div style={{ textAlign: 'right', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontSize: 15, fontWeight: 800 }}>${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: change >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-            {change >= 0 ? '+' : ''}{change.toFixed(2)}%
-          </span>
-        </div>
+    <section style={{ margin: '14px 16px 0' }}>
+      <div className="portfolio-range-tabs compact" style={{ marginBottom: 6 }}>
+        {(['24H', '7D', '30D', 'All'] as const).map((item) => (
+          <button key={item} type="button" onClick={() => setRange(item)} className={range === item ? 'active' : ''}>{item === 'All' ? 'All-time' : item}</button>
+        ))}
       </div>
-      <div
-        onClick={() => setVisible(false)}
-        style={{
-          cursor: 'pointer',
-          position: 'relative',
-          overflow: 'hidden',
-          animation: 'balanceChartShimmer 3s ease-in-out infinite',
-        }}
-      >
-        <Sparkline data={history.values} color={change >= 0 ? '#0ECB81' : '#F6465D'} width={320} height={140} />
+      <div onClick={() => setVisible(false)} style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+        <PortfolioChart data={history.values} color={chartColor} />
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -290,9 +290,11 @@ export default function HomePage() {
   const [bonusDone, setBonusDone] = useState(false)
   const [bannerIndex, setBannerIndex] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [transactions, setTransactions] = useState<any[]>([])
 
   const load = useCallback(() => {
     fetch('/api/user/profile').then(r=>r.json()).then(d=>{ setUser(d.user); setLoading(false) })
+    fetch('/api/transactions?page=1').then(r=>r.json()).then(d=>setTransactions(d.transactions || [])).catch(()=>setTransactions([]))
     fetch('/api/markets/list?per_page=40')
       .then(r=>r.json())
       .then(d => {
@@ -315,7 +317,7 @@ export default function HomePage() {
   useEffect(() => {
     load()
     // Refresh market data more frequently
-    const t = setInterval(() => { fetch('/api/markets/list?per_page=40').then(r=>r.json()).then(d=>{ const list=(d.list||[]).filter((c:any)=>c?.symbol&&Array.isArray(c.spark)&&c.spark.length>1).map((c:any)=>({ sym:String(c.symbol).toUpperCase(), name:c.name||String(c.symbol).toUpperCase(), price:Number(c.price||0), change:Number(c.change24h||0), spark:c.spark.slice(-24) })); const featured=list.slice(0,8); const movers=[...featured].sort((a:LiveCoin,b:LiveCoin)=>Math.abs(b.change)-Math.abs(a.change)); setCoins(movers) }).catch(()=>{}) }, 8000)
+    const t = setInterval(() => { fetch('/api/markets/list?per_page=40').then(r=>r.json()).then(d=>{ const list=(d.list||[]).filter((c:any)=>c?.symbol&&Array.isArray(c.spark)&&c.spark.length>1).map((c:any)=>({ sym:String(c.symbol).toUpperCase(), name:c.name||String(c.symbol).toUpperCase(), price:Number(c.price||0), change:Number(c.change24h||0), spark:c.spark.slice(-24) })); const featured=list.slice(0,8); const movers=[...featured].sort((a:LiveCoin,b:LiveCoin)=>Math.abs(b.change)-Math.abs(a.change)); setCoins(movers) }).catch(()=>{}) }, 30000)
     window.addEventListener('balance:refresh', load)
     return () => { clearInterval(t); window.removeEventListener('balance:refresh', load) }
   }, [load])
@@ -327,9 +329,25 @@ export default function HomePage() {
     setBonusClaiming(false)
   }
 
-  const usdBal = user?.balances?.find((b:any)=>b.currency==='USD')?.amount || 0
+  const priceMap = useMemo(() => Object.fromEntries(coins.map((c) => [c.sym, c.price])), [coins])
+  const balanceList = user?.balances || []
+  const usdBal = balanceList.reduce((sum: number, b: any) => {
+    const currency = String(b.currency || '').toUpperCase()
+    const amount = Number(b.amount || 0)
+    if (currency === 'USD') return sum + amount
+    if (currency === 'USDT') return sum + amount
+    return sum + amount * Number(priceMap[currency] || 0)
+  }, 0)
   const activeInvestments = user?.investments?.filter((i:any)=>i.status==='ACTIVE') || []
-  const todayProfit = activeInvestments.reduce((s:number,i:any)=>s+(i.amount*i.dailyRoi),0)
+  const cryptoPL = balanceList.reduce((sum: number, b: any) => {
+    const currency = String(b.currency || '').toUpperCase()
+    if (currency === 'USD') return sum
+    const coin = coins.find((c) => c.sym === currency)
+    const price = currency === 'USDT' ? 1 : Number(coin?.price || 0)
+    const change = Number(coin?.change || 0)
+    const previous = price && change !== -100 ? price / (1 + change / 100) : price
+    return sum + Number(b.amount || 0) * (price - previous)
+  }, 0)
   const canClaimBonus = !user?.bonusClaimed && !bonusDone
 
   const BANNERS = [
@@ -377,14 +395,14 @@ export default function HomePage() {
     if (!showWelcomeCard || visibleBanners.length === 0) return
     const interval = setInterval(() => {
       setBannerIndex((i) => (i + 1) % visibleBanners.length)
-    }, 6000)
+    }, 9000)
     return () => clearInterval(interval)
   }, [showWelcomeCard, visibleBanners.length])
 
   const FEATURED_PLAN = { name:'DeFi Accelerator', roi:'3.5%', dur:'7 days', spots:3, endsAt: new Date(Date.now()+2*86400000+14*3600000+33*60000) }
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'70vh' }}>
-      <AltarisLogoMark size={40} />
+      <div style={{ width:34, height:34, border:'3px solid rgba(242,186,14,0.18)', borderTopColor:'#F2BA0E', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
     </div>
   )
 
@@ -407,9 +425,9 @@ export default function HomePage() {
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <span style={{ color:'var(--success)', fontSize:13, fontWeight:600 }}>
-            {balanceHidden ? '••••' : `+$${todayProfit.toFixed(2)} today`}
+            {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '-'}$${Math.abs(cryptoPL).toFixed(2)} crypto P/L`}
           </span>
-          {todayProfit > 0 && <span style={{ background:'var(--success-bg)', color:'var(--success)', padding:'2px 7px', borderRadius:99, fontSize:11, fontWeight:700 }}>LIVE</span>}
+          {cryptoPL !== 0 && <span style={{ background:'var(--success-bg)', color:'var(--success)', padding:'2px 7px', borderRadius:99, fontSize:11, fontWeight:700 }}>LIVE</span>}
         </div>
 
         {/* Quick actions */}
@@ -430,28 +448,28 @@ export default function HomePage() {
         </div>
       </div>
 
-      <BalanceChart usdBalance={usdBal} />
+      <BalanceChart usdBalance={usdBal} transactions={transactions} />
 
       {/* ── Promo banner (rotating offers) — only when unverified or bonus not claimed ── */}
       {visibleBanners.length > 0 && (
-      <div style={{ margin:'18px 16px 0' }}>
-        <div style={{ position:'relative', borderRadius:18, overflow:'hidden', border:'1px solid rgba(242,186,14,0.25)', background:'radial-gradient(circle at 0% 0%,rgba(242,186,14,0.18),transparent 55%), radial-gradient(circle at 100% 100%,rgba(59,130,246,0.12),transparent 55%)' }}>
-          <div style={{ position:'absolute', top:-60, right:-40, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.22),transparent 70%)', opacity:0.85, pointerEvents:'none' }} />
-          <div style={{ position:'absolute', bottom:-50, left:-40, width:140, height:140, borderRadius:'50%', background:'radial-gradient(circle,rgba(59,130,246,0.18),transparent 70%)', pointerEvents:'none' }} />
+      <div style={{ margin:'12px 16px 0' }}>
+        <div style={{ position:'relative', borderRadius:16, overflow:'hidden', border:'1px solid rgba(242,186,14,0.25)', background:'radial-gradient(circle at 0% 0%,rgba(242,186,14,0.18),transparent 55%), radial-gradient(circle at 100% 100%,rgba(59,130,246,0.12),transparent 55%)' }}>
+          <div style={{ position:'absolute', top:-44, right:-30, width:112, height:112, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.22),transparent 70%)', opacity:0.85, pointerEvents:'none' }} />
+          <div style={{ position:'absolute', bottom:-36, left:-30, width:104, height:104, borderRadius:'50%', background:'radial-gradient(circle,rgba(59,130,246,0.18),transparent 70%)', pointerEvents:'none' }} />
           <AnimatePresence mode="wait">
             <motion.div
               key={visibleBanners[bannerIndex % visibleBanners.length].id}
               initial={{ opacity: 0, x: 32 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -32 }}
-              transition={{ duration: 0.55, ease: 'easeOut' }}
-              style={{ position: 'relative', padding: 18, display: 'flex', gap: 14, alignItems: 'center' }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              style={{ position: 'relative', padding: 12, display: 'flex', gap: 10, alignItems: 'center' }}
             >
               {/* Icon / Illustration */}
               <div style={{
-                width: 56,
-                height: 56,
-                borderRadius: 16,
+                width: 42,
+                height: 42,
+                borderRadius: 13,
                 background: 'linear-gradient(135deg,rgba(0,0,0,0.2),rgba(0,0,0,0.8))',
                 border: '1px solid rgba(242,186,14,0.4)',
                 display: 'flex',
@@ -460,28 +478,28 @@ export default function HomePage() {
                 flexShrink: 0,
               }}>
                 <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 10,
+                  width: 26,
+                  height: 26,
+                  borderRadius: 8,
                   background: 'conic-gradient(from 210deg,#F2BA0E,#FF7A00,#F2BA0E)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: 18,
                 }}>
-                  <Gift size={18} strokeWidth={2} color="#000" />
+                  <Gift size={15} strokeWidth={2} color="#000" />
                 </div>
               </div>
 
               {/* Text */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
                   <span style={{
                     fontSize: 10,
                     fontWeight: 700,
                     letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    padding: '3px 9px',
+                    padding: '2px 7px',
                     borderRadius: 999,
                     background: 'rgba(0,0,0,0.65)',
                     border: '1px solid rgba(242,186,14,0.35)',
@@ -490,34 +508,34 @@ export default function HomePage() {
                     {visibleBanners[bannerIndex % visibleBanners.length].pill}
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    Swipe through the latest offers
+                    Limited offer
                   </span>
                 </div>
 
                 <h2 style={{
-                  fontSize: 17,
+                  fontSize: 14,
                   fontWeight: 800,
                   letterSpacing: '-0.02em',
-                  marginBottom: 4,
+                  marginBottom: 2,
                   color: 'var(--text-primary)',
                 }}>
                   {visibleBanners[bannerIndex % visibleBanners.length].title}
                 </h2>
 
-                <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 10 }}>
+                <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.35, marginBottom: 7 }}>
                   {user?.kycStatus === 'APPROVED'
                     ? visibleBanners[bannerIndex % visibleBanners.length].subtitleApproved
                     : visibleBanners[bannerIndex % visibleBanners.length].subtitleDefault}
                 </p>
 
                 {/* Steps row stays similar to original bonus card */}
-                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10, overflowX:'auto' }} className="no-scrollbar">
+                <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:7, overflowX:'auto' }} className="no-scrollbar">
                   {[{l:'Sign Up',done:true},{l:'Verify KYC',done:user?.kycStatus==='APPROVED'},{l:'Claim Bonus',done:false}].map((s,i,arr)=>(
                     <div key={s.l} style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-                      <div style={{ width:16, height:16, borderRadius:'50%', background:s.done?'#F2BA0E':'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8, fontWeight:800, color:s.done?'#000':'var(--text-muted)', flexShrink:0 }}>
-                        {s.done ? <Check size={10} strokeWidth={3} /> : i+1}
+                      <div style={{ width:14, height:14, borderRadius:'50%', background:s.done?'#F2BA0E':'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8, fontWeight:800, color:s.done?'#000':'var(--text-muted)', flexShrink:0 }}>
+                        {s.done ? <Check size={9} strokeWidth={3} /> : i+1}
                       </div>
-                      <span style={{ fontSize:10, color:s.done?'var(--text-primary)':'var(--text-muted)', fontWeight:s.done?600:400, whiteSpace:'nowrap' }}>{s.l}</span>
+                      <span style={{ fontSize:9, color:s.done?'var(--text-primary)':'var(--text-muted)', fontWeight:s.done?600:400, whiteSpace:'nowrap' }}>{s.l}</span>
                       {i<arr.length-1 && <div style={{ width:14, height:1, background:'rgba(242,186,14,0.25)' }}/>} 
                     </div>
                   ))}
@@ -528,13 +546,13 @@ export default function HomePage() {
                   <button
                     onClick={claimBonus}
                     className="btn-primary"
-                    style={{ width: '100%', padding: '12px 0', borderRadius: 12, fontWeight: 700 }}
+                    style={{ width: '100%', padding: '9px 0', borderRadius: 10, fontWeight: 700, fontSize: 12 }}
                   >
                     {bonusClaiming ? 'Claiming…' : bonusDone ? 'Claimed' : 'Claim $40 Bonus'}
                   </button>
                 ) : (
                   <Link href="/kyc" style={{ display: 'block', textDecoration: 'none' }}>
-                    <button className="btn-secondary" style={{ width: '100%', padding: '12px 0', borderRadius: 12, fontWeight: 700 }}>
+                    <button className="btn-secondary" style={{ width: '100%', padding: '9px 0', borderRadius: 10, fontWeight: 700, fontSize: 12 }}>
                       Complete KYC
                     </button>
                   </Link>

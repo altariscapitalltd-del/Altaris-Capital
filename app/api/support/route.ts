@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { trigger, adminChannel } from '@/lib/pusher'
-import { getAIResponse } from '@/lib/ai-support'
+import { notifyAdminTelegram } from '@/lib/push'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -44,20 +44,11 @@ export async function POST(req: NextRequest) {
 
   // Notify admin
   await trigger(adminChannel, 'chat:message', { ...userMsg, userId: user.id, userName: user.name })
+  await notifyAdminTelegram(`💬 <b>New Support Message</b>\nUser: ${user.name}\nMessage: ${content.trim().slice(0, 300)}`)
 
-  // If conversation is in AI mode, get AI response
-  if (conv.status === 'ai_assisting') {
-    // Get AI response
-    await getAIResponse(user.id, conv.id, content.trim())
-    
-    // If user asked for human, update status
-    const handoffKeywords = ['human', 'live agent', 'person', 'support team', 'agent', 'talk to someone']
-    if (handoffKeywords.some(k => content.toLowerCase().includes(k))) {
-      await prisma.conversation.update({
-        where: { id: conv.id },
-        data: { status: 'active' }
-      })
-    }
+  // Human-only support: keep the conversation open for the admin team.
+  if (conv.status !== 'active') {
+    await prisma.conversation.update({ where: { id: conv.id }, data: { status: 'active' } })
   }
 
   return NextResponse.json({ message: userMsg })

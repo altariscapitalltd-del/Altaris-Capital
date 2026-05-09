@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, LayoutGroup } from 'framer-motion'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
@@ -114,7 +114,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installModalVisible, setInstallModalVisible] = useState(false)
   const [installModalType, setInstallModalType] = useState<'android'|'ios'|null>(null)
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
-  const [splashVisible, setSplashVisible] = useState(true)
+  const [splashVisible, setSplashVisible] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -129,9 +129,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       }
     } catch {}
 
+    const fetchWithTimeout = (url: string, timeoutMs = 6000) => {
+      const controller = new AbortController()
+      const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+      return fetch(url, { signal: controller.signal }).finally(() => window.clearTimeout(timer))
+    }
+
     const run = async () => {
       try {
-        const meRes = await fetch('/api/auth/me')
+        const meRes = await fetchWithTimeout('/api/auth/me', 6000)
         if (!meRes.ok) {
           router.push('/login')
           return
@@ -146,7 +152,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           })
         }
 
-        const profileRes = await fetch('/api/user/profile').catch(() => null)
+        const profileRes = await fetchWithTimeout('/api/user/profile', 6000).catch(() => null)
         if (!profileRes || !profileRes.ok) return
         const profileData = await profileRes.json().catch(() => null)
         if (cancelled || !profileData?.user) return
@@ -154,6 +160,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         setBonusUnclaimed(!profileData.user?.bonusClaimed)
         setUnread(profileData.user?.notifications?.length || 0)
         try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(profileData.user)) } catch {}
+      } catch {
+        try {
+          if (!cancelled && window.localStorage.getItem('altaris_user_cache')) setSplashVisible(false)
+        } catch {}
       } finally {
         if (!cancelled) setSplashVisible(false)
       }
@@ -162,6 +172,48 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     run()
     return () => { cancelled = true }
   }, [router])
+
+  useEffect(() => {
+    // Some mobile webviews (notably in-app browsers) can drop the synthetic click
+    // after touchend when fixed/animated layers are present. Bridge short taps on
+    // real interactive elements into a normal click so links/buttons don't feel dead.
+    let tapStart: { x: number; y: number; t: number; el: Element | null } | null = null
+    const isInteractive = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) return null
+      return target.closest('a,button,[role="button"],input,select,textarea,label') as HTMLElement | null
+    }
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return
+      const touch = e.touches[0]
+      tapStart = { x: touch.clientX, y: touch.clientY, t: Date.now(), el: isInteractive(e.target) }
+    }
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!tapStart || e.changedTouches.length !== 1) return
+      const touch = e.changedTouches[0]
+      const dx = Math.abs(touch.clientX - tapStart.x)
+      const dy = Math.abs(touch.clientY - tapStart.y)
+      const elapsed = Date.now() - tapStart.t
+      const el = isInteractive(e.target) || (tapStart.el as HTMLElement | null)
+      tapStart = null
+      if (!el || dx > 14 || dy > 14 || elapsed > 800) return
+      if (el.matches('input,select,textarea,label')) return
+      e.preventDefault()
+      const anchor = el.closest('a[href]') as HTMLAnchorElement | null
+      if (anchor) {
+        const href = anchor.getAttribute('href') || ''
+        if (href.startsWith('/')) window.location.assign(href)
+        else if (anchor.href) window.location.href = anchor.href
+        return
+      }
+      window.requestAnimationFrame(() => el.click())
+    }
+    document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true })
+    document.addEventListener('touchend', onTouchEnd, { capture: true, passive: false })
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart, true)
+      document.removeEventListener('touchend', onTouchEnd, true)
+    }
+  }, [])
 
   useEffect(() => {
     // Capture PWA install prompt event for later (Android / Chrome)
@@ -593,6 +645,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         boxShadow: '0 -2px 18px rgba(0,0,0,0.35)',
         overflow: 'hidden',
       }}>
+        <LayoutGroup id="bottom-nav">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 62 }}>
           {NAV.map(({ href, label, icon }) => {
             const active = activeTab === href
@@ -607,15 +660,20 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                   transition: 'opacity .1s',
                 }}
               >
-                {/* Active top indicator dot — Bybit style */}
-                {active && href === '/invest' ? null : active && (
-                  <div style={{
-                    position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                    width: 20, height: 2.5, borderRadius: '0 0 3px 3px',
-                    background: '#FFFFFF',
-                  }} />
+                {active && href !== '/invest' && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    transition={{ type: 'spring', stiffness: 500, damping: 34 }}
+                    style={{
+                      position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                      width: 20, height: 2.5, borderRadius: '0 0 3px 3px',
+                      background: '#FFFFFF',
+                    }}
+                  />
                 )}
-                {icon(active)}
+                <motion.div animate={{ scale: active ? 1.06 : 1 }} transition={{ type: 'spring', stiffness: 500, damping: 28 }}>
+                  {icon(active)}
+                </motion.div>
                 <span style={{
                   fontSize: 10,
                   fontWeight: active ? 600 : 400,
@@ -631,6 +689,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             )
           })}
         </div>
+        </LayoutGroup>
       </nav>
     </div>
   )

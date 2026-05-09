@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/lib/theme'
+import LanguageTranslator from '@/components/LanguageTranslator'
 
 export const metadata: Metadata = {
   title: 'Altaris Capital — Premium Investment Platform',
@@ -44,17 +45,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Altaris" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
         <script dangerouslySetInnerHTML={{ __html: `
-          window.OneSignalDeferred = window.OneSignalDeferred || [];
-          OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({
-              appId: "d7beb41e-012b-4216-bfe5-ff35456f37f4",
-              safari_web_id: "web.onesignal.auto.4d1813bb-fb28-4cd6-9039-144582b81585",
-              notifyButton: { enable: true },
-              allowLocalhostAsSecureOrigin: true,
+          (function () {
+            var host = window.location.hostname;
+            var allowed = host === 'altaris-capital.vercel.app' || host === 'localhost' || host === '127.0.0.1';
+            if (!allowed) return;
+            var script = document.createElement('script');
+            script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+            script.defer = true;
+            document.head.appendChild(script);
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.init({
+                appId: "d7beb41e-012b-4216-bfe5-ff35456f37f4",
+                safari_web_id: "web.onesignal.auto.4d1813bb-fb28-4cd6-9039-144582b81585",
+                notifyButton: { enable: false },
+                allowLocalhostAsSecureOrigin: true,
+              });
             });
-          });
+          })();
         `}} />
       </head>
       <body style={{ background: 'var(--bg-primary)' }}>
@@ -63,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="root-shell">
             {children}
           </div>
+          <LanguageTranslator />
         </ThemeProvider>
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
