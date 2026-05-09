@@ -41,6 +41,7 @@ export default function AdminChatPage() {
   const [query, setQuery] = useState('')
   const [listOpen, setListOpen] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const composerRef = useRef<HTMLTextAreaElement>(null)
 
   const refreshConversations = () => {
     fetch('/api/admin/chat')
@@ -81,6 +82,26 @@ export default function AdminChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const vv = window.visualViewport
+    if (!vv) return
+
+    const update = () => {
+      const keyboard = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      document.documentElement.style.setProperty('--admin-keyboard-offset', `${keyboard}px`)
+    }
+
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      document.documentElement.style.removeProperty('--admin-keyboard-offset')
+    }
+  }, [])
 
   const filteredConversations = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -243,8 +264,14 @@ export default function AdminChatPage() {
                 <Paperclip size={18} />
               </button>
               <textarea
+                ref={composerRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onFocus={() => {
+                  window.setTimeout(() => {
+                    composerRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+                  }, 50)
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
