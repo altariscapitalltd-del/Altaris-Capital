@@ -8,7 +8,7 @@ const TELEGRAM_API = 'https://api.telegram.org'
 
 function getKycTelegramConfig() {
   const token = process.env.TELEGRAM_BOT_TOKEN || process.env.KYC_TELEGRAM_BOT_TOKEN
-  const chatId = process.env.TELEGRAM_KYC_CHAT_ID || process.env.KYC_TELEGRAM_CHAT_ID
+  const chatId = process.env.TELEGRAM_CHAT_ID || process.env.TELEGRAM_KYC_CHAT_ID || process.env.KYC_TELEGRAM_CHAT_ID
   if (!token || !chatId) return null
   return { token, chatId }
 }
