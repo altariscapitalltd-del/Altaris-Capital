@@ -463,18 +463,6 @@ export default function WalletPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 12, padding: 10, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', marginBottom: 10 }}>DEPOSIT TYPE</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <button type="button" onClick={() => { setTab('deposit'); setDepositMode('network'); setMsg(null) }} style={{ padding: '14px 12px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: depositMode === 'network' ? 'rgba(242,186,14,0.12)' : '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900 }}>
-            Crypto
-          </button>
-          <button type="button" onClick={() => { setTab('deposit'); setDepositMode('fiat'); setMsg(null) }} style={{ padding: '14px 12px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: depositMode === 'fiat' ? 'rgba(242,186,14,0.12)' : '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900 }}>
-            Fiat
-          </button>
-        </div>
-      </div>
-
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 2px 12px' }}>
         <div>
           <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>INVESTMENT PLANS</div>
@@ -482,6 +470,21 @@ export default function WalletPage() {
         </div>
         <Link href="/invest" style={{ fontSize: 12, fontWeight: 800, color: '#F2BA0E', textDecoration: 'none', padding: '8px 10px', borderRadius: 999, border: '1px solid rgba(242,186,14,0.16)', background: 'rgba(242,186,14,0.08)' }}>More →</Link>
       </div>
+      {tab === 'deposit' && depositMode === 'select' && (
+        <div style={{ marginBottom: 12, padding: 12, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', marginBottom: 12 }}>DEPOSIT TYPE</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <button type="button" onClick={() => setDepositMode('network')} style={{ padding: '15px 12px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#0ECB81' }} />
+              Crypto
+            </button>
+            <button type="button" onClick={() => setDepositMode('fiat')} style={{ padding: '15px 12px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#F2BA0E' }} />
+              Fiat
+            </button>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
         {[
@@ -593,31 +596,35 @@ export default function WalletPage() {
           )}
 
           {depositMode === 'fiat' && (
-            <div className="network-sheet fiat-sheet">
+            <div className="network-sheet fiat-sheet" style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="network-sheet-head">
                 <h2>Select payment method</h2>
                 <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
               </div>
-              <div className="paybis-hero-row">
-                <span className="paybis-mark">P</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, background: '#111', border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12 }}>
+                <span style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg,#F2BA0E,#FFDD7A)', color: '#000', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>P</span>
                 <span>
-                  <strong>Paybis</strong>
-                  <em>Buy crypto with fiat, then send to your Altaris wallet</em>
+                  <strong style={{ display: 'block', fontSize: 14 }}>Paybis</strong>
+                  <span style={{ color: 'rgba(255,255,255,0.58)', fontSize: 12 }}>Simple fiat on-ramp with card checkout</span>
                 </span>
               </div>
-              <div className="fiat-logo-grid" aria-label="Supported fiat payment methods">
-                <span className="visa-logo">VISA</span>
-                <span className="mc-logo"><i></i><b></b></span>
-                <span className="apple-logo"> Pay</span>
-                <span className="gpay-logo"><b>G</b> Pay</span>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 12 }} aria-label="Supported fiat payment methods">
+                <span style={{ height: 42, borderRadius: 12, background: '#fff', color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900 }}>VISA</span>
+                <span style={{ height: 42, borderRadius: 12, background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ width: 16, height: 16, borderRadius: 99, background: '#EB001B', marginRight: -5 }} /><span style={{ width: 16, height: 16, borderRadius: 99, background: '#F79E1B', opacity: 0.95 }} /></span>
+                <span style={{ height: 42, borderRadius: 12, background: '#111', border: '1px solid rgba(255,255,255,0.06)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900 }}> Pay</span>
+                <span style={{ height: 42, borderRadius: 12, background: '#111', border: '1px solid rgba(255,255,255,0.06)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900 }}><span style={{ color: '#4285F4', marginRight: 4 }}>G</span>Pay</span>
               </div>
-              <div className="paybis-flow">
-                <div><strong>1</strong><span>Redirect to Paybis</span></div>
-                <div><strong>2</strong><span>Complete purchase with card or wallet pay</span></div>
-                <div><strong>3</strong><span>Crypto sent to your wallet</span></div>
+              <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+                {[
+                  '1. Choose Paybis',
+                  '2. Pick card or Apple / Google Pay',
+                  '3. Crypto lands in your wallet',
+                ].map((step) => (
+                  <div key={step} style={{ padding: '10px 12px', borderRadius: 12, background: '#111', border: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.78)', fontSize: 12 }}>{step}</div>
+                ))}
               </div>
-              <a href={paybisUrl} target="_blank" rel="noopener noreferrer" className="paybis-button pressable">
-                Continue to Paybis →
+              <a href={paybisUrl} target="_blank" rel="noopener noreferrer" className="paybis-button pressable" style={{ background: '#F2BA0E', color: '#000', fontWeight: 900, borderRadius: 14 }}>
+                Continue to Paybis
               </a>
             </div>
           )}
