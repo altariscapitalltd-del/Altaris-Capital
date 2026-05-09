@@ -122,7 +122,7 @@ export default function KYCPage() {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}><button onClick={() => setStep(0)} className="btn-ghost">← Back</button><button onClick={() => setStep(2)} disabled={!step2Valid} className="btn-primary" style={{ opacity: step2Valid ? 1 : 0.5 }}>Review →</button></div>
       </div>}
       {step === 2 && <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-        <ReviewBox rows={[['Full Name', `${form.firstName} ${form.lastName}`], ['Date of Birth', form.dob], ['Country', form.country], ['Document Type', DOC_TYPES.find(d => d.value === form.docType)?.label], ['Front Photo', frontFile?.name], ['Back Photo', backFile?.name], ['Front Upload', uploading.front ? `${uploading.front}%` : 'Pending'], ['Back Upload', uploading.back ? `${uploading.back}%` : 'Pending']]} />
+        <ReviewBox rows={[['Full Name', `${form.firstName} ${form.lastName}`], ['Date of Birth', form.dob], ['Country', form.country], ['Document Type', DOC_TYPES.find(d => d.value === form.docType)?.label], ['Front Upload', uploading.front ? `${uploading.front}%` : 'Pending'], ['Back Upload', uploading.back ? `${uploading.back}%` : 'Pending']]} />
         {msg && <div style={{ padding:'10px 14px', borderRadius:9, background:msg.type==='success' ? 'rgba(14,203,129,0.1)' : 'rgba(246,70,93,0.1)', color:msg.type==='success' ? '#0ECB81' : '#F6465D' }}>{msg.text}</div>}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}><button onClick={() => setStep(1)} className="btn-ghost">← Back</button><button onClick={submit} disabled={submitting} className="btn-primary">{submitting ? 'Submitting…' : 'Submit for Review →'}</button></div>
       </div>}

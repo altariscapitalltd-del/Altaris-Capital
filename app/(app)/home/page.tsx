@@ -76,9 +76,16 @@ function useBalanceHistory(latest: number, transactions: any[] = []) {
       .slice(-40)
 
     if (ordered.length === 0) {
-      const base = latest || 0
+      const base = latest || 1000
       const times = Array.from({ length: 32 }, (_, i) => Date.now() - (31 - i) * 60 * 1000)
-      setSeries({ times, values: times.map(() => Number(base.toFixed(2))) })
+      const values = times.map((_, i) => {
+        const t = i / 31
+        const wave = Math.sin(t * Math.PI * 2.6) * 0.018 + Math.sin(t * Math.PI * 6.4) * 0.006
+        const drift = (t - 0.5) * 0.045
+        const noise = Math.sin((i + 3) * 1.7) * 0.003
+        return Number((base * (1 + wave + drift + noise)).toFixed(2))
+      })
+      setSeries({ times, values })
       return
     }
 
