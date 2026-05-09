@@ -526,48 +526,6 @@ export default function WalletPage() {
           </Link>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
-        <ActionButton
-          active={tab === 'deposit'}
-          onClick={() => {
-            setTab('deposit')
-            setDepositMode('select')
-            setMsg(null)
-          }}
-          label="Deposit"
-          color="var(--success)"
-          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>}
-        />
-        <ActionButton
-          active={tab === 'withdraw'}
-          onClick={() => {
-            setTab('withdraw')
-            setDepositMode('select')
-            setMsg(null)
-          }}
-          label="Withdraw"
-          color="var(--danger)"
-          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>}
-        />
-        <ActionButton
-          active={false}
-          onClick={() => (window.location.href = '/invest?tab=my')}
-          label="Invested"
-          color="var(--brand-primary)"
-          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>}
-        />
-        <ActionButton
-          active={tab === 'reward'}
-          onClick={() => {
-            setTab('reward')
-            setMsg(null)
-          }}
-          label="Rewards"
-          color="var(--brand-primary)"
-          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>}
-        />
-      </div>
-
       {tab === 'deposit' && (
         <div style={{ marginBottom: 14 }}>
           {depositMode === 'select' && (
