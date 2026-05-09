@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
+import os from 'os'
 import { trigger, adminChannel } from '@/lib/pusher'
 import { notifyUser } from '@/lib/push'
 import { notifyAdminTelegram } from '@/lib/push'
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const dir = path.join(process.cwd(), 'uploads', 'kyc')
+    const dir = process.env.VERCEL ? path.join(os.tmpdir(), 'altaris-kyc') : path.join(process.cwd(), 'uploads', 'kyc')
     await mkdir(dir, { recursive: true })
 
     const filename = `${user.id}-${Date.now()}${extension}`
