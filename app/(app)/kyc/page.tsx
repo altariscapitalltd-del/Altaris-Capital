@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { upload } from '@vercel/blob/client'
+import { useEffect, useRef, useState } from 'react'
 import { COUNTRIES } from '@/lib/countries'
 
 const DOC_TYPES = [
@@ -11,10 +10,7 @@ const DOC_TYPES = [
   { value: 'residence_permit', label: 'Residence Permit' },
 ]
 
-const FILE_KEYS = ['front', 'back', 'selfie'] as const
-
-type FileKey = (typeof FILE_KEYS)[number]
-type UploadState = { progress: number; status: 'idle' | 'uploading' | 'done' | 'error'; error?: string }
+type FileKey = 'front' | 'back'
 
 export default function KYCPage() {
   const [status, setStatus] = useState<string | null>(null)
@@ -23,16 +19,10 @@ export default function KYCPage() {
   const [submitting, setSubmitting] = useState(false)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [form, setForm] = useState({ firstName: '', lastName: '', dob: '', country: '', docType: 'passport' })
-  const [files, setFiles] = useState<Record<FileKey, File | null>>({ front: null, back: null, selfie: null })
-  const [urls, setUrls] = useState<Record<FileKey, string | null>>({ front: null, back: null, selfie: null })
-  const [uploads, setUploads] = useState<Record<FileKey, UploadState>>({
-    front: { progress: 0, status: 'idle' },
-    back: { progress: 0, status: 'idle' },
-    selfie: { progress: 0, status: 'idle' },
-  })
+  const [files, setFiles] = useState<Record<FileKey, File | null>>({ front: null, back: null })
+  const [urls, setUrls] = useState<Record<FileKey, string | null>>({ front: null, back: null })
   const frontRef = useRef<HTMLInputElement>(null)
   const backRef = useRef<HTMLInputElement>(null)
-  const selfieRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetch('/api/user/kyc')
@@ -44,11 +34,7 @@ export default function KYCPage() {
       })
   }, [])
 
-  useEffect(() => {
-    return () => {
-      Object.values(urls).forEach(u => u && URL.revokeObjectURL(u))
-    }
-  }, [urls])
+  useEffect(() => () => { Object.values(urls).forEach(u => u && URL.revokeObjectURL(u)) }, [urls])
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(p => ({ ...p, [k]: e.target.value }))
@@ -59,56 +45,7 @@ export default function KYCPage() {
       if (p[key]) URL.revokeObjectURL(p[key]!)
       return { ...p, [key]: file ? URL.createObjectURL(file) : null }
     })
-    setUploads(p => ({ ...p, [key]: { progress: 0, status: 'idle' } }))
     setMsg(null)
-  }
-
-  async function normalizeImageFile(file: File): Promise<File> {
-    const isJpeg = file.type === 'image/jpeg' || /\.(jpe?g)$/i.test(file.name)
-    if (isJpeg || file.type === 'application/pdf') return file
-    if (!file.type.startsWith('image/')) return file
-
-    const url = URL.createObjectURL(file)
-    try {
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const el = new Image()
-        el.onload = () => resolve(el)
-        el.onerror = reject
-        el.src = url
-      })
-      const canvas = document.createElement('canvas')
-      canvas.width = img.naturalWidth
-      canvas.height = img.naturalHeight
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return file
-      ctx.drawImage(img, 0, 0)
-      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.92))
-      if (!blob) return file
-      return new File([blob], `${file.name.replace(/\.[^.]+$/, '')}.jpg`, { type: 'image/jpeg', lastModified: file.lastModified })
-    } finally {
-      URL.revokeObjectURL(url)
-    }
-  }
-
-  async function uploadOne(key: FileKey, label: string, file: File) {
-    const normalized = await normalizeImageFile(file)
-    setUploads(p => ({ ...p, [key]: { progress: 0, status: 'uploading' } }))
-    try {
-      const pathname = `kyc/${Date.now()}-${label}.jpg`
-      const result = await upload(pathname, normalized, {
-        access: 'public',
-        handleUploadUrl: '/api/kyc/upload',
-        onUploadProgress: ({ percentage }) => {
-          setUploads(p => ({ ...p, [key]: { progress: Math.round(percentage), status: 'uploading' } }))
-        },
-      })
-      setUploads(p => ({ ...p, [key]: { progress: 100, status: 'done' } }))
-      return result.url
-    } catch (err: any) {
-      const message = err?.message?.replace(/^Vercel Blob:\s*/i, '') || 'Upload failed'
-      setUploads(p => ({ ...p, [key]: { progress: 0, status: 'error', error: message } }))
-      throw new Error(message)
-    }
   }
 
   async function submit() {
@@ -119,29 +56,20 @@ export default function KYCPage() {
       if (!form.firstName || !form.lastName || !form.dob || !form.country) {
         throw new Error('Please complete your personal details.')
       }
-      if (!files.front || !files.back || !files.selfie) {
-        throw new Error('Please upload front, back, and selfie photos.')
+      if (!files.front || !files.back) {
+        throw new Error('Please upload front and back photos.')
       }
 
-      const [frontUrl, backUrl, selfieUrl] = await Promise.all([
-        uploadOne('front', 'front', files.front),
-        uploadOne('back', 'back', files.back),
-        uploadOne('selfie', 'selfie', files.selfie),
-      ])
+      const fd = new FormData()
+      fd.append('firstName', form.firstName)
+      fd.append('lastName', form.lastName)
+      fd.append('dob', form.dob)
+      fd.append('country', form.country)
+      fd.append('docType', form.docType)
+      fd.append('documentFile', files.front)
+      fd.append('documentBackFile', files.back)
 
-      const res = await fetch('/api/kyc/submit', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          fullName: `${form.firstName} ${form.lastName}`.trim(),
-          dob: form.dob,
-          country: form.country,
-          docType: form.docType,
-          documentFrontUrl: frontUrl,
-          documentBackUrl: backUrl,
-          selfieUrl,
-        }),
-      })
+      const res = await fetch('/api/user/kyc', { method: 'POST', body: fd })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Submission failed')
       setStatus('PENDING_REVIEW')
@@ -152,8 +80,6 @@ export default function KYCPage() {
       setSubmitting(false)
     }
   }
-
-  const canContinue = useMemo(() => form.firstName && form.lastName && form.dob && form.country, [form])
 
   if (loading) return <CenteredSpinner />
   if (status === 'APPROVED') return <SimpleState title="Identity Verified" body="Your identity is confirmed." />
@@ -183,55 +109,34 @@ export default function KYCPage() {
       </Section>
 
       <Section title="Uploads">
-        {(['front', 'back', 'selfie'] as const).map(key => (
+        {(['front', 'back'] as const).map(key => (
           <UploadCard
             key={key}
-            label={key === 'front' ? 'Document Front photo' : key === 'back' ? 'Document Back photo' : 'Selfie photo'}
+            label={key === 'front' ? 'Document Front photo' : 'Document Back photo'}
             file={files[key]}
             preview={urls[key]}
-            upload={uploads[key]}
-            onClick={() => ({ front: frontRef, back: backRef, selfie: selfieRef }[key].current?.click())}
+            onClick={() => ({ front: frontRef, back: backRef }[key].current?.click())}
           />
         ))}
-        <HiddenInputs
-          frontRef={frontRef}
-          backRef={backRef}
-          selfieRef={selfieRef}
-          onChange={setFile}
-        />
+        <input ref={frontRef} type="file" accept="image/*,.pdf" capture="environment" hidden onChange={e => setFile('front', e.target.files?.[0] || null)} />
+        <input ref={backRef} type="file" accept="image/*,.pdf" capture="environment" hidden onChange={e => setFile('back', e.target.files?.[0] || null)} />
       </Section>
 
       {msg && <div style={{ padding: '10px 14px', borderRadius: 10, background: msg.type === 'success' ? 'rgba(14,203,129,0.1)' : 'rgba(246,70,93,0.1)', color: msg.type === 'success' ? '#0ECB81' : '#F6465D', marginBottom: 14 }}>{msg.text}</div>}
 
-      <button className="btn-primary" disabled={submitting || !canContinue} onClick={submit} style={{ width: '100%', opacity: submitting || !canContinue ? 0.6 : 1 }}>
-        {submitting ? 'Uploading…' : 'Submit for Review'}
+      <button className="btn-primary" disabled={submitting || !form.firstName || !form.lastName || !form.dob || !form.country || !files.front || !files.back} onClick={submit} style={{ width: '100%', opacity: submitting || !form.firstName || !form.lastName || !form.dob || !form.country || !files.front || !files.back ? 0.6 : 1 }}>
+        {submitting ? 'Submitting…' : 'Submit for Review'}
       </button>
     </div>
   )
 }
 
-function HiddenInputs({ frontRef, backRef, selfieRef, onChange }: any) {
-  return (
-    <>
-      <input ref={frontRef} type="file" accept="image/*,.pdf" capture="environment" hidden onChange={e => onChange('front', e.target.files?.[0] || null)} />
-      <input ref={backRef} type="file" accept="image/*,.pdf" capture="environment" hidden onChange={e => onChange('back', e.target.files?.[0] || null)} />
-      <input ref={selfieRef} type="file" accept="image/*" capture="user" hidden onChange={e => onChange('selfie', e.target.files?.[0] || null)} />
-    </>
-  )
-}
-
-function UploadCard({ label, file, preview, upload, onClick }: any) {
+function UploadCard({ label, file, preview, onClick }: any) {
   return (
     <div onClick={onClick} style={uploadBoxStyle(file)}>
       {preview ? <img src={preview} alt={label} style={previewStyle} /> : <UploadHint label={file ? file.name : label} />}
-      <Progress upload={upload} />
     </div>
   )
-}
-
-function Progress({ upload }: any) {
-  if (upload.status === 'idle') return null
-  return <div style={{ marginTop: 10, fontSize: 12, color: upload.status === 'error' ? '#F6465D' : 'var(--text-muted)' }}>{upload.status === 'error' ? upload.error : `${upload.progress}% uploaded`}</div>
 }
 
 function SimpleState({ title, body, button }: any) {
