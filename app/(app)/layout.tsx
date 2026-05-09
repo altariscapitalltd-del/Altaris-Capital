@@ -114,7 +114,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installModalVisible, setInstallModalVisible] = useState(false)
   const [installModalType, setInstallModalType] = useState<'android'|'ios'|null>(null)
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
-  const [splashVisible, setSplashVisible] = useState(true)
+  const [splashVisible, setSplashVisible] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -150,7 +150,6 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(merged)) } catch {}
             return merged
           })
-          setSplashVisible(false)
         }
 
         const profileRes = await fetchWithTimeout('/api/user/profile', 6000).catch(() => null)

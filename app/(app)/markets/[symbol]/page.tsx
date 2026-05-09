@@ -103,7 +103,7 @@ function AssetChart({ data, negative }: { data: number[]; negative: boolean }) {
     ctx.stroke()
   }, [data, color])
 
-  return <canvas ref={canvasRef} aria-label="Asset price chart" style={{ width: '100%', height: 270, display: 'block' }} />
+  return <canvas ref={canvasRef} aria-label="Asset price chart" style={{ width: '100%', height: 190, display: 'block' }} />
 }
 
 function ActionButton({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {

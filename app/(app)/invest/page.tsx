@@ -52,44 +52,57 @@ type PlanType = {
   change24h?: number
 }
 
-function generateVariantPlans(asset: any, count: number = 3): PlanType[] {
+const FALLBACK_ASSETS = [
+  { id: 'btc', symbol: 'BTC', name: 'Bitcoin', category: 'Crypto', dailyReturn: '2.40', riskLevel: 4, image: '', spark: [1, 1.1, 1.05, 1.18, 1.24, 1.35, 1.5], change24h: 2.1 },
+  { id: 'eth', symbol: 'ETH', name: 'Ethereum', category: 'Crypto', dailyReturn: '1.65', riskLevel: 4, image: '', spark: [1, 1.02, 1.08, 1.1, 1.16, 1.2, 1.28], change24h: 1.2 },
+  { id: 'sol', symbol: 'SOL', name: 'Solana', category: 'Crypto', dailyReturn: '1.30', riskLevel: 3, image: '', spark: [1, 1.06, 1.01, 1.12, 1.08, 1.15, 1.22], change24h: 0.8 },
+  { id: 'xrp', symbol: 'XRP', name: 'XRP', category: 'Crypto', dailyReturn: '1.05', riskLevel: 3, image: '', spark: [1, 0.98, 1.03, 1.01, 1.06, 1.1, 1.08], change24h: 0.4 },
+  { id: 'usd', symbol: 'USD', name: 'USD Cash', category: 'Fixed Income', dailyReturn: '0.45', riskLevel: 1, image: '', spark: [1, 1, 1, 1, 1, 1, 1], change24h: 0 },
+]
+
+function generateVariantPlans(asset: any, count: number = 4): PlanType[] {
   const plans: PlanType[] = []
   const durations = [7, 14, 30, 60, 90, 180, 365]
-  const minInvestments = [50, 100, 250, 500, 1000]
+  const minInvestments = [50, 100, 250, 500, 1000, 2500]
   const descriptions = [
     'Conservative strategy with steady returns',
     'Balanced approach for moderate growth',
-    'Aggressive strategy for high returns',
-    'Short-term quick gains',
-    'Long-term wealth building',
-    'Premium tier with exclusive benefits',
+    'Aggressive strategy for higher yield',
+    'Short-term compounding plan',
+    'Long-term wealth building plan',
+    'Premium tier with priority payouts',
     'Entry-level plan for beginners',
   ]
 
+  const baseDaily = Number(asset.dailyReturn || 0.8)
+  const symbol = String(asset.symbol || '').toUpperCase()
+  const bonus = symbol === 'BTC' ? 1.9 : symbol === 'ETH' ? 1.1 : symbol === 'SOL' ? 0.8 : symbol === 'XRP' ? 0.6 : 0.4
+  const roiSteps = [0, 0.9, 1.8, 3.2]
+
   for (let i = 0; i < count; i++) {
-    const dur = durations[Math.floor(Math.random() * durations.length)]
-    const min = minInvestments[Math.floor(Math.random() * minInvestments.length)]
-    const dailyAdjustment = (Math.random() - 0.5) * 2
-    const daily = Math.max(0.1, parseFloat(asset.dailyReturn) + dailyAdjustment)
-    
+    const dur = durations[(i + symbol.length) % durations.length]
+    const min = minInvestments[(i + symbol.charCodeAt(0)) % minInvestments.length]
+    const daily = Math.max(0.25, baseDaily + bonus + roiSteps[i])
+    const annualRoi = daily * 365
+
     plans.push({
       id: `${asset.id}-variant-${i}`,
-      name: `${asset.name} ${i === 0 ? 'Standard' : i === 1 ? 'Plus' : 'Elite'}`,
-      description: descriptions[Math.floor(Math.random() * descriptions.length)],
+      name: `${asset.name} ${i === 0 ? 'Core' : i === 1 ? 'Growth' : i === 2 ? 'Prime' : 'Elite'}`,
+      description: descriptions[(i + symbol.length) % descriptions.length],
       class: asset.category,
       icon: asset.symbol,
       iconBg: '#111',
-      daily: parseFloat(daily.toFixed(2)),
-      roi: `${(daily * 365).toFixed(1)}%`,
+      daily: Number(daily.toFixed(2)),
+      roi: `${annualRoi.toFixed(1)}%`,
       dur,
       min,
-      risk: asset.riskLevel,
-      investors: Math.floor(Math.random() * 15000) + 100,
+      risk: Math.min(5, Math.max(1, Number(asset.riskLevel || 3) + (i > 1 ? 1 : 0))),
+      investors: 1000 + (i * 1250) + symbol.charCodeAt(0),
       spots: null,
-      badge: Math.random() > 0.7 ? 'Hot' : null,
-      spark: asset.spark && asset.spark.length > 0 ? asset.spark : Array.from({length: 20}, () => Math.random() * 100),
+      badge: symbol === 'BTC' && i >= 1 ? 'Top' : (i === 3 ? 'Hot' : null),
+      spark: asset.spark && asset.spark.length > 0 ? asset.spark : Array.from({length: 20}, (_, idx) => Math.max(1, 80 + Math.sin(idx / 2) * 8 + i * 3)),
       image: asset.image,
-      change24h: asset.change24h
+      change24h: asset.change24h,
     })
   }
   return plans
@@ -116,22 +129,31 @@ function InvestContent() {
   const categories = ['All', 'Crypto', 'DeFi', 'Stocks', 'Real Estate', 'Bonds', 'Fixed Income', 'Commodities', 'Forex', 'ETF', 'Hedge']
 
   useEffect(() => {
+    const fallback = FALLBACK_ASSETS.flatMap((a) => generateVariantPlans(a, a.symbol === 'BTC' ? 5 : 4))
+    setAllPlans(fallback)
+    setLiveHot(fallback.filter((p) => p.badge === 'Hot' || p.badge === 'Top').slice(0, 10))
     setFetchingLive(true)
+
+    const timer = window.setTimeout(() => setFetchingLive(false), 2500)
     fetch(`/api/markets/live?category=${category}`)
       .then(r => r.json())
       .then(data => {
-        const allVariants: PlanType[] = [];
-        (data.assets || []).forEach((a: any) => {
-          const variants = generateVariantPlans(a, 3)
+        const allVariants: PlanType[] = []
+        ;(data.assets || []).slice(0, 10).forEach((a: any) => {
+          const variants = generateVariantPlans(a, a.symbol?.toUpperCase() === 'BTC' ? 5 : 4)
           allVariants.push(...variants)
         })
-        setAllPlans(allVariants)
-        if (category === 'All') {
-          setLiveHot(allVariants.filter((p: any) => p.badge === 'Hot').slice(0, 10))
+        if (allVariants.length) {
+          setAllPlans(allVariants)
+          if (category === 'All') setLiveHot(allVariants.filter((p: any) => p.badge === 'Hot' || p.badge === 'Top').slice(0, 10))
         }
+      })
+      .catch(() => {})
+      .finally(() => {
+        window.clearTimeout(timer)
         setFetchingLive(false)
       })
-      .catch(() => setFetchingLive(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category])
 
   useEffect(() => {
@@ -253,9 +275,7 @@ function InvestContent() {
 
           {/* ── Plans List ── */}
           <div style={{ display: 'grid', gap: 12 }}>
-            {fetchingLive ? (
-              <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading live market data...</div>
-            ) : filteredPlans.length === 0 ? (
+            {filteredPlans.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No plans found matching your search.</div>
             ) : (
               filteredPlans.map(plan => (

@@ -67,7 +67,7 @@ function MiniTrend({ values, color = '#F2BA0E' }: { values: number[]; color?: st
   return <canvas ref={canvasRef} style={{ width: 130, height: 52, display: 'block' }} />
 }
 
-function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 126 }: { data: number[]; color?: string; width?: number; height?: number }) {
+function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 96 }: { data: number[]; color?: string; width?: number; height?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return

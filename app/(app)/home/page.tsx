@@ -402,7 +402,7 @@ export default function HomePage() {
   const FEATURED_PLAN = { name:'DeFi Accelerator', roi:'3.5%', dur:'7 days', spots:3, endsAt: new Date(Date.now()+2*86400000+14*3600000+33*60000) }
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'70vh' }}>
-      <AltarisLogoMark size={40} />
+      <div style={{ width:34, height:34, border:'3px solid rgba(242,186,14,0.18)', borderTopColor:'#F2BA0E', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
     </div>
   )
 
