@@ -115,12 +115,20 @@ export async function POST(req: NextRequest) {
 
     await prisma.user.update({ where: { id: user.id }, data: { kycStatus: 'PENDING_REVIEW' } })
 
-    await trigger(adminChannel, 'admin:kyc_submitted', {
-      userId: user.id,
-      name: user.name,
-      email: user.email,
-    })
-    await notifyAdminTelegram(`🪪 <b>KYC Submitted</b>\nUser: ${user.name}\nEmail: ${user.email}`)
+    try {
+      await trigger(adminChannel, 'admin:kyc_submitted', {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+      })
+    } catch (err) {
+      console.error('[KYC pusher notify]', err)
+    }
+    try {
+      await notifyAdminTelegram(`🪪 <b>KYC Submitted</b>\nUser: ${user.name}\nEmail: ${user.email}`)
+    } catch (err) {
+      console.error('[KYC admin telegram notify]', err)
+    }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
     const adminUrl = appUrl ? `${appUrl.replace(/\/$/, '')}/admin/kyc` : '/admin/kyc'
