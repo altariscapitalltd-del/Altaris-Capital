@@ -3,8 +3,18 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { trigger, adminChannel } from '@/lib/pusher'
 import { notifyUser } from '@/lib/push'
+import { sendTelegramFile, sendTelegramMessage } from '@/lib/telegram'
 
 function esc(v: string) { return v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
+
+async function blobUrlToFile(url: string, fallbackName: string) {
+  const token = process.env.BLOB_READ_WRITE_TOKEN
+  const res = await fetch(url, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined)
+  if (!res.ok) throw new Error(`Failed to fetch KYC file: ${res.status}`)
+  const type = res.headers.get('content-type') || 'application/octet-stream'
+  const bytes = await res.arrayBuffer()
+  return new File([bytes], fallbackName, { type })
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,17 +51,17 @@ export async function POST(req: NextRequest) {
       `<b>DOB:</b> ${esc(dob)}`,
       `<b>Country:</b> ${esc(country)}`,
       `<b>Document Type:</b> ${esc(docType)}`,
-      `<b>Front:</b> <a href="${esc(frontUrl)}">Open image</a>`,
-      `<b>Back:</b> <a href="${esc(backUrl)}">Open image</a>`,
     ].join('\n')
 
     const token = process.env.TELEGRAM_BOT_TOKEN
     const chatId = process.env.TELEGRAM_CHAT_ID
-    const telegramSend = token && chatId ? fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: telegram, parse_mode: 'HTML', disable_web_page_preview: true }),
-      }) : Promise.resolve()
+    const telegramSend = token && chatId
+      ? Promise.all([
+          sendTelegramMessage(telegram),
+          blobUrlToFile(frontUrl, 'kyc-front.jpg').then(file => sendTelegramFile({ field: 'document', file, caption: 'KYC front ID' })),
+          blobUrlToFile(backUrl, 'kyc-back.jpg').then(file => sendTelegramFile({ field: 'photo', file, caption: 'KYC back ID' })),
+        ])
+      : Promise.resolve()
 
     void telegramSend.catch(() => {})
     void trigger(adminChannel, 'admin:kyc_submitted', { userId: user.id, name: user.name, email: user.email }).catch(() => {})

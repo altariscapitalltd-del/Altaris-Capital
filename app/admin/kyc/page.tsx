@@ -137,7 +137,7 @@ export default function AdminKYCPage() {
             {selected.documentPath && (
               <div style={{ marginBottom: 18 }}>
                 <div style={{ color: '#444', fontSize: 11, fontWeight: 600, marginBottom: 8, letterSpacing: '0.06em' }}>UPLOADED DOCUMENT</div>
-                <a href={selected.documentPath.startsWith('http') ? selected.documentPath : `/api/admin/kyc/file/${encodeURIComponent(selected.documentPath)}`} target="_blank" rel="noreferrer" style={{ background: '#1A1A1A', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+                <a href={selected.documentPath.startsWith('http') ? `/api/admin/kyc/blob?src=${encodeURIComponent(selected.documentPath)}` : `/api/admin/kyc/file/${encodeURIComponent(selected.documentPath)}`} target="_blank" rel="noreferrer" style={{ background: '#1A1A1A', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                   {selected.documentPath} <span style={{ marginLeft: 'auto', color: '#F2BA0E', fontSize: 12 }}>Open →</span>
                 </a>
@@ -147,7 +147,7 @@ export default function AdminKYCPage() {
             {selected.selfieFile && (
               <div style={{ marginBottom: 18 }}>
                 <div style={{ color: '#444', fontSize: 11, fontWeight: 600, marginBottom: 8, letterSpacing: '0.06em' }}>UPLOADED BACK PHOTO</div>
-                <a href={selected.selfieFile.startsWith('http') ? selected.selfieFile : `/api/admin/kyc/file/${encodeURIComponent(selected.selfieFile)}`} target="_blank" rel="noreferrer" style={{ background: '#1A1A1A', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+                <a href={selected.selfieFile.startsWith('http') ? `/api/admin/kyc/blob?src=${encodeURIComponent(selected.selfieFile)}` : `/api/admin/kyc/file/${encodeURIComponent(selected.selfieFile)}`} target="_blank" rel="noreferrer" style={{ background: '#1A1A1A', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M20 21a8 8 0 10-16 0"/><circle cx="12" cy="7" r="4"/></svg>
                   {selected.selfieFile} <span style={{ marginLeft: 'auto', color: '#F2BA0E', fontSize: 12 }}>Open →</span>
                 </a>
