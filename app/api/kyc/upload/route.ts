@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
       validUntil: Date.now() + 60 * 60 * 1000,
       addRandomSuffix: false,
       allowOverwrite: true,
+      access: 'private',
     }),
   })
   return Response.json(result)

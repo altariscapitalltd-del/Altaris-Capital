@@ -66,13 +66,13 @@ export default function KYCPage() {
   async function uploadBlob(key: 'front' | 'back', file: File) {
     const normalized = await normalizeImageFile(file)
     const res = await upload(`kyc/${Date.now()}-${key}.jpg`, normalized, {
-      access: 'public',
+      access: 'private',
       handleUploadUrl: '/api/kyc/upload',
       multipart: normalized.size > 4 * 1024 * 1024,
       onUploadProgress: ({ percentage }) => setUploading(p => ({ ...p, [key]: Math.round(percentage) })),
     })
-    if (!res?.url) throw new Error(`${key} upload did not finish`)
-    return res.url
+    if (!res?.downloadUrl) throw new Error(`${key} upload did not finish`)
+    return res.downloadUrl
   }
 
   async function submit() {
