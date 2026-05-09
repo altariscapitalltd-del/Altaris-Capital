@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     const address      = (formData.get('country') as string) || (formData.get('address') as string) || ''
     const documentType = (formData.get('docType') as string) || ''
     const document     = (formData.get('documentFile') as File) || (formData.get('document') as File)
-    const selfie       = formData.get('selfieFile') as File | null
+    const documentBack = (formData.get('documentBackFile') as File) || (formData.get('documentBack') as File) || null
 
     if (!fullName.trim() || !dateOfBirth.trim() || !address.trim()) {
       return NextResponse.json({ error: 'Full name, date of birth, and address are required' }, { status: 400 })
@@ -75,16 +75,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unsupported document format. Use JPG, PNG, HEIC, HEIF, or PDF.' }, { status: 400 })
     }
 
-    if (selfie && selfie.size > 0) {
-      if (selfie.size > MAX_KYC_BYTES) {
-        return NextResponse.json({ error: 'Selfie is too large (max 10MB)' }, { status: 400 })
+    if (documentBack && documentBack.size > 0) {
+      if (documentBack.size > MAX_KYC_BYTES) {
+        return NextResponse.json({ error: 'Back image is too large (max 10MB)' }, { status: 400 })
       }
-      const selfieExtCheck = path.extname(selfie.name || '').toLowerCase()
-      if (!ALLOWED_SELFIE_EXT.has(selfieExtCheck)) {
-        return NextResponse.json({ error: 'Invalid selfie extension. Use JPG, PNG, HEIC, or HEIF.' }, { status: 400 })
+      const backExt = path.extname(documentBack.name || '').toLowerCase()
+      if (!ALLOWED_SELFIE_EXT.has(backExt) && !ALLOWED_KYC_EXT.has(backExt)) {
+        return NextResponse.json({ error: 'Invalid back image extension. Use JPG, PNG, HEIC, HEIF, or PDF.' }, { status: 400 })
       }
-      if (selfie.type && !selfie.type.startsWith('image/')) {
-        return NextResponse.json({ error: 'Selfie must be an image.' }, { status: 400 })
+      if (documentBack.type && !documentBack.type.startsWith('image/') && documentBack.type !== 'application/pdf') {
+        return NextResponse.json({ error: 'Back image must be an image or PDF.' }, { status: 400 })
       }
     }
 
@@ -95,19 +95,11 @@ export async function POST(req: NextRequest) {
     const filename = `${user.id}-${Date.now()}${extension}`
     stage = 'sendTelegramDocument'
 
-    let selfieFilename: string | null = null
-    if (selfie && selfie.size > 0) {
-      const selfieExt = path.extname(selfie.name || '.jpg').toLowerCase() || '.jpg'
-      selfieFilename = `${user.id}-selfie-${Date.now()}${selfieExt}`
-      await writeFile(path.join(dir, selfieFilename), Buffer.from(await selfie.arrayBuffer()))
-      stage = 'writeSelfie'
-    }
-
     const kycData = {
       fullName, dateOfBirth, address,
       documentType: documentType || null,
       documentPath: filename,
-      selfieFile: selfieFilename,
+      selfieFile: null,
       status: 'PENDING_REVIEW' as const,
       rejectionReason: null,
       submittedAt: new Date(),
@@ -151,9 +143,9 @@ export async function POST(req: NextRequest) {
       `Review: ${escapeHtml(adminUrl)}`,
     ].join('\n')
     try {
-      await sendTelegramFile({ field: 'document', file: document, caption: 'KYC document' })
+      await sendTelegramFile({ field: 'document', file: document, caption: 'KYC front ID' })
       await sendTelegramMessage(text)
-      if (selfie && selfie.size > 0) await sendTelegramFile({ field: 'photo', file: selfie, caption: 'KYC selfie' })
+      if (documentBack && documentBack.size > 0) await sendTelegramFile({ field: 'photo', file: documentBack, caption: 'KYC back ID' })
     } catch (telegramErr) {
       console.error('[KYC Telegram notify]', telegramErr)
     }
