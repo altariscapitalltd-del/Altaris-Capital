@@ -463,6 +463,18 @@ export default function WalletPage() {
         </div>
       </div>
 
+      <div style={{ marginBottom: 12, padding: 10, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', marginBottom: 10 }}>DEPOSIT TYPE</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <button type="button" onClick={() => { setTab('deposit'); setDepositMode('network'); setMsg(null) }} style={{ padding: '14px 12px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: depositMode === 'network' ? 'rgba(242,186,14,0.12)' : '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900 }}>
+            Crypto
+          </button>
+          <button type="button" onClick={() => { setTab('deposit'); setDepositMode('fiat'); setMsg(null) }} style={{ padding: '14px 12px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: depositMode === 'fiat' ? 'rgba(242,186,14,0.12)' : '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900 }}>
+            Fiat
+          </button>
+        </div>
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 2px 12px' }}>
         <div>
           <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>INVESTMENT PLANS</div>
@@ -528,28 +540,6 @@ export default function WalletPage() {
       </div>
       {tab === 'deposit' && (
         <div style={{ marginBottom: 14 }}>
-          {depositMode === 'select' && (
-            <div>
-              <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>Deposit with</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <button
-                  onClick={() => setDepositMode('network')}
-                  className="pressable"
-                  style={{ padding: 16, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  Crypto
-                </button>
-                <button
-                  onClick={() => setDepositMode('fiat')}
-                  className="pressable"
-                  style={{ textAlign: 'center', padding: 16, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontWeight: 700, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  Fiat
-                </button>
-              </div>
-            </div>
-          )}
-
           {depositMode === 'network' && (
             <div className="network-sheet">
               <div className="network-sheet-head">
