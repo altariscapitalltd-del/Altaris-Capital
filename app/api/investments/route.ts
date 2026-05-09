@@ -3,60 +3,7 @@ import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 import { notifyUser } from '@/lib/push'
 import { cookies } from 'next/headers'
-
-// Profit starts 24 hours after investment creation
-const PROFIT_DELAY_MS = 24 * 60 * 60 * 1000
-
-function calcProfit(inv: {
-  amount: number
-  dailyRoi: number
-  startDate: Date
-  endDate: Date
-  status: string
-  totalEarned: number
-}) {
-  const now = Date.now()
-  const startMs = new Date(inv.startDate).getTime()
-  const endMs = new Date(inv.endDate).getTime()
-  const profitStartMs = startMs + PROFIT_DELAY_MS
-  const totalDurationDays = (endMs - startMs) / 86400000
-
-  if (inv.status === 'COMPLETED') {
-    return {
-      profitEarned: parseFloat(inv.totalEarned.toFixed(2)),
-      totalValue: parseFloat((inv.amount + inv.totalEarned).toFixed(2)),
-      dailyProfit: parseFloat((inv.dailyRoi * inv.amount).toFixed(2)),
-      hasStartedEarning: true,
-      hoursUntilProfit: 0,
-      daysRemaining: 0,
-      progressPct: 100,
-      totalDurationDays: parseFloat(totalDurationDays.toFixed(0)),
-    }
-  }
-
-  const hasStartedEarning = now >= profitStartMs
-  const msUntilProfit = Math.max(0, profitStartMs - now)
-  const hoursUntilProfit = Math.ceil(msUntilProfit / 3600000)
-
-  const earningMs = hasStartedEarning ? now - profitStartMs : 0
-  const daysEarning = Math.min(earningMs / 86400000, totalDurationDays)
-  const profitEarned = daysEarning * inv.dailyRoi * inv.amount
-
-  const daysRemaining = Math.max(0, (endMs - now) / 86400000)
-  const daysElapsed = Math.min((now - startMs) / 86400000, totalDurationDays)
-  const progressPct = Math.min(100, (daysElapsed / totalDurationDays) * 100)
-
-  return {
-    profitEarned: parseFloat(profitEarned.toFixed(2)),
-    totalValue: parseFloat((inv.amount + profitEarned).toFixed(2)),
-    dailyProfit: parseFloat((inv.dailyRoi * inv.amount).toFixed(2)),
-    hasStartedEarning,
-    hoursUntilProfit,
-    daysRemaining: parseFloat(daysRemaining.toFixed(1)),
-    progressPct: parseFloat(progressPct.toFixed(1)),
-    totalDurationDays: parseFloat(totalDurationDays.toFixed(0)),
-  }
-}
+import { calcInvestmentState } from '@/lib/investmentMath'
 
 export async function GET() {
   const token = (await cookies()).get('token')?.value
@@ -72,18 +19,16 @@ export async function GET() {
   // Enrich each investment with live profit calculations
   const enriched = investments.map((inv) => ({
     ...inv,
-    ...calcProfit(inv),
+    ...calcInvestmentState(inv),
   }))
 
-  // Summary aggregates
-  const active = enriched.filter((i) => i.status === 'ACTIVE')
-  const summary = {
-    totalInvested: active.reduce((s, i) => s + i.amount, 0),
-    totalProfit: active.reduce((s, i) => s + i.profitEarned, 0),
-    totalValue: active.reduce((s, i) => s + i.totalValue, 0),
-    dailyEarning: active.reduce((s, i) => s + i.dailyProfit, 0),
-    activeCount: active.length,
-  }
+  const summary = enriched.length ? {
+    totalInvested: enriched.filter((i) => i.status === 'ACTIVE').reduce((s, i) => s + i.amount, 0),
+    totalProfit: enriched.filter((i) => i.status === 'ACTIVE').reduce((s, i) => s + i.profitEarned, 0),
+    totalValue: enriched.filter((i) => i.status === 'ACTIVE').reduce((s, i) => s + i.totalValue, 0),
+    dailyEarning: enriched.filter((i) => i.status === 'ACTIVE').reduce((s, i) => s + i.dailyProfit, 0),
+    activeCount: enriched.filter((i) => i.status === 'ACTIVE').length,
+  } : { totalInvested: 0, totalProfit: 0, totalValue: 0, dailyEarning: 0, activeCount: 0 }
 
   return NextResponse.json({ investments: enriched, summary })
 }
@@ -157,5 +102,5 @@ export async function POST(req: Request) {
     'investment'
   )
 
-  return NextResponse.json({ investment: { ...investment, ...calcProfit(investment) } })
+  return NextResponse.json({ investment: { ...investment, ...calcInvestmentState(investment) } })
 }

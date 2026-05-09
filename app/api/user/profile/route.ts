@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
+import { calcInvestmentState, calcInvestmentSummary } from '@/lib/investmentMath'
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'])
@@ -101,7 +102,15 @@ export async function GET(req: NextRequest) {
         notifications: { where: { read: false }, take: 10, orderBy: { createdAt: 'desc' } },
       },
     })
-    return NextResponse.json({ user: full ? normalizeProfilePicture(full) : null })
+    if (!full) return NextResponse.json({ user: null })
+    const investments = full.investments.map((inv) => ({ ...inv, ...calcInvestmentState(inv) }))
+    return NextResponse.json({
+      user: normalizeProfilePicture({
+        ...full,
+        investments,
+        investmentSummary: calcInvestmentSummary(investments),
+      }),
+    })
   } catch {
     if (process.env.NODE_ENV !== 'production') {
       return NextResponse.json({ user: buildMockUser({

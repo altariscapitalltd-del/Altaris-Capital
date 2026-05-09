@@ -58,9 +58,18 @@ const FALLBACK_ASSETS = [
   { id: 'sol', symbol: 'SOL', name: 'Solana', category: 'Crypto', dailyReturn: '1.30', riskLevel: 3, image: '', spark: [1, 1.06, 1.01, 1.12, 1.08, 1.15, 1.22], change24h: 0.8 },
   { id: 'xrp', symbol: 'XRP', name: 'XRP', category: 'Crypto', dailyReturn: '1.05', riskLevel: 3, image: '', spark: [1, 0.98, 1.03, 1.01, 1.06, 1.1, 1.08], change24h: 0.4 },
   { id: 'usd', symbol: 'USD', name: 'USD Cash', category: 'Fixed Income', dailyReturn: '0.45', riskLevel: 1, image: '', spark: [1, 1, 1, 1, 1, 1, 1], change24h: 0 },
+  { id: 'bnb', symbol: 'BNB', name: 'BNB', category: 'Crypto', dailyReturn: '1.48', riskLevel: 3, image: '', spark: [1, 1.03, 1.05, 1.09, 1.14, 1.16, 1.2], change24h: 0.7 },
+  { id: 'ada', symbol: 'ADA', name: 'Cardano', category: 'Crypto', dailyReturn: '0.96', riskLevel: 2, image: '', spark: [1, 0.99, 1.01, 1.0, 1.03, 1.05, 1.07], change24h: 0.2 },
+  { id: 'doge', symbol: 'DOGE', name: 'Dogecoin', category: 'Crypto', dailyReturn: '0.88', riskLevel: 3, image: '', spark: [1, 0.97, 1.0, 1.02, 1.04, 1.06, 1.1], change24h: -0.4 },
+  { id: 'trx', symbol: 'TRX', name: 'TRON', category: 'Crypto', dailyReturn: '0.82', riskLevel: 2, image: '', spark: [1, 1.01, 1.0, 1.02, 1.03, 1.04, 1.06], change24h: 0.1 },
+  { id: 'xlm', symbol: 'XLM', name: 'Stellar', category: 'Crypto', dailyReturn: '0.79', riskLevel: 2, image: '', spark: [1, 1.0, 1.01, 1.02, 1.03, 1.03, 1.05], change24h: 0.15 },
+  { id: 'ltc', symbol: 'LTC', name: 'Litecoin', category: 'Crypto', dailyReturn: '1.12', riskLevel: 3, image: '', spark: [1, 1.02, 1.03, 1.06, 1.05, 1.08, 1.12], change24h: 0.5 },
+  { id: 'xau', symbol: 'XAU', name: 'Gold', category: 'Commodities', dailyReturn: '0.58', riskLevel: 1, image: '', spark: [1, 1.01, 1.02, 1.02, 1.03, 1.03, 1.04], change24h: 0.05 },
+  { id: 'spx', symbol: 'SPX', name: 'S&P 500', category: 'Stocks', dailyReturn: '0.72', riskLevel: 2, image: '', spark: [1, 1.01, 1.02, 1.03, 1.04, 1.05, 1.07], change24h: 0.25 },
+  { id: 'usd-bond', symbol: 'BOND', name: 'Treasury Yield', category: 'Bonds', dailyReturn: '0.31', riskLevel: 1, image: '', spark: [1, 1, 1, 1, 1, 1, 1], change24h: 0 },
 ]
 
-function generateVariantPlans(asset: any, count: number = 4): PlanType[] {
+function generateVariantPlans(asset: any, count: number = 6): PlanType[] {
   const plans: PlanType[] = []
   const durations = [7, 14, 30, 60, 90, 180, 365]
   const minInvestments = [50, 100, 250, 500, 1000, 2500]
@@ -77,7 +86,7 @@ function generateVariantPlans(asset: any, count: number = 4): PlanType[] {
   const baseDaily = Number(asset.dailyReturn || 0.8)
   const symbol = String(asset.symbol || '').toUpperCase()
   const bonus = symbol === 'BTC' ? 1.9 : symbol === 'ETH' ? 1.1 : symbol === 'SOL' ? 0.8 : symbol === 'XRP' ? 0.6 : 0.4
-  const roiSteps = [0, 0.9, 1.8, 3.2]
+  const roiSteps = [0, 0.8, 1.6, 2.8, 4.2, 5.8]
 
   for (let i = 0; i < count; i++) {
     const dur = durations[(i + symbol.length) % durations.length]
@@ -87,7 +96,7 @@ function generateVariantPlans(asset: any, count: number = 4): PlanType[] {
 
     plans.push({
       id: `${asset.id}-variant-${i}`,
-      name: `${asset.name} ${i === 0 ? 'Core' : i === 1 ? 'Growth' : i === 2 ? 'Prime' : 'Elite'}`,
+      name: `${asset.name} ${['Core', 'Growth', 'Prime', 'Elite', 'Pro', 'Max'][i] || `Tier ${i + 1}`}`,
       description: descriptions[(i + symbol.length) % descriptions.length],
       class: asset.category,
       icon: asset.symbol,
@@ -99,7 +108,7 @@ function generateVariantPlans(asset: any, count: number = 4): PlanType[] {
       risk: Math.min(5, Math.max(1, Number(asset.riskLevel || 3) + (i > 1 ? 1 : 0))),
       investors: 1000 + (i * 1250) + symbol.charCodeAt(0),
       spots: null,
-      badge: symbol === 'BTC' && i >= 1 ? 'Top' : (i === 3 ? 'Hot' : null),
+      badge: symbol === 'BTC' && i >= 1 ? 'Top' : (i >= 4 ? 'Hot' : null),
       spark: asset.spark && asset.spark.length > 0 ? asset.spark : Array.from({length: 20}, (_, idx) => Math.max(1, 80 + Math.sin(idx / 2) * 8 + i * 3)),
       image: asset.image,
       change24h: asset.change24h,
@@ -129,7 +138,7 @@ function InvestContent() {
   const categories = ['All', 'Crypto', 'DeFi', 'Stocks', 'Real Estate', 'Bonds', 'Fixed Income', 'Commodities', 'Forex', 'ETF', 'Hedge']
 
   useEffect(() => {
-    const fallback = FALLBACK_ASSETS.flatMap((a) => generateVariantPlans(a, a.symbol === 'BTC' ? 5 : 4))
+    const fallback = FALLBACK_ASSETS.flatMap((a) => generateVariantPlans(a, a.symbol === 'BTC' ? 8 : 6))
     setAllPlans(fallback)
     setLiveHot(fallback.filter((p) => p.badge === 'Hot' || p.badge === 'Top').slice(0, 10))
     setFetchingLive(true)
@@ -139,8 +148,8 @@ function InvestContent() {
       .then(r => r.json())
       .then(data => {
         const allVariants: PlanType[] = []
-        ;(data.assets || []).slice(0, 10).forEach((a: any) => {
-          const variants = generateVariantPlans(a, a.symbol?.toUpperCase() === 'BTC' ? 5 : 4)
+        ;(data.assets || []).slice(0, 16).forEach((a: any) => {
+          const variants = generateVariantPlans(a, a.symbol?.toUpperCase() === 'BTC' ? 8 : 6)
           allVariants.push(...variants)
         })
         if (allVariants.length) {
@@ -323,15 +332,24 @@ function InvestContent() {
           ) : (
             <>
               {summary && (
-                <div style={{ background: 'linear-gradient(135deg,rgba(242,186,14,0.12),rgba(14,203,129,0.08))', border: '1px solid rgba(242,186,14,0.2)', borderRadius: 16, padding: 16, marginBottom: 14 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 10 }}>PORTFOLIO OVERVIEW</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                    <div><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Total Invested</div><div style={{ fontWeight: 900, fontSize: 20, color: 'var(--text-primary)' }}>${summary.totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
-                    <div><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Total Value</div><div style={{ fontWeight: 900, fontSize: 20, color: 'var(--text-primary)' }}>${summary.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
+                <div style={{ background: 'linear-gradient(180deg, rgba(242,186,14,0.14), rgba(12,16,24,0.96))', border: '1px solid rgba(242,186,14,0.18)', borderRadius: 22, padding: 16, marginBottom: 14, boxShadow: '0 18px 40px rgba(0,0,0,0.22)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 900, color: 'rgba(255,255,255,0.58)', letterSpacing: '0.14em', marginBottom: 8 }}>MY PLAN DASHBOARD</div>
+                      <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>${summary.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                      <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 6 }}>Locked capital plus profit</div>
+                    </div>
+                    <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(242,186,14,0.14)', border: '1px solid rgba(242,186,14,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2BA0E', fontWeight: 900, fontSize: 20 }}>%</div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Profit Earned</div><div style={{ fontWeight: 800, fontSize: 16, color: '#0ECB81' }}>+${summary.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
-                    <div><div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Daily Earning</div><div style={{ fontWeight: 800, fontSize: 16, color: '#F2BA0E' }}>+${summary.dailyEarning.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day</div></div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                    <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Total Invested</div><div style={{ fontWeight: 900, fontSize: 18 }}>${summary.totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
+                    <div style={{ padding: 12, borderRadius: 16, background: 'rgba(14,203,129,0.08)', border: '1px solid rgba(14,203,129,0.16)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Profit Earned</div><div style={{ fontWeight: 900, fontSize: 18, color: '#0ECB81' }}>+${summary.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Daily Earning</div><div style={{ fontWeight: 900, fontSize: 16, color: '#F2BA0E' }}>+${summary.dailyEarning.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day</div></div>
+                    <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Active Plans</div><div style={{ fontWeight: 900, fontSize: 18 }}>{summary.activeCount}</div></div>
                   </div>
                 </div>
               )}
