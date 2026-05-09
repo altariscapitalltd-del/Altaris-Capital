@@ -42,7 +42,8 @@ export async function sendTelegramMessage(text: string) {
 export async function sendTelegramFile({ field, file, caption }: TelegramFile) {
   const body = new FormData()
   if (caption) body.set('caption', caption)
-  body.set(field, file, file.name || `kyc-${Date.now()}`)
+  const bytes = Buffer.from(await file.arrayBuffer())
+  body.set(field, new Blob([bytes], { type: file.type || 'application/octet-stream' }), file.name || `kyc-${Date.now()}`)
   return callTelegram(field === 'photo' ? 'sendPhoto' : 'sendDocument', body)
 }
 
