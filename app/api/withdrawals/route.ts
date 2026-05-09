@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { trigger, adminChannel } from '@/lib/pusher'
+import { notifyAdminTelegram } from '@/lib/push'
 import { z } from 'zod'
 
 const withdrawSchema = z.object({
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
     ])
 
     await trigger(adminChannel, 'admin:new_withdrawal', { userId: user.id, amount, currency: currency.toUpperCase() })
+    await notifyAdminTelegram(`🏧 <b>New Withdrawal</b>\nUser: ${user.id}\nAmount: ${amount} ${currency.toUpperCase()}\nAddress: ${address}`)
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

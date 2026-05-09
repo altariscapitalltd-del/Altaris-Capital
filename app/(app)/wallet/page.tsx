@@ -218,7 +218,7 @@ export default function WalletPage() {
       .slice(-40)
 
     if (tx.length === 0) {
-    const base = walletBalance || 0
+      const base = walletBalance || 0
       return Array.from({ length: 24 }, () => Number(base.toFixed(2)))
     }
 
@@ -439,8 +439,8 @@ export default function WalletPage() {
   )
 
   return (
-    <div style={{ padding: '10px 16px 22px' }}>
-      <div style={{ marginBottom: 14, padding: '18px 16px', borderRadius: 24, background: 'linear-gradient(180deg, rgba(128,90,213,0.24), rgba(242,186,14,0.10) 45%, rgba(16,21,31,0.98) 100%)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 22px 48px rgba(0,0,0,0.3)' }}>
+    <div style={{ padding: '10px 16px 22px', background: '#000', minHeight: '100vh' }}>
+      <div style={{ marginBottom: 14, padding: '18px 16px', borderRadius: 22, background: '#000', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'none' }}>
         <div style={{ color: 'rgba(255,255,255,0.68)', fontSize: 12, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Wallet balance</div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
@@ -464,14 +464,9 @@ export default function WalletPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, padding: '12px 14px' }}>
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#6b7280" strokeWidth="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/></svg>
-        <input type="search" placeholder="Search assets" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit' }} />
-      </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         {(['crypto', 'plans'] as const).map((mode) => (
-          <button key={mode} type="button" onClick={() => setWalletView(mode)} style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: walletView === mode ? 'rgba(242,186,14,0.16)' : 'rgba(255,255,255,0.04)', color: walletView === mode ? '#F2BA0E' : 'var(--text-secondary)', fontWeight: 800, fontSize: 13, fontFamily: 'inherit' }}>
+          <button key={mode} type="button" onClick={() => setWalletView(mode)} style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)', background: walletView === mode ? '#111' : '#000', color: walletView === mode ? '#F2BA0E' : 'rgba(255,255,255,0.65)', fontWeight: 800, fontSize: 13, fontFamily: 'inherit' }}>
             {mode === 'crypto' ? 'Crypto' : 'Investment Plans'}
           </button>
         ))}
@@ -480,17 +475,25 @@ export default function WalletPage() {
       {walletView === 'crypto' ? (
         <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
           {walletCurrencies.map((asset) => (
-            <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} className="wallet-currency-card">
+            <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} className="wallet-currency-card" style={{ background: '#000', border: '1px solid rgba(255,255,255,0.06)' }}>
               <span className="wallet-currency-icon" style={{ background: asset.image ? '#111' : asset.color }}>
                 {asset.image ? <img src={asset.image} alt={`${asset.name} logo`} /> : <CoinIcon symbol={asset.sym} size={34} />}
               </span>
               <span className="wallet-currency-copy">
                 <strong>{asset.name}</strong>
-                <em>Price ${asset.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</em>
+                <em>
+                  Price{' '}
+                  <span style={{ color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D', fontVariantNumeric: 'tabular-nums' }}>
+                    ${asset.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                  </span>
+                </em>
               </span>
               <span className="wallet-currency-value">
                 <strong>{asset.amount.toLocaleString('en-US', { maximumFractionDigits: asset.sym === 'USDT' ? 2 : 6 })}</strong>
                 <em>{asset.value}</em>
+              </span>
+              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 800, color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D' }}>
+                {(marketPrices[asset.sym]?.change || 0) >= 0 ? '+' : ''}{(marketPrices[asset.sym]?.change || 0).toFixed(2)}%
               </span>
             </Link>
           ))}
@@ -671,41 +674,6 @@ export default function WalletPage() {
           {msg.text}
         </div>
       )}
-
-      <section className="wallet-currency-panel">
-        <div className="wallet-currency-head">
-          <div>
-            <span>Wallet currencies</span>
-            <strong>Assets</strong>
-          </div>
-          <button
-            type="button"
-            aria-label="Add currency"
-            onClick={() => setMsg({ type: 'success', text: 'Currency request noted. Admin must add the wallet address before deposits can work.' })}
-          >
-            +
-          </button>
-        </div>
-
-        <div className="wallet-currency-list">
-          {walletCurrencies.map((asset) => (
-            <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} className="wallet-currency-card">
-              <span className="wallet-currency-icon" style={{ background: asset.image ? '#111' : asset.color }}>
-                {asset.image ? <img src={asset.image} alt={`${asset.name} logo`} /> : <CoinIcon symbol={asset.sym} size={34} />}
-              </span>
-              <span className="wallet-currency-copy">
-                <strong>{asset.name}</strong>
-                <em>{asset.note}</em>
-              </span>
-              <span className="wallet-currency-value">
-                <strong>{asset.amount.toLocaleString('en-US', { maximumFractionDigits: asset.sym === 'USDT' ? 2 : 6 })}</strong>
-                <em>{asset.value}</em>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
 
       {tab === 'withdraw' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(73px + env(safe-area-inset-bottom))', zIndex: 45, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px 20px' }}>

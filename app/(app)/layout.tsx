@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, LayoutGroup } from 'framer-motion'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 
@@ -645,6 +645,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         boxShadow: '0 -2px 18px rgba(0,0,0,0.35)',
         overflow: 'hidden',
       }}>
+        <LayoutGroup id="bottom-nav">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 62 }}>
           {NAV.map(({ href, label, icon }) => {
             const active = activeTab === href
@@ -659,15 +660,20 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                   transition: 'opacity .1s',
                 }}
               >
-                {/* Active top indicator dot — Bybit style */}
-                {active && href === '/invest' ? null : active && (
-                  <div style={{
-                    position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                    width: 20, height: 2.5, borderRadius: '0 0 3px 3px',
-                    background: '#FFFFFF',
-                  }} />
+                {active && href !== '/invest' && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    transition={{ type: 'spring', stiffness: 500, damping: 34 }}
+                    style={{
+                      position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                      width: 20, height: 2.5, borderRadius: '0 0 3px 3px',
+                      background: '#FFFFFF',
+                    }}
+                  />
                 )}
-                {icon(active)}
+                <motion.div animate={{ scale: active ? 1.06 : 1 }} transition={{ type: 'spring', stiffness: 500, damping: 28 }}>
+                  {icon(active)}
+                </motion.div>
                 <span style={{
                   fontSize: 10,
                   fontWeight: active ? 600 : 400,
@@ -683,6 +689,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             )
           })}
         </div>
+        </LayoutGroup>
       </nav>
     </div>
   )

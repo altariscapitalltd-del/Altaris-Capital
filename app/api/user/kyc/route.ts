@@ -5,6 +5,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import { trigger, adminChannel } from '@/lib/pusher'
 import { notifyUser } from '@/lib/push'
+import { notifyAdminTelegram } from '@/lib/push'
 import { sendTelegramFile, sendTelegramMessage } from '@/lib/telegram'
 
 const MAX_KYC_BYTES = 10 * 1024 * 1024
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
       name: user.name,
       email: user.email,
     })
+    await notifyAdminTelegram(`🪪 <b>KYC Submitted</b>\nUser: ${user.name}\nEmail: ${user.email}`)
 
     try {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
