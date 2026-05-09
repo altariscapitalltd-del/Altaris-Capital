@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
 import { notifyUser } from '@/lib/push'
+import { notifyAdminTelegram } from '@/lib/push'
 import { cookies } from 'next/headers'
 import { calcInvestmentState } from '@/lib/investmentMath'
 
@@ -101,6 +102,7 @@ export async function POST(req: Request) {
     '/invest',
     'investment'
   )
+  await notifyAdminTelegram(`📈 <b>New Investment</b>\nUser: ${payload.userId}\nPlan: ${planName || 'Investment Plan'}\nAmount: $${Number(amount).toLocaleString()}`)
 
   return NextResponse.json({ investment: { ...investment, ...calcInvestmentState(investment) } })
 }

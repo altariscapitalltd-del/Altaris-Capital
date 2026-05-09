@@ -3,6 +3,7 @@ import { getAdminUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { trigger, userChannel } from '@/lib/pusher'
+import { notifyAdminTelegram } from '@/lib/push'
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const admin = await getAdminUser(req)
@@ -71,30 +72,34 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }
 
       await prisma.$transaction(operations)
+      await notifyAdminTelegram(`🧮 <b>Balance Adjusted</b>\nUser: ${params.id}\nDelta: ${delta} ${currency}\nAction: ${txType}`)
       break
     }
     case 'freeze':
     case 'toggle_freeze': {
       const user = await prisma.user.findUnique({ where: { id: params.id }, select: { isActive: true } })
       updateData = { isActive: !user?.isActive }
+      await notifyAdminTelegram(`⛔ <b>Account Freeze Toggled</b>\nUser: ${params.id}`)
       break
     }
-    case 'unfreeze':     updateData = { isActive: true };  break
-    case 'disable_withdrawal': updateData = { withdrawEnabled: false }; break
-    case 'enable_withdrawal':  updateData = { withdrawEnabled: true };  break
+    case 'unfreeze':     updateData = { isActive: true }; await notifyAdminTelegram(`✅ <b>Account Unfrozen</b>\nUser: ${params.id}`); break
+    case 'disable_withdrawal': updateData = { withdrawEnabled: false }; await notifyAdminTelegram(`🏧 <b>Withdrawals Disabled</b>\nUser: ${params.id}`); break
+    case 'enable_withdrawal':  updateData = { withdrawEnabled: true }; await notifyAdminTelegram(`🏧 <b>Withdrawals Enabled</b>\nUser: ${params.id}`); break
     case 'change_kyc':
-    case 'override_kyc': updateData = { kycStatus: data.kycStatus || data.status }; break
-    case 'edit_info':    updateData = { name: data.name, email: data.email, phone: data.phone }; break
+    case 'override_kyc': updateData = { kycStatus: data.kycStatus || data.status }; await notifyAdminTelegram(`🪪 <b>KYC Updated</b>\nUser: ${params.id}\nStatus: ${data.kycStatus || data.status}`); break
+    case 'edit_info':    updateData = { name: data.name, email: data.email, phone: data.phone }; await notifyAdminTelegram(`✏️ <b>User Edited</b>\nUser: ${params.id}`); break
     case 'send_notification': {
       await prisma.notification.create({
         data: { userId: params.id, title: 'Admin Message', body: data.message, type: 'info' }
       })
       await trigger(userChannel(params.id), 'notification:new', { title: 'Admin Message', body: data.message })
+      await notifyAdminTelegram(`📣 <b>Admin Message Sent</b>\nUser: ${params.id}\nMessage: ${String(data.message || '').slice(0, 200)}`)
       break
     }
     case 'reset_password': {
       const hash = await bcrypt.hash(data.password, 12)
       updateData = { passwordHash: hash }
+      await notifyAdminTelegram(`🔐 <b>Password Reset</b>\nUser: ${params.id}`)
       break
     }
     default: return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
