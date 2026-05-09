@@ -79,7 +79,24 @@ export default function KYCPage() {
   if (loading) return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh' }}><div style={{ width:32, height:32, border:'3px solid rgba(242,186,14,0.2)', borderTopColor:'#F2BA0E', borderRadius:'50%', animation:'spin .8s linear infinite' }}/></div>
   if (status === 'APPROVED') return <div style={{ padding:24, textAlign:'center', minHeight:'70vh', display:'flex', flexDirection:'column', justifyContent:'center' }}><h2 style={{ fontSize:22, fontWeight:800 }}>Identity Verified</h2><p style={{ color:'var(--text-muted)' }}>Your identity is confirmed.</p></div>
   if (status === 'PENDING_REVIEW') return <div style={{ padding:24, textAlign:'center', minHeight:'70vh', display:'flex', flexDirection:'column', justifyContent:'center' }}><h2 style={{ fontSize:22, fontWeight:800 }}>Under Review</h2><p style={{ color:'var(--text-muted)' }}>We’ll notify you within 1–2 business days.</p></div>
-  if (status === 'REJECTED') return <div style={{ padding:24, textAlign:'center', minHeight:'70vh', display:'flex', flexDirection:'column', justifyContent:'center' }}><h2 style={{ fontSize:22, fontWeight:800 }}>Verification Not Approved</h2><p style={{ color:'var(--text-muted)' }}>{rejectionReason || 'Please resubmit.'}</p></div>
+  if (status === 'REJECTED') return (
+    <div style={{ padding:24, textAlign:'center', minHeight:'70vh', display:'flex', flexDirection:'column', justifyContent:'center', gap:12 }}>
+      <h2 style={{ fontSize:22, fontWeight:800 }}>Verification Not Approved</h2>
+      <p style={{ color:'var(--text-muted)' }}>{rejectionReason || 'Please resubmit.'}</p>
+      <button
+        className="btn-primary"
+        onClick={() => {
+          setStatus('NOT_SUBMITTED')
+          setStep(0)
+          setMsg(null)
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }}
+        style={{ marginTop: 8 }}
+      >
+        Resubmit
+      </button>
+    </div>
+  )
 
   const valid1 = form.firstName && form.lastName && form.dob && form.country
   const valid2 = frontFile && backFile && form.docType
