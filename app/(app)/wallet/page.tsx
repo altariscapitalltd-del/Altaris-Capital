@@ -439,6 +439,13 @@ export default function WalletPage() {
 
   return (
     <div style={{ padding: '10px 16px 22px', background: '#000', minHeight: '100vh' }}>
+      {copied && (
+        <div style={{ position: 'fixed', top: 'calc(var(--app-header-height, 64px) + 12px)', left: 16, right: 16, zIndex: 80, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ background: 'rgba(14,203,129,0.15)', color: '#0ECB81', border: '1px solid rgba(14,203,129,0.25)', padding: '9px 14px', borderRadius: 999, fontSize: 12, fontWeight: 800, boxShadow: '0 8px 20px rgba(0,0,0,0.25)' }}>
+            Copied
+          </div>
+        </div>
+      )}
       <div style={{ marginBottom: 14, padding: '18px 16px', borderRadius: 22, background: '#000', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'none' }}>
         <div style={{ color: 'rgba(255,255,255,0.68)', fontSize: 12, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Wallet balance</div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>

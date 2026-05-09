@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { upload } from '@vercel/blob/client'
 import { COUNTRIES } from '@/lib/countries'
 
@@ -27,6 +28,7 @@ function StepDot({ idx, current }: { idx: number; current: number }) {
 }
 
 export default function KYCPage() {
+  const router = useRouter()
   const [status, setStatus] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState<string | null>(null)
   const [step, setStep] = useState(0)
@@ -86,6 +88,7 @@ export default function KYCPage() {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Failed to submit KYC')
       setMsg({ type: 'success', text: "Submitted! We'll review within 1–2 business days." })
+      router.push('/home')
     } catch (e: any) { setMsg({ type: 'error', text: e?.message || 'Failed to submit KYC. Please try again.' }); setStatus(null) } finally { setSubmitting(false) }
   }
 

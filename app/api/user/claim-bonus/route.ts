@@ -17,7 +17,15 @@ export async function POST(req: NextRequest) {
 
   const BONUS_AMOUNT = 40
 
-  // Credit balance + mark claimed in a transaction
+  // Atomic claim: only one request can flip bonusClaimed from false -> true
+  const claimed = await prisma.user.updateMany({
+    where: { id: user.id, bonusClaimed: false },
+    data: { bonusClaimed: true },
+  })
+  if (claimed.count !== 1) {
+    return NextResponse.json({ error: 'Bonus already claimed' }, { status: 400 })
+  }
+
   await prisma.$transaction([
     prisma.balance.update({
       where: { userId_currency: { userId: user.id, currency: 'USD' } },
@@ -32,10 +40,6 @@ export async function POST(req: NextRequest) {
         status: 'SUCCESS',
         note: 'Welcome bonus — KYC verification reward',
       },
-    }),
-    prisma.user.update({
-      where: { id: user.id },
-      data: { bonusClaimed: true },
     }),
   ])
 
