@@ -108,7 +108,6 @@ export default function WalletPage() {
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
   const [refCode, setRefCode] = useState('')
-  const [walletView, setWalletView] = useState<'crypto' | 'plans'>('crypto')
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
 
   function loadProfile() {
@@ -464,61 +463,69 @@ export default function WalletPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-        {(['crypto', 'plans'] as const).map((mode) => (
-          <button key={mode} type="button" onClick={() => setWalletView(mode)} style={{ padding: '11px 14px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)', background: walletView === mode ? '#111' : '#000', color: walletView === mode ? '#F2BA0E' : 'rgba(255,255,255,0.65)', fontWeight: 800, fontSize: 13, fontFamily: 'inherit' }}>
-            {mode === 'crypto' ? 'Crypto' : 'Investment Plans'}
-          </button>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 2px 12px' }}>
+        <div>
+          <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>INVESTMENT PLANS</div>
+          <div style={{ color: '#fff', fontSize: 15, fontWeight: 900, marginTop: 4 }}>Top plans from Invest</div>
+        </div>
+        <Link href="/invest" style={{ fontSize: 12, fontWeight: 800, color: '#F2BA0E', textDecoration: 'none', padding: '8px 10px', borderRadius: 999, border: '1px solid rgba(242,186,14,0.16)', background: 'rgba(242,186,14,0.08)' }}>More →</Link>
       </div>
 
-      {walletView === 'crypto' ? (
-        <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
-          {walletCurrencies.map((asset) => (
-            <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} className="wallet-currency-card" style={{ background: '#000', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <span className="wallet-currency-icon" style={{ background: asset.image ? '#111' : asset.color }}>
-                {asset.image ? <img src={asset.image} alt={`${asset.name} logo`} /> : <CoinIcon symbol={asset.sym} size={34} />}
-              </span>
-              <span className="wallet-currency-copy">
-                <strong>{asset.name}</strong>
-                <em>
-                  Price{' '}
-                  <span style={{ color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D', fontVariantNumeric: 'tabular-nums' }}>
-                    ${asset.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
-                  </span>
-                </em>
-              </span>
-              <span className="wallet-currency-value">
-                <strong>{asset.amount.toLocaleString('en-US', { maximumFractionDigits: asset.sym === 'USDT' ? 2 : 6 })}</strong>
-                <em>{asset.value}</em>
-              </span>
-              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 800, color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D' }}>
-                {(marketPrices[asset.sym]?.change || 0) >= 0 ? '+' : ''}{(marketPrices[asset.sym]?.change || 0).toFixed(2)}%
-              </span>
-            </Link>
-          ))}
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
-          {[
-            { title: 'BTC Growth Plan', sub: 'Best for high conviction holders', roi: '2.4% daily', tone: '#F7931A' },
-            { title: 'ETH Builder Plan', sub: 'Balanced growth and stability', roi: '1.6% daily', tone: '#627EEA' },
-            { title: 'SOL Momentum Plan', sub: 'Aggressive short-term upside', roi: '1.3% daily', tone: '#14F195' },
-          ].map((p) => (
-            <div key={p.title} style={{ padding: 14, borderRadius: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 42, height: 42, borderRadius: 14, background: p.tone, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CoinIcon symbol={p.title.split(' ')[0]} size={26} /></div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, fontSize: 14 }}>{p.title}</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{p.sub}</div>
+      <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+        {[
+          { title: 'BTC Growth Plan', sub: 'Best for high conviction holders', roi: '2.4% daily', sym: 'BTC', color: '#F7931A' },
+          { title: 'ETH Builder Plan', sub: 'Balanced growth and stability', roi: '1.6% daily', sym: 'ETH', color: '#627EEA' },
+          { title: 'SOL Momentum Plan', sub: 'Aggressive short-term upside', roi: '1.3% daily', sym: 'SOL', color: '#14F195' },
+        ].map((p) => {
+          const img = marketPrices[p.sym]?.image
+          return (
+            <Link key={p.title} href="/invest" style={{ padding: 14, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }} className="pressable">
+              <div style={{ width: 42, height: 42, borderRadius: 14, background: img ? '#111' : p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                {img ? <img src={img} alt={`${p.sym} logo`} style={{ width: 28, height: 28, objectFit: 'contain' }} /> : <CoinIcon symbol={p.sym} size={26} />}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>{p.title}</div>
+                <div style={{ color: 'rgba(255,255,255,0.58)', fontSize: 12, marginTop: 2 }}>{p.sub}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#F2BA0E', fontWeight: 900, fontSize: 13 }}>{p.roi}</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>Tap in Invest</div>
+                <div style={{ color: '#0ECB81', fontWeight: 900, fontSize: 13 }}>{p.roi}</div>
+                <div style={{ color: 'rgba(255,255,255,0.44)', fontSize: 11 }}>Open</div>
               </div>
-            </div>
-          ))}
+            </Link>
+          )
+        })}
+      </div>
+
+      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>CRYPTO LIST</div>
+          <div style={{ color: '#fff', fontSize: 15, fontWeight: 900, marginTop: 4 }}>Your held assets</div>
         </div>
-      )}
+        <Link href="/markets" style={{ fontSize: 12, fontWeight: 800, color: '#F2BA0E', textDecoration: 'none' }}>All markets</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+        {walletCurrencies.map((asset) => (
+          <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} className="wallet-currency-card" style={{ background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <span className="wallet-currency-icon" style={{ background: asset.image ? '#111' : asset.color }}>
+              {asset.image ? <img src={asset.image} alt={`${asset.name} logo`} /> : <CoinIcon symbol={asset.sym} size={34} />}
+            </span>
+            <span className="wallet-currency-copy">
+              <strong>{asset.name}</strong>
+              <em>
+                Price <span style={{ color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D', fontVariantNumeric: 'tabular-nums' }}>${asset.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</span>
+              </em>
+            </span>
+            <span className="wallet-currency-value">
+              <strong>{asset.amount.toLocaleString('en-US', { maximumFractionDigits: asset.sym === 'USDT' ? 2 : 6 })}</strong>
+              <em>{asset.value}</em>
+            </span>
+            <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 800, color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D' }}>
+              {(marketPrices[asset.sym]?.change || 0) >= 0 ? '+' : ''}{(marketPrices[asset.sym]?.change || 0).toFixed(2)}%
+            </span>
+          </Link>
+        ))}
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, marginBottom: 14 }}>
         <ActionButton
           active={tab === 'deposit'}
