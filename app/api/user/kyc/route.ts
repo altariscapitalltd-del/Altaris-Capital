@@ -31,11 +31,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let stage = 'start'
   try {
     const user = await getAuthUser(req)
+    stage = 'auth'
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const existing = await prisma.kycSubmission.findUnique({ where: { userId: user.id } })
+    stage = 'existing'
     if (existing?.status === 'PENDING_REVIEW') {
       return NextResponse.json({ error: 'Your KYC is already under review.' }, { status: 400 })
     }
@@ -44,6 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     const formData = await req.formData()
+    stage = 'formData'
     const firstName    = (formData.get('firstName') as string) || ''
     const lastName     = (formData.get('lastName') as string) || ''
     const fullName     = [firstName, lastName].filter(Boolean).join(' ') || (formData.get('fullName') as string) || ''
@@ -56,6 +60,7 @@ export async function POST(req: NextRequest) {
     if (!fullName.trim() || !dateOfBirth.trim() || !address.trim()) {
       return NextResponse.json({ error: 'Full name, date of birth, and address are required' }, { status: 400 })
     }
+    stage = 'validation'
     if (!document || document.size === 0) {
       return NextResponse.json({ error: 'Document photo is required' }, { status: 400 })
     }
@@ -85,15 +90,18 @@ export async function POST(req: NextRequest) {
 
     const dir = process.env.VERCEL ? path.join(os.tmpdir(), 'altaris-kyc') : path.join(process.cwd(), 'uploads', 'kyc')
     await mkdir(dir, { recursive: true })
+    stage = 'mkdir'
 
     const filename = `${user.id}-${Date.now()}${extension}`
     await writeFile(path.join(dir, filename), Buffer.from(await document.arrayBuffer()))
+    stage = 'writeDocument'
 
     let selfieFilename: string | null = null
     if (selfie && selfie.size > 0) {
       const selfieExt = path.extname(selfie.name || '.jpg').toLowerCase() || '.jpg'
       selfieFilename = `${user.id}-selfie-${Date.now()}${selfieExt}`
       await writeFile(path.join(dir, selfieFilename), Buffer.from(await selfie.arrayBuffer()))
+      stage = 'writeSelfie'
     }
 
     const kycData = {
@@ -112,6 +120,7 @@ export async function POST(req: NextRequest) {
     } else {
       await prisma.kycSubmission.create({ data: { userId: user.id, ...kycData } })
     }
+    stage = 'dbWrite'
 
     await prisma.user.update({ where: { id: user.id }, data: { kycStatus: 'PENDING_REVIEW' } })
 
@@ -164,10 +173,11 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.error('[KYC user notify]', err)
     }
+    stage = 'done'
 
     return NextResponse.json({ success: true })
   } catch (e: any) {
     console.error('[KYC submit]', e?.message ?? e)
-    return NextResponse.json({ error: 'Failed to submit KYC. Please try again.' }, { status: 500 })
+    return NextResponse.json({ error: `Failed to submit KYC at ${typeof stage !== 'undefined' ? stage : 'unknown'}: ${e?.message ?? 'unknown error'}` }, { status: 500 })
   }
 }
