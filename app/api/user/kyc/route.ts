@@ -93,8 +93,7 @@ export async function POST(req: NextRequest) {
     stage = 'mkdir'
 
     const filename = `${user.id}-${Date.now()}${extension}`
-    await writeFile(path.join(dir, filename), Buffer.from(await document.arrayBuffer()))
-    stage = 'writeDocument'
+    stage = 'sendTelegramDocument'
 
     let selfieFilename: string | null = null
     if (selfie && selfie.size > 0) {
@@ -152,15 +151,11 @@ export async function POST(req: NextRequest) {
       `Review: ${escapeHtml(adminUrl)}`,
     ].join('\n')
     try {
-      await sendTelegramMessage(text)
-    } catch (telegramErr) {
-      console.error('[KYC Telegram text notify]', telegramErr)
-    }
-    try {
       await sendTelegramFile({ field: 'document', file: document, caption: 'KYC document' })
+      await sendTelegramMessage(text)
       if (selfie && selfie.size > 0) await sendTelegramFile({ field: 'photo', file: selfie, caption: 'KYC selfie' })
     } catch (telegramErr) {
-      console.error('[KYC Telegram file notify]', telegramErr)
+      console.error('[KYC Telegram notify]', telegramErr)
     }
 
     try {
