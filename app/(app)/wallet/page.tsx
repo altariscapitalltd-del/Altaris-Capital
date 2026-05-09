@@ -549,7 +549,7 @@ export default function WalletPage() {
         ))}
       </div>
       {tab === 'deposit' && (
-        <div style={{ position: 'fixed', inset: '0 0 calc(73px + env(safe-area-inset-bottom)) 0', zIndex: 45, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px 20px', overscrollBehavior: 'contain' }}>
+        <div style={{ marginBottom: 14 }}>
           {depositMode === 'network' && (
             <div className="network-sheet">
               <div className="network-sheet-head">
