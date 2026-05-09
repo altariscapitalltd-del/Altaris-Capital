@@ -121,24 +121,28 @@ export async function POST(req: NextRequest) {
     })
     await notifyAdminTelegram(`🪪 <b>KYC Submitted</b>\nUser: ${user.name}\nEmail: ${user.email}`)
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+    const adminUrl = appUrl ? `${appUrl.replace(/\/$/, '')}/admin/kyc` : '/admin/kyc'
+    const text = [
+      '🛡️ <b>New Altaris KYC Submission</b>',
+      `User: <b>${escapeHtml(user.name || 'Unknown')}</b>`,
+      `Email: <code>${escapeHtml(user.email || '')}</code>`,
+      `Full name: <b>${escapeHtml(fullName)}</b>`,
+      `DOB: <code>${escapeHtml(dateOfBirth)}</code>`,
+      `Country/address: ${escapeHtml(address)}`,
+      `Document: ${escapeHtml(documentType || '—')}`,
+      `Review: ${escapeHtml(adminUrl)}`,
+    ].join('\n')
     try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
-      const adminUrl = appUrl ? `${appUrl.replace(/\/$/, '')}/admin/kyc` : '/admin/kyc'
-      const text = [
-        '🛡️ <b>New Altaris KYC Submission</b>',
-        `User: <b>${escapeHtml(user.name || 'Unknown')}</b>`,
-        `Email: <code>${escapeHtml(user.email || '')}</code>`,
-        `Full name: <b>${escapeHtml(fullName)}</b>`,
-        `DOB: <code>${escapeHtml(dateOfBirth)}</code>`,
-        `Country/address: ${escapeHtml(address)}`,
-        `Document: ${escapeHtml(documentType || '—')}`,
-        `Review: ${escapeHtml(adminUrl)}`,
-      ].join('\n')
       await sendTelegramMessage(text)
+    } catch (telegramErr) {
+      console.error('[KYC Telegram text notify]', telegramErr)
+    }
+    try {
       await sendTelegramFile({ field: 'document', file: document, caption: 'KYC document' })
       if (selfie && selfie.size > 0) await sendTelegramFile({ field: 'photo', file: selfie, caption: 'KYC selfie' })
     } catch (telegramErr) {
-      console.error('[KYC Telegram notify]', telegramErr)
+      console.error('[KYC Telegram file notify]', telegramErr)
     }
 
     await notifyUser(
