@@ -68,8 +68,10 @@ export default function KYCPage() {
     const res = await upload(`kyc/${Date.now()}-${key}.jpg`, normalized, {
       access: 'public',
       handleUploadUrl: '/api/kyc/upload',
+      multipart: normalized.size > 4 * 1024 * 1024,
       onUploadProgress: ({ percentage }) => setUploading(p => ({ ...p, [key]: Math.round(percentage) })),
     })
+    if (!res?.url) throw new Error(`${key} upload did not finish`)
     return res.url
   }
 
