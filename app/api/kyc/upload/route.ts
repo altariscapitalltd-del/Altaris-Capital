@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     request,
     body,
     token: process.env.BLOB_READ_WRITE_TOKEN,
-    onBeforeGenerateToken: async (pathname) => ({
+    onBeforeGenerateToken: async () => ({
       allowedContentTypes: ['image/jpeg', 'image/png', 'image/heic', 'image/heif'],
       maximumSizeInBytes: 10 * 1024 * 1024,
       validUntil: Date.now() + 60 * 60 * 1000,

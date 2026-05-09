@@ -4,18 +4,15 @@ import { prisma } from '@/lib/db'
 import { trigger, adminChannel } from '@/lib/pusher'
 import { notifyUser } from '@/lib/push'
 
-function esc(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
+function esc(v: string) { return v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
 
 export async function POST(req: NextRequest) {
   try {
     const user = await getAuthUser(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json()
-    const { fullName, dob, country, docType, documentFrontUrl, documentBackUrl, selfieUrl } = body || {}
-    if (!fullName || !dob || !country || !docType || !documentFrontUrl || !documentBackUrl || !selfieUrl) {
+    const { fullName, dob, country, docType, frontUrl, backUrl } = await req.json()
+    if (!fullName || !dob || !country || !docType || !frontUrl || !backUrl) {
       return NextResponse.json({ error: 'Missing required KYC fields' }, { status: 400 })
     }
 
@@ -25,8 +22,8 @@ export async function POST(req: NextRequest) {
       dateOfBirth: dob,
       address: country,
       documentType: docType,
-      documentPath: documentFrontUrl,
-      selfieFile: selfieUrl,
+      documentPath: frontUrl,
+      selfieFile: backUrl,
       status: 'PENDING_REVIEW' as const,
       rejectionReason: null,
       submittedAt: new Date(),
@@ -36,7 +33,7 @@ export async function POST(req: NextRequest) {
     else await prisma.kycSubmission.create({ data: { userId: user.id, ...record } })
     await prisma.user.update({ where: { id: user.id }, data: { kycStatus: 'PENDING_REVIEW' } })
 
-    const message = [
+    const telegram = [
       '*🛡️ New KYC Submission*',
       `*User:* ${esc(user.name || 'Unknown')}`,
       `*Email:* ${esc(user.email || '')}`,
@@ -44,9 +41,8 @@ export async function POST(req: NextRequest) {
       `*DOB:* ${esc(dob)}`,
       `*Country:* ${esc(country)}`,
       `*Document Type:* ${esc(docType)}`,
-      `*Front:* [Open image](${documentFrontUrl})`,
-      `*Back:* [Open image](${documentBackUrl})`,
-      `*Selfie:* [Open image](${selfieUrl})`,
+      `*Front:* [Open image](${frontUrl})`,
+      `*Back:* [Open image](${backUrl})`,
     ].join('\n')
 
     const token = process.env.TELEGRAM_BOT_TOKEN
@@ -55,7 +51,7 @@ export async function POST(req: NextRequest) {
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'Markdown' }),
+        body: JSON.stringify({ chat_id: chatId, text: telegram, parse_mode: 'Markdown' }),
       })
     }
 
