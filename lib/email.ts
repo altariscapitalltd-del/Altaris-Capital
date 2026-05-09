@@ -69,19 +69,49 @@ export async function sendOTPEmail(email: string, name: string, otp: string, pur
 }
 
 export async function sendNotificationEmail(email: string, name: string, title: string, body: string) {
+  const safeName = name?.trim() || 'there'
+  const safeTitle = title?.trim() || 'Update'
+  const safeBody = body?.trim() || 'You have a new update in your Altaris Capital account.'
   await transporter.sendMail({
     from: `"Altaris Capital" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: `${title} — Altaris Capital`,
+    subject: `${safeTitle} — Altaris Capital`,
+    text: `Hello ${safeName},\n\n${safeTitle}\n${safeBody}\n\nOpen the app to view this update.\n\nAltaris Capital`,
     html: `
-<!DOCTYPE html><html><body style="background:#0B0E11;font-family:Inter,sans-serif;padding:40px 20px;">
-  <div style="max-width:560px;margin:0 auto;background:#151A21;border-radius:16px;border:1px solid #2B3139;padding:40px;">
-    <h2 style="color:#F0B90B;margin:0 0 16px;">${title}</h2>
-    <p style="color:#B0B3B8;font-size:15px;line-height:1.6;">${body}</p>
-    <hr style="border:none;border-top:1px solid #2B3139;margin:24px 0;">
-    <p style="color:#6E757C;font-size:12px;">© ${new Date().getFullYear()} Altaris Capital</p>
-  </div>
-</body></html>
+<!DOCTYPE html>
+<html>
+<body style="margin:0;background:#07090c;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Arial,sans-serif;color:#e8e8e8;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#07090c;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#0d1117;border:1px solid rgba(255,255,255,0.08);border-radius:22px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.35);">
+          <tr>
+            <td style="padding:28px 28px 18px;border-bottom:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#f2ba0e;font-weight:800;">Altaris Capital</div>
+              <div style="font-size:24px;line-height:1.25;font-weight:800;color:#ffffff;margin-top:10px;">Hello ${safeName},</div>
+              <div style="font-size:14px;color:#9aa4b2;margin-top:8px;line-height:1.6;">You have a new account update.</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px;">
+              <div style="background:linear-gradient(180deg,rgba(242,186,14,0.12),rgba(242,186,14,0.05));border:1px solid rgba(242,186,14,0.18);border-radius:18px;padding:22px;">
+                <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:10px;">${safeTitle}</div>
+                <div style="font-size:15px;line-height:1.75;color:#c9d1d9;white-space:pre-line;">${safeBody}</div>
+              </div>
+              <div style="margin-top:22px;font-size:13px;line-height:1.7;color:#7e8794;">Open the app to review this message and continue.</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 28px 26px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:#65707f;text-align:center;">
+              © ${new Date().getFullYear()} Altaris Capital
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
     `,
   })
 }
