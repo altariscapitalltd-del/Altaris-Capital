@@ -103,6 +103,34 @@ export default function KYCPage() {
     setSelfiePreview(file && file.type.startsWith('image/') ? URL.createObjectURL(file) : null)
   }
 
+  async function normalizeImageFile(file: File): Promise<File> {
+    const isJpeg = file.type === 'image/jpeg' || file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.jpeg')
+    if (isJpeg || file.type === 'application/pdf') return file
+    if (!file.type.startsWith('image/')) return file
+
+    const url = URL.createObjectURL(file)
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image()
+        el.onload = () => resolve(el)
+        el.onerror = reject
+        el.src = url
+      })
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return file
+      ctx.drawImage(img, 0, 0)
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92))
+      if (!blob) return file
+      const name = `${file.name.replace(/\.[^.]+$/, '')}.jpg`
+      return new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified })
+    } finally {
+      URL.revokeObjectURL(url)
+    }
+  }
+
   async function submit() {
     if (submitting) return
     setSubmitting(true); setMsg(null)
@@ -111,8 +139,8 @@ export default function KYCPage() {
       fd.append('firstName', form.firstName); fd.append('lastName', form.lastName)
       fd.append('dob', form.dob); fd.append('country', form.country)
       fd.append('docType', form.docType)
-      if (docFile) fd.append('documentFile', docFile)
-      if (selfieFile) fd.append('selfieFile', selfieFile)
+      if (docFile) fd.append('documentFile', await normalizeImageFile(docFile))
+      if (selfieFile) fd.append('selfieFile', await normalizeImageFile(selfieFile))
       const res = await fetch('/api/user/kyc', { method: 'POST', body: fd })
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
