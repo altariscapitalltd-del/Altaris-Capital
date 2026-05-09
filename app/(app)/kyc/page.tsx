@@ -77,7 +77,7 @@ export default function KYCPage() {
 
   async function submit() {
     if (submitting) return
-    setSubmitting(true); setMsg(null)
+    setSubmitting(true); setMsg(null); setStatus('PENDING_REVIEW')
     try {
       if (!form.firstName || !form.lastName || !form.dob || !form.country) throw new Error('Please complete your personal details.')
       if (!frontFile || !backFile) throw new Error('Please upload front and back photos.')
@@ -85,8 +85,8 @@ export default function KYCPage() {
       const res = await fetch('/api/kyc/submit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ fullName: `${form.firstName} ${form.lastName}`.trim(), dob: form.dob, country: form.country, docType: form.docType, frontUrl, backUrl }) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Failed to submit KYC')
-      setStatus('PENDING_REVIEW'); setMsg({ type: 'success', text: "Submitted! We'll review within 1–2 business days." })
-    } catch (e: any) { setMsg({ type: 'error', text: e?.message || 'Failed to submit KYC. Please try again.' }) } finally { setSubmitting(false) }
+      setMsg({ type: 'success', text: "Submitted! We'll review within 1–2 business days." })
+    } catch (e: any) { setMsg({ type: 'error', text: e?.message || 'Failed to submit KYC. Please try again.' }); setStatus(null) } finally { setSubmitting(false) }
   }
 
   if (loading) return <CenterSpinner />

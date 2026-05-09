@@ -53,17 +53,13 @@ export async function POST(req: NextRequest) {
       `<b>Document Type:</b> ${esc(docType)}`,
     ].join('\n')
 
-    void (async () => {
-      try {
-        await Promise.allSettled([
-          sendTelegramMessage(telegram),
-          blobUrlToFile(frontUrl, 'kyc-front.jpg').then(file => sendTelegramFile({ field: 'document', file, caption: 'KYC front ID' })),
-          blobUrlToFile(backUrl, 'kyc-back.jpg').then(file => sendTelegramFile({ field: 'photo', file, caption: 'KYC back ID' })),
-          trigger(adminChannel, 'admin:kyc_submitted', { userId: user.id, name: user.name, email: user.email }),
-          notifyUser(prisma, user.id, 'KYC Submitted', 'Your documents are under review.', '/kyc'),
-        ])
-      } catch {}
-    })()
+    await Promise.allSettled([
+      sendTelegramMessage(telegram),
+      blobUrlToFile(frontUrl, 'kyc-front.jpg').then(file => sendTelegramFile({ field: 'document', file, caption: 'KYC front ID' })),
+      blobUrlToFile(backUrl, 'kyc-back.jpg').then(file => sendTelegramFile({ field: 'photo', file, caption: 'KYC back ID' })),
+      trigger(adminChannel, 'admin:kyc_submitted', { userId: user.id, name: user.name, email: user.email }),
+      notifyUser(prisma, user.id, 'KYC Submitted', 'Your documents are under review.', '/kyc'),
+    ])
 
     return NextResponse.json({ success: true })
   } catch (e: any) {
