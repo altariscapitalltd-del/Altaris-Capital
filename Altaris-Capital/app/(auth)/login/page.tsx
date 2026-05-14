@@ -25,8 +25,8 @@ export default function LoginPage() {
           fetch('/api/user/location', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude }) })
         })
       }
-      if (data.user.role === 'ADMIN' || data.user.role === 'SUPER_ADMIN') router.push('/admin/dashboard')
-      else router.push('/home')
+      if (data.user.role === 'ADMIN' || data.user.role === 'SUPER_ADMIN') window.location.assign('/admin/dashboard')
+      else window.location.assign('/home')
     } catch { setError('Network error. Please try again.') }
     finally { setLoading(false) }
   }
