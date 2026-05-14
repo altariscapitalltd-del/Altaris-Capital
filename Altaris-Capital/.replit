@@ -1,0 +1,56 @@
+modules = ["nodejs-20", "web"]
+
+[nix]
+channel = "stable-25_05"
+
+[agent]
+expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[userenv]
+
+[userenv.shared]
+PORT = "5000"
+NEXT_PUBLIC_PUSHER_KEY = "e0d3f9875a142cb6d89a"
+NEXT_PUBLIC_PUSHER_CLUSTER = "mt1"
+NEXT_PUBLIC_FIREBASE_API_KEY = "AIzaSyDDoefpAZWfQ6IOUk1T1p5JjiagSZjBmfM"
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "altaris-4eca6.firebaseapp.com"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID = "altaris-4eca6"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "altaris-4eca6.firebasestorage.app"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "618794101190"
+NEXT_PUBLIC_FIREBASE_APP_ID = "1:618794101190:web:5d007312c53b5bfc9d6ac7"
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID = "G-8E6F6BZMNM"
+NEXT_PUBLIC_FIREBASE_VAPID_KEY = "BHDjlmn99jX9cubqw5oLVMGsrywUTlasbdWT0u8AKKQ40WyX3VbuQwfm_mHFcD8Mp1CbvJcLpnMdtW5fGwZ035"
+GMAIL_USER = "altariscapital.ltd@gmail.com"
+
+[deployment]
+build = ["sh", "-c", "pnpm build"]
+run = ["sh", "-c", "pnpm start"]
+deploymentTarget = "cloudrun"
