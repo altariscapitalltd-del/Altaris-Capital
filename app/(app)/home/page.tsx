@@ -1,13 +1,14 @@
- 'use client'
- import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
- import Link from 'next/link'
- import { AnimatePresence, motion } from 'framer-motion'
- import { Download, Upload, TrendingUp, History, Gift, Check, UserCheck, Clock } from 'lucide-react'
- import { AltarisLogoMark } from '@/components/AltarisLogo'
+'use client'
+import { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react'
+import Link from 'next/link'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Download, Upload, TrendingUp, History, Gift, Check, UserCheck, Clock } from 'lucide-react'
+import { AltarisLogoMark } from '@/components/AltarisLogo'
 
-// Mini sparkline component
-function Sparkline({ data, color, width=64, height=28 }: { data:number[], color: string, width?:number, height?:number }) {
+// Mini sparkline component - memoized to prevent unnecessary redraws
+const Sparkline = memo(function Sparkline({ data, color, width=64, height=28 }: { data:number[], color: string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return
     const ctx = canvas.getContext('2d'); if (!ctx) return
@@ -30,11 +31,16 @@ function Sparkline({ data, color, width=64, height=28 }: { data:number[], color:
     for (let i = 1; i < xs.length; i++) ctx.lineTo(xs[i], ys[i])
     ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke()
   }, [data, color, width, height])
-  return <canvas ref={canvasRef} style={{ width, height, display:'block' }} />
-}
+  
+  return <canvas ref={canvasRef} style={{ width, height, display:'block', willChange: 'contents' }} />
+}, (prev, next) => {
+  // Custom comparison: only re-render if data array reference changes or color changes
+  return prev.data === next.data && prev.color === next.color && prev.width === next.width && prev.height === next.height
+})
 
-function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 150 }: { data: number[]; color?: string; width?: number; height?: number }) {
+const PortfolioChart = memo(function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 150 }: { data: number[]; color?: string; width?: number; height?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return
     const ctx = canvas.getContext('2d'); if (!ctx) return
@@ -64,8 +70,11 @@ function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 150 }: 
     ctx.fillStyle = '#050505'; ctx.beginPath(); ctx.arc(lastX, lastY, 5, 0, Math.PI * 2); ctx.fill()
     ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI * 2); ctx.stroke()
   }, [data, color, width, height])
-  return <canvas ref={canvasRef} style={{ width: '100%', height, display: 'block' }} />
-}
+  
+  return <canvas ref={canvasRef} style={{ width: '100%', height, display: 'block', willChange: 'contents' }} />
+}, (prev, next) => {
+  return prev.data === next.data && prev.color === next.color && prev.width === next.width && prev.height === next.height
+})
 
 function useBalanceHistory(latest: number, transactions: any[] = []) {
   const [series, setSeries] = useState<{ times: number[]; values: number[] }>({ times: [], values: [] })
@@ -114,7 +123,7 @@ function useBalanceHistory(latest: number, transactions: any[] = []) {
   return series
 }
 
-function BalanceChart({ usdBalance, transactions }: { usdBalance: number; transactions: any[] }) {
+const BalanceChart = memo(function BalanceChart({ usdBalance, transactions }: { usdBalance: number; transactions: any[] }) {
   const [range, setRange] = useState<'24H' | '7D' | '30D' | 'All'>('24H')
   const rangeMs = range === '24H' ? 24 * 60 * 60 * 1000 : range === '7D' ? 7 * 24 * 60 * 60 * 1000 : range === '30D' ? 30 * 24 * 60 * 60 * 1000 : Infinity
   const filteredTransactions = range === 'All' ? transactions : transactions.filter((tx: any) => Date.now() - new Date(tx.createdAt).getTime() <= rangeMs)
@@ -176,10 +185,10 @@ function BalanceChart({ usdBalance, transactions }: { usdBalance: number; transa
       </div>
     </section>
   )
-}
+})
 
-// Countdown timer
-function Countdown({ endsAt }: { endsAt: Date }) {
+// Countdown timer - memoized
+const Countdown = memo(function Countdown({ endsAt }: { endsAt: Date }) {
   const [time, setTime] = useState({ d:0, h:0, m:0, s:0 })
   useEffect(() => {
     function calc() {
@@ -198,7 +207,7 @@ function Countdown({ endsAt }: { endsAt: Date }) {
       ))}
     </div>
   )
-}
+})
 
 const LATEST_EVENTS = [
   { title: 'Refer Friends — Get $30', date: '2025-03-10', icon: 'event' },
@@ -213,7 +222,7 @@ const LATEST_NEWS = [
 
 type LiveCoin = { sym: string; name: string; price: number; change: number; spark: number[] }
 
-function BybitSection({ coins }: { coins: LiveCoin[] }) {
+const BybitSection = memo(function BybitSection({ coins }: { coins: LiveCoin[] }) {
   const [eventsTab, setEventsTab] = useState<'events' | 'news'>('events')
   const fallbackCoins: LiveCoin[] = [
     { sym: 'BTC', name: 'Bitcoin', price: 0, change: 0, spark: [1, 2, 1.8, 2.3, 2.2, 2.6, 2.8] },
@@ -273,8 +282,8 @@ function BybitSection({ coins }: { coins: LiveCoin[] }) {
         <div style={{ padding: 12 }}>
           {(eventsTab === 'events' ? LATEST_EVENTS : LATEST_NEWS).map((item, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <TrendingUp size={14} strokeWidth={2} color="var(--brand-primary)" />
+              <div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>
+                {item.icon === 'event' ? '📅' : '📰'}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 12 }}>{item.title}</div>
@@ -287,7 +296,7 @@ function BybitSection({ coins }: { coins: LiveCoin[] }) {
       </div>
     </div>
   )
-}
+})
 
 export default function HomePage() {
   const [user, setUser] = useState<any>(null)
@@ -300,7 +309,7 @@ export default function HomePage() {
   const [transactions, setTransactions] = useState<any[]>([])
 
   const load = useCallback(() => {
-    fetch('/api/user/profile').then(r=>r.json()).then(d=>{ setUser(d.user); setLoading(false) })
+    fetch('/api/user/profile').then(r=>r.json()).then(d=>{ setUser(d.user); setLoading(false) }).catch(() => setLoading(false))
     fetch('/api/transactions?page=1').then(r=>r.json()).then(d=>setTransactions(d.transactions || [])).catch(()=>setTransactions([]))
     fetch('/api/markets/list?per_page=40')
       .then(r=>r.json())
@@ -323,8 +332,26 @@ export default function HomePage() {
 
   useEffect(() => {
     load()
-    // Refresh market data more frequently
-    const t = setInterval(() => { fetch('/api/markets/list?per_page=40').then(r=>r.json()).then(d=>{ const list=(d.list||[]).filter((c:any)=>c?.symbol&&Array.isArray(c.spark)&&c.spark.length>1).map((c:any)=>({ sym:String(c.symbol).toUpperCase(), name:c.name||String(c.symbol).toUpperCase(), price:Number(c.price||0), change:Number(c.change24h||0), spark:c.spark.slice(-24) })); const featured=list.slice(0,8); const movers=[...featured].sort((a:LiveCoin,b:LiveCoin)=>Math.abs(b.change)-Math.abs(a.change)); setCoins(movers) }).catch(()=>{}) }, 30000)
+    // Increase polling interval from 30s to 60s to reduce re-renders
+    const t = setInterval(() => { 
+      fetch('/api/markets/list?per_page=40')
+        .then(r=>r.json())
+        .then(d=>{ 
+          const list=(d.list||[])
+            .filter((c:any)=>c?.symbol&&Array.isArray(c.spark)&&c.spark.length>1)
+            .map((c:any)=>({ 
+              sym:String(c.symbol).toUpperCase(), 
+              name:c.name||String(c.symbol).toUpperCase(), 
+              price:Number(c.price||0), 
+              change:Number(c.change24h||0), 
+              spark:c.spark.slice(-24) 
+            }))
+          const featured=list.slice(0,8)
+          const movers=[...featured].sort((a:LiveCoin,b:LiveCoin)=>Math.abs(b.change)-Math.abs(a.change))
+          setCoins(movers) 
+        })
+        .catch(()=>{}) 
+    }, 60000)
     window.addEventListener('balance:refresh', load)
     return () => { clearInterval(t); window.removeEventListener('balance:refresh', load) }
   }, [load])
@@ -338,15 +365,17 @@ export default function HomePage() {
 
   const priceMap = useMemo(() => Object.fromEntries(coins.map((c) => [c.sym, c.price])), [coins])
   const balanceList = user?.balances || []
-  const usdBal = balanceList.reduce((sum: number, b: any) => {
+  const usdBal = useMemo(() => balanceList.reduce((sum: number, b: any) => {
     const currency = String(b.currency || '').toUpperCase()
     const amount = Number(b.amount || 0)
     if (currency === 'USD') return sum + amount
     if (currency === 'USDT') return sum + amount
     return sum + amount * Number(priceMap[currency] || 0)
-  }, 0)
-  const activeInvestments = user?.investments?.filter((i:any)=>i.status==='ACTIVE') || []
-  const cryptoPL = balanceList.reduce((sum: number, b: any) => {
+  }, 0), [balanceList, priceMap])
+  
+  const activeInvestments = useMemo(() => user?.investments?.filter((i:any)=>i.status==='ACTIVE') || [], [user?.investments])
+  
+  const cryptoPL = useMemo(() => balanceList.reduce((sum: number, b: any) => {
     const currency = String(b.currency || '').toUpperCase()
     if (currency === 'USD') return sum
     const coin = coins.find((c) => c.sym === currency)
@@ -354,7 +383,8 @@ export default function HomePage() {
     const change = Number(coin?.change || 0)
     const previous = price && change !== -100 ? price / (1 + change / 100) : price
     return sum + Number(b.amount || 0) * (price - previous)
-  }, 0)
+  }, 0), [balanceList, coins])
+  
   const canClaimBonus = !user?.bonusClaimed && !bonusDone
 
   const BANNERS = [
@@ -407,6 +437,7 @@ export default function HomePage() {
   }, [showWelcomeCard, visibleBanners.length])
 
   const FEATURED_PLAN = { name:'DeFi Accelerator', roi:'3.5%', dur:'7 days', spots:3, endsAt: new Date(Date.now()+2*86400000+14*3600000+33*60000) }
+  
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'70vh' }}>
       <div style={{ width:34, height:34, border:'3px solid rgba(242,186,14,0.18)', borderTopColor:'#F2BA0E', borderRadius:'50%', animation:'spin .8s linear infinite' }} />
@@ -414,7 +445,7 @@ export default function HomePage() {
   )
 
   return (
-    <div style={{ padding:'4px 0 16px' }}>
+    <div style={{ padding:'4px 0 16px', willChange: 'scroll-position' }}>
 
       {/* ── Portfolio Balance — floats on black, no card box ── */}
       <div style={{ margin:'8px 16px 0', padding:'20px 18px 14px', borderRadius:20, border:'1px solid rgba(242,186,14,0.2)', background:'linear-gradient(145deg, rgba(242,186,14,0.12) 0%, rgba(21,26,33,0.96) 35%, rgba(11,14,17,1) 100%)', boxShadow:'0 20px 45px rgba(0,0,0,0.35)' }}>
@@ -427,7 +458,7 @@ export default function HomePage() {
             }
           </button>
         </div>
-        <div style={{ fontSize:42, fontWeight:900, letterSpacing:'-1px', marginBottom:4, transition:'all .3s' }}>
+        <div style={{ fontSize:42, fontWeight:900, letterSpacing:'-1px', marginBottom:4, transition:'all .3s', willChange: 'contents' }}>
           {balanceHidden ? '••••••' : `$${usdBal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`}
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -470,7 +501,7 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -32 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              style={{ position: 'relative', padding: 12, display: 'flex', gap: 10, alignItems: 'center' }}
+              style={{ position: 'relative', padding: 12, display: 'flex', gap: 10, alignItems: 'center', willChange: 'transform' }}
             >
               {/* Icon / Illustration */}
               <div style={{
@@ -610,7 +641,7 @@ export default function HomePage() {
             <span style={{ fontWeight:700, fontSize:15 }}>Active Plans</span>
             <Link href="/invest?tab=my" style={{ color:'var(--brand-primary)', fontSize:12, textDecoration:'none', fontWeight:600 }}>View All →</Link>
           </div>
-          <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px' }} className="no-scrollbar">
+          <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', willChange: 'scroll-position' }} className="no-scrollbar">
             {activeInvestments.slice(0,5).map((inv:any) => {
               const prog = Math.min(100,((Date.now()-new Date(inv.startDate).getTime())/(new Date(inv.endDate).getTime()-new Date(inv.startDate).getTime()))*100)
               const dailyEarn = inv.amount * inv.dailyRoi
