@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, memo, startTransitio
 import Link from 'next/link'
 import { Download, Upload, TrendingUp, History, UserCheck } from 'lucide-react'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
-import * as HomeSections from '@/components/home/HomeSections'
+import * as HomeSections from '../../../components/home/HomeSections'
 
 // ─── Shared mobile hook ───────────────────────────────────────────────────
 function useIsMobile() {
