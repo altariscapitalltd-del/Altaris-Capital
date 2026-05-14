@@ -5,6 +5,19 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Download, Upload, TrendingUp, History, Gift, Check, UserCheck, Clock } from 'lucide-react'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
+// Deferred rendering hook - similar to Invest tab
+function useIdleReady(delay = 0) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if ('requestIdleCallback' in window) (window as any).requestIdleCallback(() => setReady(true), { timeout: 1500 })
+      else (window as any).requestAnimationFrame(() => setReady(true))
+    }, delay)
+    return () => window.clearTimeout(timer)
+  }, [delay])
+  return ready
+}
+
 // Mini sparkline component - memoized to prevent unnecessary redraws
 const Sparkline = memo(function Sparkline({ data, color, width=64, height=28 }: { data:number[], color: string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -32,9 +45,8 @@ const Sparkline = memo(function Sparkline({ data, color, width=64, height=28 }: 
     ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke()
   }, [data, color, width, height])
   
-  return <canvas ref={canvasRef} style={{ width, height, display:'block', willChange: 'contents' }} />
+  return <canvas ref={canvasRef} style={{ width, height, display:'block' }} />
 }, (prev, next) => {
-  // Custom comparison: only re-render if data array reference changes or color changes
   return prev.data === next.data && prev.color === next.color && prev.width === next.width && prev.height === next.height
 })
 
@@ -71,7 +83,7 @@ const PortfolioChart = memo(function PortfolioChart({ data, color = '#0ECB81', w
     ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI * 2); ctx.stroke()
   }, [data, color, width, height])
   
-  return <canvas ref={canvasRef} style={{ width: '100%', height, display: 'block', willChange: 'contents' }} />
+  return <canvas ref={canvasRef} style={{ width: '100%', height, display: 'block' }} />
 }, (prev, next) => {
   return prev.data === next.data && prev.color === next.color && prev.width === next.width && prev.height === next.height
 })
@@ -222,7 +234,7 @@ const LATEST_NEWS = [
 
 type LiveCoin = { sym: string; name: string; price: number; change: number; spark: number[] }
 
-const BybitSection = memo(function BybitSection({ coins }: { coins: LiveCoin[] }) {
+const BybitSection = memo(function BybitSection({ coins, ready }: { coins: LiveCoin[], ready: boolean }) {
   const [eventsTab, setEventsTab] = useState<'events' | 'news'>('events')
   const fallbackCoins: LiveCoin[] = [
     { sym: 'BTC', name: 'Bitcoin', price: 0, change: 0, spark: [1, 2, 1.8, 2.3, 2.2, 2.6, 2.8] },
@@ -231,6 +243,28 @@ const BybitSection = memo(function BybitSection({ coins }: { coins: LiveCoin[] }
     { sym: 'SOL', name: 'Solana', price: 0, change: 0, spark: [0.8, 0.9, 0.85, 1, 1.05, 1.1, 1.15] },
   ]
   const list = coins.length ? coins : fallbackCoins
+
+  // Only render heavy sections when ready
+  if (!ready) {
+    return (
+      <div style={{ marginTop: 18, padding: '0 16px' }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: 'var(--text-secondary)' }}>Crypto</div>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+            {[1,2,3,4].map((i) => (
+              <div key={i} style={{ padding: '12px 14px', borderBottom: i < 4 ? '1px solid var(--border)' : 'none', display: 'flex', gap: 12, alignItems: 'center' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bg-elevated)', animation: 'pulse 2s infinite' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ height: 12, background: 'var(--bg-elevated)', borderRadius: 4, marginBottom: 6, animation: 'pulse 2s infinite' }} />
+                  <div style={{ height: 10, background: 'var(--bg-elevated)', borderRadius: 4, width: '60%', animation: 'pulse 2s infinite' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ marginTop: 18, padding: '0 16px' }}>
@@ -307,6 +341,9 @@ export default function HomePage() {
   const [bannerIndex, setBannerIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [transactions, setTransactions] = useState<any[]>([])
+  
+  // Deferred rendering - heavy sections load after 150ms
+  const heavyReady = useIdleReady(150)
 
   const load = useCallback(() => {
     fetch('/api/user/profile').then(r=>r.json()).then(d=>{ setUser(d.user); setLoading(false) }).catch(() => setLoading(false))
@@ -332,7 +369,7 @@ export default function HomePage() {
 
   useEffect(() => {
     load()
-    // Increase polling interval from 30s to 60s to reduce re-renders
+    // Increase polling interval from 30s to 90s to reduce re-renders significantly
     const t = setInterval(() => { 
       fetch('/api/markets/list?per_page=40')
         .then(r=>r.json())
@@ -351,7 +388,7 @@ export default function HomePage() {
           setCoins(movers) 
         })
         .catch(()=>{}) 
-    }, 60000)
+    }, 90000)
     window.addEventListener('balance:refresh', load)
     return () => { clearInterval(t); window.removeEventListener('balance:refresh', load) }
   }, [load])
@@ -445,10 +482,10 @@ export default function HomePage() {
   )
 
   return (
-    <div style={{ padding:'4px 0 16px', willChange: 'scroll-position' }}>
+    <div style={{ padding:'4px 0 16px' }}>
 
       {/* ── Portfolio Balance — floats on black, no card box ── */}
-      <div style={{ margin:'8px 16px 0', padding:'20px 18px 14px', borderRadius:20, border:'1px solid rgba(242,186,14,0.2)', background:'linear-gradient(145deg, rgba(242,186,14,0.12) 0%, rgba(21,26,33,0.96) 35%, rgba(11,14,17,1) 100%)', boxShadow:'0 20px 45px rgba(0,0,0,0.35)' }}>
+      <div style={{ margin:'8px 16px 0', padding:'20px 18px 14px', borderRadius:20, border:'1px solid rgba(242,186,14,0.2)', background:'linear-gradient(145deg, rgba(242,186,14,0.12) 0%, rgba(21,26,33,0.96) 35%, rgba(11,14,17,1) 100%)' }}>
         <div style={{ color:'var(--text-muted)', fontSize:12, fontWeight:500, marginBottom:6, display:'flex', alignItems:'center', gap:6 }}>
           Total Portfolio Value
           <button onClick={()=>setBalanceHidden(h=>!h)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:0, lineHeight:1 }}>
@@ -458,7 +495,7 @@ export default function HomePage() {
             }
           </button>
         </div>
-        <div style={{ fontSize:42, fontWeight:900, letterSpacing:'-1px', marginBottom:4, transition:'all .3s', willChange: 'contents' }}>
+        <div style={{ fontSize:42, fontWeight:900, letterSpacing:'-1px', marginBottom:4 }}>
           {balanceHidden ? '••••••' : `$${usdBal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`}
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -477,7 +514,7 @@ export default function HomePage() {
             { l:'History', Icon: History, href:'/transactions' },
           ].map(({ l, Icon, href })=>(
             <Link key={l} href={href} style={{ flex:1, textDecoration:'none' }}>
-              <div style={{ background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', borderRadius:14, padding:'12px 8px', textAlign:'center', border:'1px solid var(--border)', transition:'all .15s', color:'var(--text-secondary)', boxShadow:'0 10px 24px rgba(0,0,0,0.2)' }} className="pressable ui-upgrade-card">
+              <div style={{ background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', borderRadius:14, padding:'12px 8px', textAlign:'center', border:'1px solid var(--border)', transition:'all .15s', color:'var(--text-secondary)' }} className="pressable">
                 <div style={{ display:'flex', justifyContent:'center', marginBottom:4 }}><Icon size={20} strokeWidth={2} /></div>
                 <div style={{ color:'var(--text-secondary)', fontSize:11, fontWeight:600 }}>{l}</div>
               </div>
@@ -486,7 +523,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <BalanceChart usdBalance={usdBal} transactions={transactions} />
+      {heavyReady && <BalanceChart usdBalance={usdBal} transactions={transactions} />}
 
       {/* ── Promo banner (rotating offers) — only when unverified or bonus not claimed ── */}
       {visibleBanners.length > 0 && (
@@ -501,7 +538,7 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -32 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              style={{ position: 'relative', padding: 12, display: 'flex', gap: 10, alignItems: 'center', willChange: 'transform' }}
+              style={{ position: 'relative', padding: 12, display: 'flex', gap: 10, alignItems: 'center' }}
             >
               {/* Icon / Illustration */}
               <div style={{
@@ -603,11 +640,10 @@ export default function HomePage() {
       )}
 
       {/* ── Bybit-style: Events, Crypto list/grid, Latest Events/News ── */}
-      <BybitSection coins={coins} />
-
-
+      <BybitSection coins={coins} ready={heavyReady} />
 
       {/* ── Limited Offer with Countdown ── */}
+      {heavyReady && (
       <div style={{ margin:'18px 16px 0' }}>
         <div style={{ background:'linear-gradient(135deg,#0D0D0D,#141414)', border:'1px solid rgba(246,70,93,0.2)', borderRadius:16, padding:18, position:'relative', overflow:'hidden' }}>
           <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 85% 50%,rgba(246,70,93,0.06),transparent 60%)', pointerEvents:'none' }}/>
@@ -633,15 +669,16 @@ export default function HomePage() {
           </Link>
         </div>
       </div>
+      )}
 
       {/* ── Active Plans ── */}
-      {activeInvestments.length > 0 && (
+      {heavyReady && activeInvestments.length > 0 && (
         <div style={{ margin:'22px 0 0' }}>
           <div style={{ padding:'0 16px', display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
             <span style={{ fontWeight:700, fontSize:15 }}>Active Plans</span>
             <Link href="/invest?tab=my" style={{ color:'var(--brand-primary)', fontSize:12, textDecoration:'none', fontWeight:600 }}>View All →</Link>
           </div>
-          <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px', willChange: 'scroll-position' }} className="no-scrollbar">
+          <div style={{ display:'flex', gap:10, overflowX:'auto', padding:'0 16px 4px' }} className="no-scrollbar">
             {activeInvestments.slice(0,5).map((inv:any) => {
               const prog = Math.min(100,((Date.now()-new Date(inv.startDate).getTime())/(new Date(inv.endDate).getTime()-new Date(inv.startDate).getTime()))*100)
               const dailyEarn = inv.amount * inv.dailyRoi
@@ -662,6 +699,7 @@ export default function HomePage() {
       )}
 
       {/* ── Market Prices ── */}
+      {heavyReady && (
       <div style={{ margin:'22px 16px 0' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
           <span style={{ fontWeight:700, fontSize:15 }}>Markets</span>
@@ -669,7 +707,7 @@ export default function HomePage() {
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
           {coins.slice(0, 4).map(coin => (
-            <div key={coin.sym} style={{ background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border:'1px solid var(--border)', borderRadius:16, padding:14, boxShadow:'0 14px 28px rgba(0,0,0,0.22)' }} className="pressable ui-upgrade-card">
+            <div key={coin.sym} style={{ background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border:'1px solid var(--border)', borderRadius:16, padding:14 }} className="pressable">
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
                 <div>
                   <div style={{ fontWeight:700, fontSize:14 }}>{coin.sym}</div>
@@ -687,10 +725,11 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+      )}
 
       {/* ── KYC Prompt ── */}
       {user?.kycStatus !== 'APPROVED' && user?.kycStatus !== 'PENDING_REVIEW' && (
-        <Link href="/kyc" style={{ display:'block', margin:'20px 16px 0', background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border:'1px solid rgba(242,186,14,0.24)', borderRadius:16, padding:16, textDecoration:'none', boxShadow:'0 12px 30px rgba(0,0,0,0.2)' }} className="ui-upgrade-card">
+        <Link href="/kyc" style={{ display:'block', margin:'20px 16px 0', background:'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border:'1px solid rgba(242,186,14,0.24)', borderRadius:16, padding:16, textDecoration:'none' }} className="pressable">
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
             <div style={{ width:42, height:42, borderRadius:11, background:'rgba(242,186,14,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'var(--brand-primary)' }}><UserCheck size={22} strokeWidth={2} /></div>
             <div style={{ flex:1 }}>
