@@ -3,6 +3,24 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import CoinIcon from '@/components/ui/CoinIcon'
 
+function ShadowCard({ h = 92 }: { h?: number }) {
+  return (
+    <div style={{
+      height: h,
+      borderRadius: 18,
+      background: '#050505',
+      border: '1px solid rgba(255,255,255,0.06)',
+      overflow: 'hidden',
+      position: 'relative',
+    }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(110deg, transparent 18%, rgba(255,255,255,0.06) 32%, transparent 46%)', backgroundSize: '200% 100%', opacity: 0.35 }} />
+      <div style={{ position: 'absolute', top: 12, left: 12, right: 76, height: 10, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }} />
+      <div style={{ position: 'absolute', top: 32, left: 12, width: '42%', height: 12, borderRadius: 999, background: 'rgba(255,255,255,0.08)' }} />
+      <div style={{ position: 'absolute', bottom: 12, left: 12, right: 12, height: 26, borderRadius: 999, background: 'rgba(255,255,255,0.05)' }} />
+    </div>
+  )
+}
+
 function Sparkline({ data, color, width=60, height=28 }: { data:number[], color:string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
@@ -152,7 +170,9 @@ export default function MarketsPage() {
         </div>
 
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>Loading...</div>
+          <div style={{ display: 'grid', gap: 12, paddingTop: 10 }}>
+            {Array.from({ length: 6 }).map((_, i) => <ShadowCard key={i} h={78} />)}
+          </div>
         ) : (
           <>
             {filtered.map(coin => (

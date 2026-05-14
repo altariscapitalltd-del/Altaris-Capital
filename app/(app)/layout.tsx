@@ -115,7 +115,11 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installModalType, setInstallModalType] = useState<'android'|'ios'|null>(null)
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
   const [splashVisible, setSplashVisible] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [displayChildren, setDisplayChildren] = useState(children)
   const headerRef = useRef<HTMLElement | null>(null)
+  const stableChildrenRef = useRef(children)
+  const stablePathRef = useRef(pathname)
 
   useEffect(() => {
     let cancelled = false
@@ -172,6 +176,23 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     run()
     return () => { cancelled = true }
   }, [router])
+
+  useEffect(() => {
+    if (pathname === stablePathRef.current) return
+    setIsTransitioning(true)
+    const prev = stableChildrenRef.current
+    setDisplayChildren(prev)
+    const raf1 = window.requestAnimationFrame(() => {
+      const raf2 = window.requestAnimationFrame(() => {
+        stableChildrenRef.current = children
+        stablePathRef.current = pathname
+        setDisplayChildren(children)
+        setIsTransitioning(false)
+      })
+      return () => window.cancelAnimationFrame(raf2)
+    })
+    return () => window.cancelAnimationFrame(raf1)
+  }, [children, pathname])
 
   useEffect(() => {
     // Some mobile webviews (notably in-app browsers) can drop the synthetic click
@@ -385,6 +406,12 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     }
   }, [installBannerVisible, unread, pathname])
 
+  useEffect(() => {
+    NAV.forEach(({ href }) => {
+      router.prefetch(href)
+    })
+  }, [router])
+
   if (splashVisible) {
     return (
       <div style={{
@@ -554,8 +581,13 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main className="app-main-scroll" style={{ flex: 1 }}>
-        {children}
+      <main className="app-main-scroll" style={{ flex: 1, position: 'relative' }}>
+        <div style={{ opacity: isTransitioning ? 0 : 1, transition: 'opacity 120ms ease' }}>
+          {displayChildren}
+        </div>
+        {isTransitioning && (
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(7,11,18,0.12), rgba(7,11,18,0.02))' }} />
+        )}
       </main>
 
       <AnimatePresence>
@@ -652,6 +684,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             return (
               <Link
                 key={href} href={href}
+                prefetch
                 style={{
                   display: 'flex', flexDirection: 'column',
                   alignItems: 'center', justifyContent: 'center',

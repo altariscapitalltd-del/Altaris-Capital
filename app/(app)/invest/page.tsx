@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
+import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 function Sparkline({ data, color, width=80, height=32 }: { data:number[], color:string, width?:number, height?:number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -28,6 +29,36 @@ function RiskBar({ level }: { level: number }) {
       {[1,2,3,4,5].map(i=>(
         <div key={i} style={{ width:10, height:4, borderRadius:2, background: i<=level ? colors[level-1] : 'var(--bg-elevated)' }}/>
       ))}
+    </div>
+  )
+}
+
+function useIdleReady(delay = 0) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if ('requestIdleCallback' in window) (window as any).requestIdleCallback(() => setReady(true), { timeout: 1500 })
+      else (window as any).requestAnimationFrame(() => setReady(true))
+    }, delay)
+    return () => window.clearTimeout(timer)
+  }, [delay])
+  return ready
+}
+
+function ShadowCard({ h = 92 }: { h?: number }) {
+  return (
+    <div style={{
+      height: h,
+      borderRadius: 18,
+      background: '#050505',
+      border: '1px solid rgba(255,255,255,0.06)',
+      overflow: 'hidden',
+      position: 'relative',
+    }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(110deg, transparent 18%, rgba(255,255,255,0.06) 32%, transparent 46%)', backgroundSize: '200% 100%', opacity: 0.35 }} />
+      <div style={{ position: 'absolute', top: 14, left: 14, right: 84, height: 10, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }} />
+      <div style={{ position: 'absolute', top: 34, left: 14, right: 126, height: 14, borderRadius: 999, background: 'rgba(255,255,255,0.08)' }} />
+      <div style={{ position: 'absolute', bottom: 14, left: 14, width: '54%', height: 12, borderRadius: 999, background: 'rgba(255,255,255,0.05)' }} />
     </div>
   )
 }
@@ -132,6 +163,16 @@ function InvestContent() {
   const [liveHot, setLiveHot] = useState<PlanType[]>([])
   const [fetchingLive, setFetchingLive] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const heavyReady = useIdleReady(120)
+
+  function PlanLogo({ plan, size = 28 }: { plan: PlanType; size?: number }) {
+    const src = plan.image
+    return (
+      <div style={{ width: size + 12, height: size + 12, borderRadius: Math.max(10, size / 2.4), background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+        {src ? <img src={src} alt={plan.name} style={{ width: size, height: size, objectFit: 'contain', display: 'block' }} /> : <div style={{ width: size, height: size, borderRadius: size / 2, background: 'linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04))' }} />}
+      </div>
+    )
+  }
 
   useBodyScrollLock(sheetOpen)
 
@@ -227,7 +268,10 @@ function InvestContent() {
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em' }}>Invest</h1>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+            <AltarisLogoMark size={26} />
+            <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', margin:0 }}>Invest</h1>
+          </div>
           <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Grow your wealth with expert plans</div>
         </div>
         <div style={{ display: 'flex', background: 'var(--bg-card)', padding: 4, borderRadius: 12, border: '1px solid var(--border)' }}>
@@ -257,7 +301,20 @@ function InvestContent() {
           </div>
 
           {/* ── HOT Section ── */}
-          {category === 'All' && liveHot.length > 0 && (
+          {(!heavyReady || fetchingLive) && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em' }}>HOT TRENDING</div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none' }}>
+                <div style={{ minWidth: 160 }}><ShadowCard h={132} /></div>
+                <div style={{ minWidth: 160 }}><ShadowCard h={132} /></div>
+                <div style={{ minWidth: 160 }}><ShadowCard h={132} /></div>
+              </div>
+            </div>
+          )}
+
+          {heavyReady && !fetchingLive && category === 'All' && liveHot.length > 0 && (
             <div style={{ marginBottom: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em' }}>HOT TRENDING</div>
@@ -267,7 +324,7 @@ function InvestContent() {
                   <div key={plan.id} onClick={() => openInvestSheet(plan)} style={{ minWidth: 160, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 14, cursor: 'pointer' }} className="pressable">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                       <div style={{ width: 32, height: 32, borderRadius: 10, background: `${plan.iconBg}1A`, border: `1px solid ${plan.iconBg}30`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <img src={plan.image} alt={plan.name} style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                        <PlanLogo plan={plan} size={18} />
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--brand-primary)' }}>{plan.daily}%</div>
@@ -284,7 +341,9 @@ function InvestContent() {
 
           {/* ── Plans List ── */}
           <div style={{ display: 'grid', gap: 12 }}>
-            {filteredPlans.length === 0 ? (
+            {!heavyReady || fetchingLive ? (
+              Array.from({ length: 4 }).map((_, i) => <ShadowCard key={i} h={152} />)
+            ) : filteredPlans.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No plans found matching your search.</div>
             ) : (
               filteredPlans.map(plan => (
@@ -292,7 +351,7 @@ function InvestContent() {
                   {plan.badge && <div style={{ position: 'absolute', top: 0, right: 0, background: 'var(--brand-primary)', color: '#000', fontSize: 9, fontWeight: 900, padding: '3px 10px', borderRadius: '0 0 0 10px', textTransform: 'uppercase' }}>{plan.badge}</div>}
                   <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 12 }}>
                     <div style={{ width: 44, height: 44, borderRadius: 12, background: `${plan.iconBg}1A`, border: `1px solid ${plan.iconBg}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <img src={plan.image} alt={plan.name} style={{ width: 26, height: 26, objectFit: 'contain' }} />
+                      <PlanLogo plan={plan} size={24} />
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
@@ -320,6 +379,12 @@ function InvestContent() {
       ) : (
         /* ── My Plans Tab ── */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {!heavyReady && (
+            <div style={{ display:'grid', gap:12 }}>
+              <div style={{ height: 110, borderRadius: 16, background: 'rgba(255,255,255,0.05)' }} />
+              <div style={{ height: 160, borderRadius: 16, background: 'rgba(255,255,255,0.05)' }} />
+            </div>
+          )}
           {userInvestments.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-card)', borderRadius: 20, border: '1px dashed var(--border)' }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
@@ -379,7 +444,7 @@ function InvestContent() {
             <div style={{ padding: '14px 24px 0' }}><div style={{ width: 40, height: 4, background: 'var(--bg-elevated)', borderRadius: 2, margin: '0 auto 14px' }} /></div>
             <div style={{ padding: '0 24px', overflowY: 'auto' }}>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 14, background: `${selected.iconBg}1A`, border: `1px solid ${selected.iconBg}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><img src={selected.image} alt={selected.name} style={{ width: 28, height: 28, objectFit: 'contain' }} /></div>
+                <PlanLogo plan={selected} size={28} />
                 <div><div style={{ fontWeight: 800, fontSize: 18 }}>{selected.name}</div><div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>{selected.class} · {selected.dur} days · {selected.daily}% daily</div></div>
               </div>
               {selected.description && <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: 12, marginBottom: 16, fontSize: 13, color: 'var(--text-secondary)' }}>{selected.description}</div>}

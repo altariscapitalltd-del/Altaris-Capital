@@ -6,17 +6,40 @@ export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { searchParams } = new URL(req.url)
-  const page = parseInt(searchParams.get('page') || '1')
   const limit = 20
+  const cursor = searchParams.get('cursor')
+  let cursorData: { createdAt: string; id: string } | null = null
+  if (cursor) {
+    try { cursorData = JSON.parse(decodeURIComponent(cursor)) } catch { cursorData = null }
+  }
 
-  const [transactions, total] = await Promise.all([
+  const where = cursorData
+    ? {
+        userId: user.id,
+        OR: [
+          { createdAt: { lt: new Date(cursorData.createdAt) } },
+          { createdAt: new Date(cursorData.createdAt), id: { lt: cursorData.id } },
+        ],
+      }
+    : { userId: user.id }
+
+  const [rows, total] = await Promise.all([
     prisma.transaction.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit,
+      where,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
     }),
     prisma.transaction.count({ where: { userId: user.id } }),
   ])
-  return NextResponse.json({ transactions, total, page, pages: Math.ceil(total / limit) })
+
+  const hasMore = rows.length > limit
+  const transactions = hasMore ? rows.slice(0, limit) : rows
+  const last = transactions[transactions.length - 1]
+  const nextCursor = hasMore && last ? encodeURIComponent(JSON.stringify({ createdAt: last.createdAt, id: last.id })) : null
+  return NextResponse.json({
+    transactions,
+    total,
+    nextCursor,
+    hasMore,
+  })
 }

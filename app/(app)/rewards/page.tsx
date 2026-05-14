@@ -55,6 +55,18 @@ function CopyIcon({ size = 16, color = '#888' }) {
   )
 }
 
+function useIdleReady(delay = 0) {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if ('requestIdleCallback' in window) (window as any).requestIdleCallback(() => setReady(true), { timeout: 1500 })
+      else (window as any).requestAnimationFrame(() => setReady(true))
+    }, delay)
+    return () => window.clearTimeout(timer)
+  }, [delay])
+  return ready
+}
+
 export default function RewardsPage() {
   const [data, setData]             = useState<any>(null)
   const [leaderboard, setLeaderboard] = useState<any>(null)
@@ -64,6 +76,7 @@ export default function RewardsPage() {
   const [activeTab, setActiveTab]   = useState<'overview' | 'referrals' | 'rewards' | 'leaderboard'>('overview')
   const [celebration, setCelebration] = useState<string | null>(null)
   const prevQualified = useState<number>(0)
+  const heavyReady = useIdleReady(120)
 
   const load = useCallback(async () => {
     try {
@@ -207,6 +220,7 @@ export default function RewardsPage() {
       {/* OVERVIEW */}
       {activeTab === 'overview' && (
         <div style={{ padding:'0 20px', display:'flex', flexDirection:'column', gap:16 }}>
+          {!heavyReady && <div style={{ height: 220, borderRadius: 16, background: 'rgba(255,255,255,0.05)' }} />}
 
           {/* Tier Progress */}
           <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, padding:18 }}>
@@ -324,7 +338,7 @@ export default function RewardsPage() {
       )}
 
       {/* REFERRALS TAB */}
-      {activeTab === 'referrals' && (
+      {activeTab === 'referrals' && heavyReady && (
         <div style={{ padding:'0 20px', display:'flex', flexDirection:'column', gap:12 }}>
           {(!data?.referrals || data.referrals.length === 0) ? (
             <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, padding:40, textAlign:'center' }}>
@@ -372,7 +386,7 @@ export default function RewardsPage() {
       )}
 
       {/* REWARDS TAB */}
-      {activeTab === 'rewards' && (
+      {activeTab === 'rewards' && heavyReady && (
         <div style={{ padding:'0 20px', display:'flex', flexDirection:'column', gap:12 }}>
           {(!data?.rewards || data.rewards.length === 0) ? (
             <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, padding:40, textAlign:'center' }}>

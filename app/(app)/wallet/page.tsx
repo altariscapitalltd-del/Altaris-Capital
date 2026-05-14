@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import QRCode from 'qrcode'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
-import CoinIcon from '@/components/ui/CoinIcon'
 
 const DEPOSIT_COINS = [
   { sym: 'BTC', name: 'Bitcoin', color: '#F7931A', minDeposit: 0.001 },
@@ -13,6 +12,26 @@ const DEPOSIT_COINS = [
 ] as const
 
 type WalletTab = 'none' | 'deposit' | 'withdraw' | 'reward'
+
+function ShadowCard({ h = 96 }: { h?: number }) {
+  return (
+    <div style={{
+      height: h,
+      borderRadius: 18,
+      background: '#050505',
+      border: '1px solid rgba(255,255,255,0.06)',
+      boxShadow: 'none',
+      overflow: 'hidden',
+      position: 'relative',
+    }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(110deg, transparent 18%, rgba(255,255,255,0.06) 32%, transparent 46%)', backgroundSize: '200% 100%', opacity: 0.35 }} />
+      <div style={{ position: 'absolute', top: 14, left: 14, right: 14, height: 12, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }} />
+      <div style={{ position: 'absolute', top: 38, left: 14, right: 70, height: 18, borderRadius: 999, background: 'rgba(255,255,255,0.08)' }} />
+      <div style={{ position: 'absolute', bottom: 14, left: 14, width: '58%', height: 12, borderRadius: 999, background: 'rgba(255,255,255,0.05)' }} />
+      <div style={{ position: 'absolute', bottom: 14, right: 14, width: 54, height: 54, borderRadius: 16, background: 'rgba(255,255,255,0.05)' }} />
+    </div>
+  )
+}
 
 function MiniTrend({ values, color = '#F2BA0E' }: { values: number[]; color?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -107,6 +126,7 @@ export default function WalletPage() {
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [ready, setReady] = useState(false)
   const [refCode, setRefCode] = useState('')
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
 
@@ -135,31 +155,54 @@ export default function WalletPage() {
   }
 
   useEffect(() => {
-    loadProfile()
-    loadTransactions()
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [profileRes, txRes, addrRes, marketRes] = await Promise.allSettled([
+          fetch('/api/user/profile'),
+          fetch('/api/transactions?page=1'),
+          fetch('/api/wallet/addresses'),
+          fetch('/api/markets/list?per_page=40'),
+        ])
 
-    fetch('/api/wallet/addresses')
-      .then((r) => r.json())
-      .then((d) => {
-        const mapped: Record<string, string> = {}
-        d.addresses?.forEach((a: any) => {
-          mapped[a.currency] = a.address
-        })
-        setWalletAddresses(mapped)
-      })
-      .catch(() => setWalletAddresses({}))
+        if (cancelled) return
 
-    fetch('/api/markets/list?per_page=40')
-      .then((r) => r.json())
-      .then((d) => {
-        const mapped: Record<string, { price: number; change: number; image?: string; spark?: number[] }> = { USDT: { price: 1, change: 0 } }
-        ;(d.list || []).forEach((c: any) => {
-          const sym = String(c.symbol || '').toUpperCase()
-          if (sym) mapped[sym] = { price: Number(c.price || 0), change: Number(c.change24h || 0), image: c.image || '', spark: Array.isArray(c.spark) ? c.spark : [] }
-        })
-        setMarketPrices(mapped)
-      })
-      .catch(() => setMarketPrices({ USDT: { price: 1, change: 0 } }))
+        if (profileRes.status === 'fulfilled') {
+          const d = await profileRes.value.json().catch(() => ({}))
+          const nextBalances: Record<string, number> = {}
+          d.user?.balances?.forEach((b: any) => { nextBalances[b.currency] = b.amount })
+          setBalances(nextBalances)
+          const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
+          setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
+          setRefCode(d.user?.referralCode || 'ALTARIS01')
+        }
+
+        if (txRes.status === 'fulfilled') {
+          const d = await txRes.value.json().catch(() => ({}))
+          setTransactions(d.transactions || [])
+        }
+
+        if (addrRes.status === 'fulfilled') {
+          const d = await addrRes.value.json().catch(() => ({}))
+          const mapped: Record<string, string> = {}
+          d.addresses?.forEach((a: any) => { mapped[a.currency] = a.address })
+          setWalletAddresses(mapped)
+        }
+
+        if (marketRes.status === 'fulfilled') {
+          const d = await marketRes.value.json().catch(() => ({}))
+          const mapped: Record<string, { price: number; change: number; image?: string; spark?: number[] }> = { USDT: { price: 1, change: 0 } }
+          ;(d.list || []).forEach((c: any) => {
+            const sym = String(c.symbol || '').toUpperCase()
+            if (sym) mapped[sym] = { price: Number(c.price || 0), change: Number(c.change24h || 0), image: c.image || '', spark: Array.isArray(c.spark) ? c.spark : [] }
+          })
+          setMarketPrices(mapped)
+        }
+      } finally {
+        if (!cancelled) setReady(true)
+      }
+    })()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -439,7 +482,16 @@ export default function WalletPage() {
 
   return (
     <div style={{ padding: '10px 16px 22px', background: '#000', minHeight: '100vh' }}>
-      {copied && (
+      {!ready && (
+        <div style={{ display: 'grid', gap: 14 }}>
+          <ShadowCard h={118} />
+          <ShadowCard h={92} />
+          <ShadowCard h={92} />
+          <ShadowCard h={92} />
+          <ShadowCard h={210} />
+        </div>
+      )}
+      {ready && copied && (
         <div style={{ position: 'fixed', top: 'calc(var(--app-header-height, 64px) + 12px)', left: 16, right: 16, zIndex: 80, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
           <div style={{ background: 'rgba(14,203,129,0.15)', color: '#0ECB81', border: '1px solid rgba(14,203,129,0.25)', padding: '9px 14px', borderRadius: 999, fontSize: 12, fontWeight: 800, boxShadow: '0 8px 20px rgba(0,0,0,0.25)' }}>
             Copied
@@ -494,6 +546,9 @@ export default function WalletPage() {
       )}
 
       <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
+        {(!walletCurrencies.some((a) => a.image) || loading) && (
+          <ShadowCard h={96} />
+        )}
         {[
           { title: 'BTC Growth Plan', sub: 'Best for high conviction holders', roi: '2.4% daily', sym: 'BTC', color: '#F7931A' },
           { title: 'ETH Builder Plan', sub: 'Balanced growth and stability', roi: '1.6% daily', sym: 'ETH', color: '#627EEA' },
@@ -503,7 +558,7 @@ export default function WalletPage() {
           return (
             <Link key={p.title} href="/invest" style={{ padding: 14, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }} className="pressable">
               <div style={{ width: 42, height: 42, borderRadius: 14, background: img ? '#111' : p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                {img ? <img src={img} alt={`${p.sym} logo`} style={{ width: 28, height: 28, objectFit: 'contain' }} /> : <CoinIcon symbol={p.sym} size={26} />}
+                {img ? <img src={img} alt={`${p.sym} logo`} style={{ width: 28, height: 28, objectFit: 'contain' }} /> : <div style={{ width: 18, height: 18, borderRadius: 999, background: 'rgba(255,255,255,0.1)' }} />}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>{p.title}</div>
@@ -530,7 +585,7 @@ export default function WalletPage() {
         {walletCurrencies.map((asset) => (
           <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} className="wallet-currency-card" style={{ background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
             <span className="wallet-currency-icon" style={{ background: asset.image ? '#111' : asset.color }}>
-              {asset.image ? <img src={asset.image} alt={`${asset.name} logo`} /> : <CoinIcon symbol={asset.sym} size={34} />}
+              {asset.image ? <img src={asset.image} alt={`${asset.name} logo`} /> : <div style={{ width: 16, height: 16, borderRadius: 999, background: 'rgba(255,255,255,0.1)' }} />}
             </span>
             <span className="wallet-currency-copy">
               <strong>{asset.name}</strong>
@@ -548,6 +603,12 @@ export default function WalletPage() {
           </Link>
         ))}
       </div>
+
+      {!walletCurrencies.some((a) => a.image) && (
+        <div style={{ marginBottom: 14 }}>
+          <ShadowCard h={96} />
+        </div>
+      )}
       {tab === 'deposit' && (
         <div style={{ marginBottom: 14 }}>
           {depositMode === 'network' && (
