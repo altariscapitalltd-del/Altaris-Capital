@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from 'react'
 import Link from 'next/link'
-import { AnimatePresence, motion } from 'framer-motion'
 import { Download, Upload, TrendingUp, History, Gift, Check, UserCheck, Clock } from 'lucide-react'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
@@ -332,6 +331,43 @@ const BybitSection = memo(function BybitSection({ coins, ready }: { coins: LiveC
   )
 })
 
+const PromoBanner = memo(function PromoBanner({ user, canClaimBonus, claimBonus }: { user: any; canClaimBonus: boolean; claimBonus: () => void }) {
+  const [bannerIndex, setBannerIndex] = useState(0)
+  const banners = useMemo(() => ([
+    { id: 'welcome', title: 'Claim Your $40 Welcome Bonus', subtitleApproved: 'KYC verified! Claim your reward instantly.', subtitleDefault: 'Complete KYC verification → Get $40 free', pill: 'Welcome Offer' },
+    { id: 'referral', title: 'Invite Friends, Earn up to 30%', subtitleApproved: 'Share your link and earn rebates on every trade.', subtitleDefault: 'Unlock referral rewards after KYC approval.', pill: 'Referral Reward' },
+    { id: 'daily', title: 'Daily Check-In Bonus', subtitleApproved: 'Tap claim once a day to stack extra yield.', subtitleDefault: 'Verify once, claim every day without friction.', pill: 'Daily Claim' },
+    { id: 'seasonal', title: 'Seasonal Yield Boost +5%', subtitleApproved: 'Limited-time APY boost on select plans.', subtitleDefault: 'Finish KYC to join the seasonal campaign.', pill: 'Seasonal Offer' },
+    { id: 'vip', title: 'Upgrade to VIP Tier 1', subtitleApproved: 'Lower fees, higher limits, priority support.', subtitleDefault: 'Verify identity to start your VIP journey.', pill: 'VIP Upgrade' },
+  ] as const), [])
+  const showWelcomeCard = user?.kycStatus !== 'APPROVED' || canClaimBonus
+  useEffect(() => {
+    if (!showWelcomeCard) return
+    const interval = window.setInterval(() => setBannerIndex((i) => (i + 1) % banners.length), 9000)
+    return () => window.clearInterval(interval)
+  }, [showWelcomeCard, banners.length])
+  if (!showWelcomeCard) return null
+  const item = banners[bannerIndex % banners.length]
+  return (
+    <div style={{ margin:'12px 16px 0', contentVisibility: 'auto', containIntrinsicSize: '220px' as any }}>
+      <div style={{ position:'relative', borderRadius:16, overflow:'hidden', border:'1px solid rgba(242,186,14,0.25)', background:'radial-gradient(circle at 0% 0%,rgba(242,186,14,0.18),transparent 55%), radial-gradient(circle at 100% 100%,rgba(59,130,246,0.12),transparent 55%)' }}>
+        <div style={{ position:'relative', padding: 12, display:'flex', gap: 10, alignItems:'center' }}>
+          <div style={{ width: 42, height: 42, borderRadius: 13, background: 'linear-gradient(135deg,rgba(0,0,0,0.2),rgba(0,0,0,0.8))', border: '1px solid rgba(242,186,14,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Gift size={15} strokeWidth={2} color="#000" /></div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 999, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(242,186,14,0.35)', color: '#F2BA0E' }}>{item.pill}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Limited offer</span>
+            </div>
+            <h2 style={{ fontSize: 14, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 2, color: 'var(--text-primary)' }}>{item.title}</h2>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.35, marginBottom: 7 }}>{user?.kycStatus === 'APPROVED' ? item.subtitleApproved : item.subtitleDefault}</p>
+            {user?.kycStatus === 'APPROVED' ? <button onClick={claimBonus} className="btn-primary" style={{ width:'100%', padding:'9px 0', borderRadius:10, fontWeight:700, fontSize:12 }}>Claim $40 Bonus</button> : <Link href="/kyc" style={{ display:'block', textDecoration:'none' }}><button className="btn-secondary" style={{ width:'100%', padding:'9px 0', borderRadius:10, fontWeight:700, fontSize:12 }}>Complete KYC</button></Link>}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
+
 export default function HomePage() {
   const [user, setUser] = useState<any>(null)
   const [coins, setCoins] = useState<LiveCoin[]>([])
@@ -424,54 +460,7 @@ export default function HomePage() {
   
   const canClaimBonus = !user?.bonusClaimed && !bonusDone
 
-  const BANNERS = [
-    {
-      id: 'welcome',
-      title: 'Claim Your $40 Welcome Bonus',
-      subtitleApproved: 'KYC verified! Claim your reward instantly.',
-      subtitleDefault: 'Complete KYC verification → Get $40 free',
-      pill: 'Welcome Offer',
-    },
-    {
-      id: 'referral',
-      title: 'Invite Friends, Earn up to 30%',
-      subtitleApproved: 'Share your link and earn rebates on every trade.',
-      subtitleDefault: 'Unlock referral rewards after KYC approval.',
-      pill: 'Referral Reward',
-    },
-    {
-      id: 'daily',
-      title: 'Daily Check-In Bonus',
-      subtitleApproved: 'Tap claim once a day to stack extra yield.',
-      subtitleDefault: 'Verify once, claim every day without friction.',
-      pill: 'Daily Claim',
-    },
-    {
-      id: 'seasonal',
-      title: 'Seasonal Yield Boost +5%',
-      subtitleApproved: 'Limited-time APY boost on select plans.',
-      subtitleDefault: 'Finish KYC to join the seasonal campaign.',
-      pill: 'Seasonal Offer',
-    },
-    {
-      id: 'vip',
-      title: 'Upgrade to VIP Tier 1',
-      subtitleApproved: 'Lower fees, higher limits, priority support.',
-      subtitleDefault: 'Verify identity to start your VIP journey.',
-      pill: 'VIP Upgrade',
-    },
-  ] as const
-
   const showWelcomeCard = user?.kycStatus !== 'APPROVED' || canClaimBonus
-  const visibleBanners = showWelcomeCard ? BANNERS : []
-
-  useEffect(() => {
-    if (!showWelcomeCard || visibleBanners.length === 0) return
-    const interval = setInterval(() => {
-      setBannerIndex((i) => (i + 1) % visibleBanners.length)
-    }, 9000)
-    return () => clearInterval(interval)
-  }, [showWelcomeCard, visibleBanners.length])
 
   const FEATURED_PLAN = { name:'DeFi Accelerator', roi:'3.5%', dur:'7 days', spots:3, endsAt: new Date(Date.now()+2*86400000+14*3600000+33*60000) }
   
@@ -526,118 +515,7 @@ export default function HomePage() {
       {heavyReady && <BalanceChart usdBalance={usdBal} transactions={transactions} />}
 
       {/* ── Promo banner (rotating offers) — only when unverified or bonus not claimed ── */}
-      {visibleBanners.length > 0 && (
-      <div style={{ margin:'12px 16px 0' }}>
-        <div style={{ position:'relative', borderRadius:16, overflow:'hidden', border:'1px solid rgba(242,186,14,0.25)', background:'radial-gradient(circle at 0% 0%,rgba(242,186,14,0.18),transparent 55%), radial-gradient(circle at 100% 100%,rgba(59,130,246,0.12),transparent 55%)' }}>
-          <div style={{ position:'absolute', top:-44, right:-30, width:112, height:112, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.22),transparent 70%)', opacity:0.85, pointerEvents:'none' }} />
-          <div style={{ position:'absolute', bottom:-36, left:-30, width:104, height:104, borderRadius:'50%', background:'radial-gradient(circle,rgba(59,130,246,0.18),transparent 70%)', pointerEvents:'none' }} />
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={visibleBanners[bannerIndex % visibleBanners.length].id}
-              initial={{ opacity: 0, x: 32 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -32 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              style={{ position: 'relative', padding: 12, display: 'flex', gap: 10, alignItems: 'center' }}
-            >
-              {/* Icon / Illustration */}
-              <div style={{
-                width: 42,
-                height: 42,
-                borderRadius: 13,
-                background: 'linear-gradient(135deg,rgba(0,0,0,0.2),rgba(0,0,0,0.8))',
-                border: '1px solid rgba(242,186,14,0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <div style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 8,
-                  background: 'conic-gradient(from 210deg,#F2BA0E,#FF7A00,#F2BA0E)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 18,
-                }}>
-                  <Gift size={15} strokeWidth={2} color="#000" />
-                </div>
-              </div>
-
-              {/* Text */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-                  <span style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    padding: '2px 7px',
-                    borderRadius: 999,
-                    background: 'rgba(0,0,0,0.65)',
-                    border: '1px solid rgba(242,186,14,0.35)',
-                    color: '#F2BA0E',
-                  }}>
-                    {visibleBanners[bannerIndex % visibleBanners.length].pill}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    Limited offer
-                  </span>
-                </div>
-
-                <h2 style={{
-                  fontSize: 14,
-                  fontWeight: 800,
-                  letterSpacing: '-0.02em',
-                  marginBottom: 2,
-                  color: 'var(--text-primary)',
-                }}>
-                  {visibleBanners[bannerIndex % visibleBanners.length].title}
-                </h2>
-
-                <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.35, marginBottom: 7 }}>
-                  {user?.kycStatus === 'APPROVED'
-                    ? visibleBanners[bannerIndex % visibleBanners.length].subtitleApproved
-                    : visibleBanners[bannerIndex % visibleBanners.length].subtitleDefault}
-                </p>
-
-                {/* Steps row stays similar to original bonus card */}
-                <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:7, overflowX:'auto' }} className="no-scrollbar">
-                  {[{l:'Sign Up',done:true},{l:'Verify KYC',done:user?.kycStatus==='APPROVED'},{l:'Claim Bonus',done:false}].map((s,i,arr)=>(
-                    <div key={s.l} style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
-                      <div style={{ width:14, height:14, borderRadius:'50%', background:s.done?'#F2BA0E':'rgba(0,0,0,0.55)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:8, fontWeight:800, color:s.done?'#000':'var(--text-muted)', flexShrink:0 }}>
-                        {s.done ? <Check size={9} strokeWidth={3} /> : i+1}
-                      </div>
-                      <span style={{ fontSize:9, color:s.done?'var(--text-primary)':'var(--text-muted)', fontWeight:s.done?600:400, whiteSpace:'nowrap' }}>{s.l}</span>
-                      {i<arr.length-1 && <div style={{ width:14, height:1, background:'rgba(242,186,14,0.25)' }}/>} 
-                    </div>
-                  ))}
-                </div>
-
-                {/* CTA */}
-                {user?.kycStatus === 'APPROVED' ? (
-                  <button
-                    onClick={claimBonus}
-                    className="btn-primary"
-                    style={{ width: '100%', padding: '9px 0', borderRadius: 10, fontWeight: 700, fontSize: 12 }}
-                  >
-                    {bonusClaiming ? 'Claiming…' : bonusDone ? 'Claimed' : 'Claim $40 Bonus'}
-                  </button>
-                ) : (
-                  <Link href="/kyc" style={{ display: 'block', textDecoration: 'none' }}>
-                    <button className="btn-secondary" style={{ width: '100%', padding: '9px 0', borderRadius: 10, fontWeight: 700, fontSize: 12 }}>
-                      Complete KYC
-                    </button>
-                  </Link>
-                )}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-      )}
+      <PromoBanner user={user} canClaimBonus={canClaimBonus} claimBonus={claimBonus} />
 
       {/* ── Bybit-style: Events, Crypto list/grid, Latest Events/News ── */}
       <BybitSection coins={coins} ready={heavyReady} />
