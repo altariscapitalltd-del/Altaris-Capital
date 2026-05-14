@@ -178,63 +178,13 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   }, [router])
 
   useEffect(() => {
-    if (pathname === stablePathRef.current) return
-    setIsTransitioning(true)
-    const prev = stableChildrenRef.current
-    setDisplayChildren(prev)
-    const raf1 = window.requestAnimationFrame(() => {
-      const raf2 = window.requestAnimationFrame(() => {
-        stableChildrenRef.current = children
-        stablePathRef.current = pathname
-        setDisplayChildren(children)
-        setIsTransitioning(false)
-      })
-      return () => window.cancelAnimationFrame(raf2)
-    })
-    return () => window.cancelAnimationFrame(raf1)
+    stableChildrenRef.current = children
+    stablePathRef.current = pathname
+    setDisplayChildren(children)
   }, [children, pathname])
 
-  useEffect(() => {
-    // Some mobile webviews (notably in-app browsers) can drop the synthetic click
-    // after touchend when fixed/animated layers are present. Bridge short taps on
-    // real interactive elements into a normal click so links/buttons don't feel dead.
-    let tapStart: { x: number; y: number; t: number; el: Element | null } | null = null
-    const isInteractive = (target: EventTarget | null) => {
-      if (!(target instanceof Element)) return null
-      return target.closest('a,button,[role="button"],input,select,textarea,label') as HTMLElement | null
-    }
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return
-      const touch = e.touches[0]
-      tapStart = { x: touch.clientX, y: touch.clientY, t: Date.now(), el: isInteractive(e.target) }
-    }
-    const onTouchEnd = (e: TouchEvent) => {
-      if (!tapStart || e.changedTouches.length !== 1) return
-      const touch = e.changedTouches[0]
-      const dx = Math.abs(touch.clientX - tapStart.x)
-      const dy = Math.abs(touch.clientY - tapStart.y)
-      const elapsed = Date.now() - tapStart.t
-      const el = isInteractive(e.target) || (tapStart.el as HTMLElement | null)
-      tapStart = null
-      if (!el || dx > 14 || dy > 14 || elapsed > 800) return
-      if (el.matches('input,select,textarea,label')) return
-      e.preventDefault()
-      const anchor = el.closest('a[href]') as HTMLAnchorElement | null
-      if (anchor) {
-        const href = anchor.getAttribute('href') || ''
-        if (href.startsWith('/')) window.location.assign(href)
-        else if (anchor.href) window.location.href = anchor.href
-        return
-      }
-      window.requestAnimationFrame(() => el.click())
-    }
-    document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true })
-    document.addEventListener('touchend', onTouchEnd, { capture: true, passive: false })
-    return () => {
-      document.removeEventListener('touchstart', onTouchStart, true)
-      document.removeEventListener('touchend', onTouchEnd, true)
-    }
-  }, [])
+  // Removed synthetic touch-to-click bridge as it can cause main-thread hanging during scroll
+  // and interferes with native browser scrolling optimizations.
 
   useEffect(() => {
     // Capture PWA install prompt event for later (Android / Chrome)
@@ -582,12 +532,9 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Page content */}
       <main className="app-main-scroll" style={{ flex: 1, position: 'relative' }}>
-        <div style={{ opacity: isTransitioning ? 0 : 1, transition: 'opacity 120ms ease' }}>
+        <div>
           {displayChildren}
         </div>
-        {isTransitioning && (
-          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(7,11,18,0.12), rgba(7,11,18,0.02))' }} />
-        )}
       </main>
 
       <AnimatePresence>
