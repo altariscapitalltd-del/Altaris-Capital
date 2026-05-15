@@ -120,6 +120,7 @@ Addresses are manageable from Admin → Settings.
 - API input validation is enforced on critical financial and admin mutation routes.
 
 ## Recent Upgrade Highlights
+- Prevented translator-induced React crashes on app-shell pages by disabling Google DOM-translation injection on authenticated app routes while preserving translator behavior for website/auth surfaces.
 - Hardened translator state handling with safe localStorage helpers and delayed language apply after script load to prevent client-side crashes when switching language on iOS Safari.
 - Fixed Reown AppKit initialization timing for `/airdrop` prerender by creating AppKit at module load before `useAppKit` hooks execute, preventing build-time "Please call createAppKit" errors on Vercel.
 - Airdrop now uses real Reown AppKit wallet-connect modal (wallet-only, no socials/email) via `NEXT_PUBLIC_REOWN_PROJECT_ID`, and claim/connect flows open that modal when disconnected.

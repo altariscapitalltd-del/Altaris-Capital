@@ -132,7 +132,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .app-main-scroll {
   position: absolute;
   inset: 0;
-  top: calc(var(--app-header-height) + 8px);
+  top: max(calc(env(safe-area-inset-top) + 72px), calc(var(--app-header-height) + 8px));
   bottom: 0;
   overflow-y: auto;
   overflow-x: hidden;
