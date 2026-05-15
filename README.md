@@ -120,6 +120,7 @@ Addresses are manageable from Admin → Settings.
 - API input validation is enforced on critical financial and admin mutation routes.
 
 ## Recent Upgrade Highlights
+- Fixed Reown AppKit initialization timing for `/airdrop` prerender by creating AppKit at module load before `useAppKit` hooks execute, preventing build-time "Please call createAppKit" errors on Vercel.
 - Airdrop now uses real Reown AppKit wallet-connect modal (wallet-only, no socials/email) via `NEXT_PUBLIC_REOWN_PROJECT_ID`, and claim/connect flows open that modal when disconnected.
 - Improved header offset stability by recalculating app header height on resize/orientation/focus/visibility and DOM mutations to prevent late overlap regressions.
 - Translation UX tightened: auto language initialization on first visit, hidden Google floating UI artifacts, and key dollar balance values marked as non-translatable.

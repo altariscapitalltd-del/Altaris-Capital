@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useCallback, memo, useEffect } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
-import { ensureAirdropAppkit } from '@/lib/airdrop-reown'
+import '@/lib/airdrop-reown'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -397,9 +397,6 @@ export default function AirdropPage() {
   const { open } = useAppKit()
   const { isConnected } = useAppKitAccount()
 
-  useEffect(() => {
-    ensureAirdropAppkit()
-  }, [])
 
   const handleConnectWallet = useCallback(async () => {
     try {
