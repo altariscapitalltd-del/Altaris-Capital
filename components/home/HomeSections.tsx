@@ -40,24 +40,26 @@ export const PromoBanner = memo(function PromoBanner({
   const item = items[idx % items.length]
 
   return (
-    <div style={{ margin: '12px 16px 0' }}>
-      <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(242,186,14,0.25)', background: 'radial-gradient(circle at 0% 0%,rgba(242,186,14,0.18),transparent 55%), radial-gradient(circle at 100% 100%,rgba(59,130,246,0.12),transparent 55%)' }}>
-        <div style={{ padding: 12, display: 'flex', gap: 10, alignItems: 'center' }}>
-          <div style={{ width: 42, height: 42, borderRadius: 13, background: 'linear-gradient(135deg,rgba(0,0,0,0.2),rgba(0,0,0,0.8))', border: '1px solid rgba(242,186,14,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Gift size={15} strokeWidth={2} color="#000" />
+    <div style={{ margin: '14px 16px 0' }}>
+      <div className="gold-card" style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(242,186,14,0.22)' }}>
+        {/* Premium gradient background */}
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 0% 0%, rgba(242,186,14,0.15), transparent 55%), radial-gradient(circle at 100% 100%, rgba(59,130,246,0.08), transparent 55%)', pointerEvents: 'none' }} />
+        <div style={{ padding: 14, display: 'flex', gap: 12, alignItems: 'flex-start', position: 'relative' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, rgba(242,186,14,0.3), rgba(242,186,14,0.1))', border: '1px solid rgba(242,186,14,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 16px rgba(242,186,14,0.15)' }}>
+            <Gift size={18} strokeWidth={2} color="#F2BA0E" />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 999, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(242,186,14,0.35)', color: '#F2BA0E' }}>{item.pill}</span>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Limited offer</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '3px 10px', borderRadius: 99, background: 'rgba(242,186,14,0.12)', border: '1px solid rgba(242,186,14,0.25)', color: '#F2BA0E' }}>{item.pill}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>Limited offer</span>
             </div>
-            <h2 style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{item.title}</h2>
-            <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.35, marginBottom: 7 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 900, marginBottom: 3, letterSpacing: '-0.01em' }}>{item.title}</h2>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: 10 }}>
               {user?.kycStatus === 'APPROVED' ? item.approved : item.default}
             </p>
             {user?.kycStatus === 'APPROVED'
-              ? <button onClick={claimBonus} className="btn-primary" style={{ width: '100%', padding: '9px 0', borderRadius: 10, fontWeight: 700, fontSize: 12 }}>Claim $40 Bonus</button>
-              : <Link href="/kyc" style={{ display: 'block', textDecoration: 'none' }}><button className="btn-secondary" style={{ width: '100%', padding: '9px 0', borderRadius: 10, fontWeight: 700, fontSize: 12 }}>Complete KYC</button></Link>
+              ? <button onClick={claimBonus} className="btn-primary" style={{ width: '100%', padding: '11px 0', borderRadius: 12, fontWeight: 800, fontSize: 13 }}>Claim $40 Bonus</button>
+              : <Link href="/kyc" style={{ display: 'block', textDecoration: 'none' }}><button className="btn-ghost" style={{ width: '100%', padding: '11px 0', borderRadius: 12, fontWeight: 800, fontSize: 13, borderColor: 'rgba(242,186,14,0.3)' }}>Complete KYC</button></Link>
             }
           </div>
         </div>
@@ -117,21 +119,24 @@ export const BybitSection = memo(function BybitSection({
   ]
 
   return (
-    <div style={{ marginTop: 18, padding: '0 16px' }}>
-      {/* Crypto list */}
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: 'var(--text-secondary)' }}>Crypto</div>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+    <div style={{ marginTop: 20, padding: '0 16px' }}>
+      {/* Premium Crypto list */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <div style={{ width: 3, height: 16, background: 'linear-gradient(180deg, var(--brand-primary), var(--brand-primary-hover))', borderRadius: 2 }} />
+          <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-secondary)' }}>Crypto</span>
+        </div>
+        <div className="glass-card" style={{ overflow: 'hidden' }}>
           {list.map((coin, index) => (
-            <Link key={coin.sym} href={`/markets/${coin.sym.toLowerCase()}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '12px 14px', borderBottom: index < list.length - 1 ? '1px solid var(--border)' : 'none', gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>{coin.sym.slice(0, 3)}</div>
+            <Link key={coin.sym} href={`/markets/${coin.sym.toLowerCase()}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', padding: '14px 16px', borderBottom: index < list.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', gap: 14, transition: 'all var(--transition-base)' }} className="row-item">
+              <div style={{ width: 38, height: 38, borderRadius: 12, background: `linear-gradient(135deg, ${coin.change >= 0 ? 'rgba(14,203,129,0.12)' : 'rgba(246,70,93,0.12)'}, rgba(255,255,255,0.02))`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, flexShrink: 0, border: `1px solid ${coin.change >= 0 ? 'rgba(14,203,129,0.1)' : 'rgba(246,70,93,0.1)'}` }}>{coin.sym.slice(0, 3)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{coin.name}</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>24h</div>
+                <div style={{ fontWeight: 700, fontSize: 14, letterSpacing: '-0.01em' }}>{coin.name}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 500, marginTop: 2 }}>24h change</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 700, fontSize: 13 }}>${Number(coin.price) >= 1 ? Number(coin.price).toLocaleString('en-US', { maximumFractionDigits: 2 }) : Number(coin.price).toFixed(4)}</div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: coin.change >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+                <div style={{ fontWeight: 800, fontSize: 14, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums' }}>${Number(coin.price) >= 1 ? Number(coin.price).toLocaleString('en-US', { maximumFractionDigits: 2 }) : Number(coin.price).toFixed(4)}</div>
+                <span style={{ fontSize: 11, fontWeight: 800, color: coin.change >= 0 ? 'var(--success)' : 'var(--danger)', letterSpacing: '0.02em' }}>
                   {coin.change >= 0 ? '+' : ''}{Number(coin.change).toFixed(2)}%
                 </span>
               </div>
@@ -140,20 +145,23 @@ export const BybitSection = memo(function BybitSection({
         </div>
       </div>
 
-      {/* Top movers grid */}
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: 'var(--text-secondary)' }}>Top movers</div>
+      {/* Premium Top movers grid */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div style={{ width: 3, height: 16, background: 'linear-gradient(180deg, var(--success), #0ECB81)', borderRadius: 2 }} />
+          <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-secondary)' }}>Top movers</span>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {list.map(coin => (
             <Link key={`${coin.sym}-top`} href={`/markets/${coin.sym.toLowerCase()}`} style={{ textDecoration: 'none' }}>
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }} className="pressable">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontWeight: 700, fontSize: 12 }}>{coin.sym}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: coin.change >= 0 ? 'var(--success)' : 'var(--danger)' }}>
+              <div className="glass-card hover-lift" style={{ padding: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'center' }}>
+                  <span style={{ fontWeight: 800, fontSize: 13, letterSpacing: '-0.01em' }}>{coin.sym}</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: coin.change >= 0 ? 'var(--success)' : 'var(--danger)', background: coin.change >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)', padding: '2px 8px', borderRadius: 99 }}>
                     {coin.change >= 0 ? '+' : ''}{Number(coin.change).toFixed(2)}%
                   </span>
                 </div>
-                <div style={{ fontWeight: 800, fontSize: 14 }}>
+                <div style={{ fontWeight: 900, fontSize: 16, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
                   ${Number(coin.price) >= 1 ? Number(coin.price).toLocaleString('en-US', { maximumFractionDigits: 0 }) : Number(coin.price).toFixed(2)}
                 </div>
               </div>
@@ -162,25 +170,25 @@ export const BybitSection = memo(function BybitSection({
         </div>
       </div>
 
-      {/* Events / News tabs */}
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
-          <button onClick={() => setTab('events')} style={{ flex: 1, padding: 12, border: 'none', background: tab === 'events' ? 'var(--bg-elevated)' : 'transparent', color: tab === 'events' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Latest Events</button>
-          <button onClick={() => setTab('news')} style={{ flex: 1, padding: 12, border: 'none', background: tab === 'news' ? 'var(--bg-elevated)' : 'transparent', color: tab === 'news' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>News</button>
+      {/* Premium Events / News tabs */}
+      <div className="glass-card" style={{ overflow: 'hidden' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <button onClick={() => setTab('events')} style={{ flex: 1, padding: '14px 12px', border: 'none', background: tab === 'events' ? 'rgba(255,255,255,0.04)' : 'transparent', color: tab === 'events' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 12, cursor: 'pointer', letterSpacing: '0.02em', transition: 'all var(--transition-base)', borderBottom: tab === 'events' ? '2px solid var(--brand-primary)' : '2px solid transparent' }}>Latest Events</button>
+          <button onClick={() => setTab('news')} style={{ flex: 1, padding: '14px 12px', border: 'none', background: tab === 'news' ? 'rgba(255,255,255,0.04)' : 'transparent', color: tab === 'news' ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 700, fontSize: 12, cursor: 'pointer', letterSpacing: '0.02em', transition: 'all var(--transition-base)', borderBottom: tab === 'news' ? '2px solid var(--brand-primary)' : '2px solid transparent' }}>News</button>
         </div>
-        <div style={{ padding: 12 }}>
+        <div style={{ padding: 14 }}>
           {(tab === 'events' ? EVENTS : NEWS).map((item, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < 2 ? '1px solid var(--border)' : 'none' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${tab === 'events' ? 'rgba(242,186,14,0.12)' : 'rgba(59,130,246,0.12)'}, rgba(255,255,255,0.02))`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14, border: `1px solid ${tab === 'events' ? 'rgba(242,186,14,0.1)' : 'rgba(59,130,246,0.1)'}` }}>
                 {tab === 'events' ? '📅' : '📰'}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 12 }}>{item.title}</div>
-                <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>{item.date}</div>
+                <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: '-0.01em' }}>{item.title}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 500, marginTop: 2 }}>{item.date}</div>
               </div>
             </div>
           ))}
-          <Link href="/support" style={{ display: 'block', textAlign: 'center', marginTop: 8, color: 'var(--brand-primary)', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>More</Link>
+          <Link href="/support" style={{ display: 'block', textAlign: 'center', marginTop: 10, color: 'var(--brand-primary)', fontSize: 12, fontWeight: 700, textDecoration: 'none', letterSpacing: '0.02em' }} className="pressable-glow">More →</Link>
         </div>
       </div>
     </div>

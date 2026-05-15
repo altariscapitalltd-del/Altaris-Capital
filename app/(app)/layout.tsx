@@ -347,10 +347,19 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const updateHeaderOffset = () => {
       const headerHeight = headerRef.current?.offsetHeight || 0
-      document.documentElement.style.setProperty('--app-header-height', `${headerHeight}px`)
+      if (headerHeight > 0) {
+        document.documentElement.style.setProperty('--app-header-height', `${headerHeight}px`)
+      }
     }
 
+    // Measure immediately, then again after paint and after 300ms
+    // to catch late font/content loads that change header size
     updateHeaderOffset()
+    requestAnimationFrame(() => {
+      updateHeaderOffset()
+      setTimeout(updateHeaderOffset, 300)
+    })
+
     window.addEventListener('resize', updateHeaderOffset)
     const observer = new ResizeObserver(updateHeaderOffset)
     if (headerRef.current) observer.observe(headerRef.current)
@@ -360,7 +369,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       observer.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // FIX: empty deps — ResizeObserver handles size changes itself; no need to recreate on every state update
+  }, [])
 
   useEffect(() => {
     NAV.forEach(({ href }) => {
@@ -414,19 +423,20 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       paddingTop: 0,
     }}>
 
-      {/* ── Top Bar — solid opaque header so app UI never shows through status bar; no install logo ── */}
+      {/* ── Premium Top Bar ── */}
       <header ref={headerRef} className="app-top-header" style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 60,
-        background: '#000000',
+        background: 'linear-gradient(180deg, rgba(0,0,0,0.99) 0%, rgba(0,0,0,0.97) 100%)',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: 'none',
+        borderBottom: '1px solid rgba(255,255,255,0.04)',
+        boxShadow: '0 4px 30px rgba(0,0,0,0.35)',
       }}>
-        <div style={{ paddingTop: 'calc(env(safe-area-inset-top) + 4px)', paddingRight: 14, paddingBottom: 8, paddingLeft: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ paddingTop: 'calc(env(safe-area-inset-top) + 6px)', paddingRight: 16, paddingBottom: 10, paddingLeft: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <AnimatePresence>
         {installBannerVisible && (
           <motion.div
@@ -463,13 +473,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Link href="/profile" style={{ flexShrink: 0, textDecoration: 'none' }}>
             <div style={{
-              width: 34, height: 34, borderRadius: '50%',
-              background: '#1A1A1A',
-              border: '1px solid rgba(255,255,255,0.08)',
+              width: 36, height: 36, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #1A1A1A, #0D0D0D)',
+              border: '1.5px solid rgba(242,186,14,0.25)',
               position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: 14, color: '#000', overflow: 'hidden', flexShrink: 0,
-            }}>
+              fontWeight: 800, fontSize: 14, color: 'var(--brand-primary)', overflow: 'hidden', flexShrink: 0,
+              boxShadow: '0 0 12px rgba(242,186,14,0.1)',
+              transition: 'all var(--transition-base)',
+            }} className="pressable">
               {user?.profilePicture ? (
                 <img
                   src={user.profilePicture}
@@ -485,15 +497,17 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           {(isMarkets || isHome) ? (
             <div style={{
               flex: 1,
-              background: '#1A1A1A',
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))',
               borderRadius: 99,
-              padding: '7px 12px',
+              padding: '8px 14px',
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              border: '1px solid rgba(255,255,255,0.04)',
+              gap: 10,
+              border: '1px solid rgba(255,255,255,0.06)',
+              backdropFilter: 'blur(12px)',
+              transition: 'all var(--transition-base)',
             }}>
-              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#4A4A4A" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#5A5A5A" strokeWidth="2.5" style={{ flexShrink: 0 }}>
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round"/>
               </svg>
               <input
@@ -503,7 +517,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                 onChange={e => handleMarketSearch(e.target.value)}
                 style={{
                   flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none',
-                  color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit',
+                  color: 'var(--text-primary)', fontSize: 14, fontFamily: 'inherit', fontWeight: 500,
                 }}
               />
             </div>
@@ -513,18 +527,19 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
           {!isMarkets && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <Link href="/notifications" style={{ position: 'relative', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
-                <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <Link href="/notifications" style={{ position: 'relative', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: 'linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))', border: '1px solid rgba(255,255,255,0.06)', transition: 'all var(--transition-base)' }} className="pressable">
+                <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#9A9A9A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8c0-3.31-2.69-6-6-6S6 4.69 6 8c0 5-3 6-3 6h18s-3-1-3-6"/>
                   <path d="M13.73 21a2 2 0 01-3.46 0"/>
                 </svg>
                 {unread > 0 && (
                   <div style={{
-                    position: 'absolute', top: 5, right: 5,
+                    position: 'absolute', top: 4, right: 4,
                     minWidth: 16, height: 16, borderRadius: 99,
-                    background: '#F6465D', border: '1.5px solid #000',
+                    background: 'linear-gradient(135deg, #F6465D, #FB7185)', border: '1.5px solid #000',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 8, fontWeight: 800, color: '#fff', padding: '0 3px',
+                    fontSize: 8, fontWeight: 900, color: '#fff', padding: '0 3px',
+                    boxShadow: '0 2px 8px rgba(246,70,93,0.35)',
                   }}>
                     {unread > 9 ? '9+' : unread}
                   </div>
@@ -616,20 +631,20 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* ── Bottom Navigation — safe area bottom ── */}
+      {/* ── Premium Bottom Navigation ── */}
       <nav className="bottom-nav app-bottom-nav" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 120,
-        background: '#0a0a0a',
-        backdropFilter: 'none',
-        WebkitBackdropFilter: 'none',
-        borderRadius: '20px 20px 0 0',
-        borderTop: '1px solid rgba(255,255,255,0.07)',
+        background: 'linear-gradient(180deg, rgba(5,5,5,0.98) 0%, rgba(0,0,0,0.99) 100%)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: '24px 24px 0 0',
+        borderTop: '1px solid rgba(255,255,255,0.05)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
-        boxShadow: '0 -2px 18px rgba(0,0,0,0.35)',
+        boxShadow: '0 -4px 30px rgba(0,0,0,0.45), 0 -1px 0 rgba(255,255,255,0.03)',
         overflow: 'hidden',
       }}>
         <LayoutGroup id="bottom-nav">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 62, pointerEvents: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 64, pointerEvents: 'auto' }}>
           {NAV.map(({ href, label, icon }) => {
             const active = activeTab === href
             return (
@@ -652,22 +667,23 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                     transition={{ type: 'spring', stiffness: 500, damping: 34 }}
                     style={{
                       position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                      width: 20, height: 2.5, borderRadius: '0 0 3px 3px',
-                      background: '#FFFFFF',
+                      width: 24, height: 3, borderRadius: '0 0 4px 4px',
+                      background: 'linear-gradient(180deg, #FFFFFF, rgba(255,255,255,0.5))',
+                      boxShadow: '0 2px 8px rgba(255,255,255,0.2)',
                     }}
                   />
                 )}
-                <motion.div animate={{ scale: active ? 1.06 : 1 }} transition={{ type: 'spring', stiffness: 500, damping: 28 }}>
+                <motion.div animate={{ scale: active ? 1.08 : 1 }} transition={{ type: 'spring', stiffness: 500, damping: 28 }}>
                   {icon(active)}
                 </motion.div>
                 <span style={{
                   fontSize: 10,
-                  fontWeight: active ? 600 : 400,
+                  fontWeight: active ? 700 : 500,
                   color: active
                     ? (href === '/invest' ? '#F2BA0E' : '#FFFFFF')
                     : '#4A4A4A',
-                  transition: 'color .15s',
-                  letterSpacing: '0.01em',
+                  transition: 'color var(--transition-base)',
+                  letterSpacing: '0.02em',
                 }}>
                   {label}
                 </span>
