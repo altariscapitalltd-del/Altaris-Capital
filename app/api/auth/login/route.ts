@@ -27,10 +27,14 @@ export async function POST(req: NextRequest) {
 
     const token = await signToken({ userId: user.id, role: user.role, name: user.name })
     const res = NextResponse.json({ success: true, user: { id: user.id, name: user.name, role: user.role } })
+    const proto = req.headers.get('x-forwarded-proto') || 'http'
+    const host = (req.headers.get('host') || '').toLowerCase()
+    const isLocalHost = host.startsWith('localhost') || host.startsWith('127.0.0.1')
+    const secureCookie = proto === 'https' || (process.env.NODE_ENV === 'production' && !isLocalHost)
     res.cookies.set('token', token, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: secureCookie,
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
     })

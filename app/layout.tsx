@@ -45,26 +45,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Altaris" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function () {
-            var host = window.location.hostname;
-            var allowed = host === 'altaris-capital.vercel.app' || host === 'localhost' || host === '127.0.0.1';
-            if (!allowed) return;
-            var script = document.createElement('script');
-            script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
-            script.defer = true;
-            document.head.appendChild(script);
-            window.OneSignalDeferred = window.OneSignalDeferred || [];
-            OneSignalDeferred.push(async function(OneSignal) {
-              await OneSignal.init({
-                appId: "d7beb41e-012b-4216-bfe5-ff35456f37f4",
-                safari_web_id: "web.onesignal.auto.4d1813bb-fb28-4cd6-9039-144582b81585",
-                notifyButton: { enable: false },
-                allowLocalhostAsSecureOrigin: true,
-              });
-            });
-          })();
-        `}} />
       </head>
       <body style={{ background: 'var(--bg-primary)' }}>
         <script dangerouslySetInnerHTML={{ __html: `document.documentElement.setAttribute('data-theme','dark');` }} />
@@ -75,34 +55,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LanguageTranslator />
         </ThemeProvider>
         <script dangerouslySetInnerHTML={{ __html: `
-          if ('serviceWorker' in navigator) {
-            window.addEventListener('load', async () => {
-              try {
-                const reg = await navigator.serviceWorker.register('/sw.js')
-                // If there's a waiting worker, ask it to skip waiting immediately
-                if (reg.waiting) {
-                  try { reg.waiting.postMessage({ type: 'SKIP_WAITING' }) } catch (e) {}
-                }
-                reg.addEventListener('updatefound', () => {
-                  const installing = reg.installing
-                  if (!installing) return
-                  installing.addEventListener('statechange', () => {
-                    if (installing.state === 'installed') {
-                      if (navigator.serviceWorker.controller) {
-                        try { installing.postMessage({ type: 'SKIP_WAITING' }) } catch (e) {}
-                      }
-                    }
-                  })
-                })
-              } catch (err) {}
-            });
-            // When the active service worker changes, reload to activate the new code
-            if (navigator.serviceWorker) {
-              navigator.serviceWorker.addEventListener('controllerchange', () => {
-                try { window.location.reload() } catch (e) {}
-              })
-            }
-          }
           // Install prompt is handled in app layout after signup.
         `}} />
       </body>
