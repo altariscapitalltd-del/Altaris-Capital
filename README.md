@@ -120,6 +120,8 @@ Addresses are manageable from Admin → Settings.
 - API input validation is enforced on critical financial and admin mutation routes.
 
 ## Recent Upgrade Highlights
+- Fixed mobile app-shell spacing so the fixed header no longer overlaps tab content, moved the Home balance chart directly under the portfolio card, and stacked widget grids to single-column on phones for clean alignment.
+- Updated Airdrop flow so Connect Wallet / Claim actions open an in-page wallet connect modal instead of redirecting to app tabs.
 - Hardened critical API routes with strict schema validation (admin auth, deposits, withdrawals, OTP, wallet settings).
 - Added idempotency protections for admin deposit approval to prevent duplicate balance credits.
 - Corrected balance snapshot creation to persist the exact post-update balance.

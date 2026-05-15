@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, memo } from 'react'
-import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -328,7 +327,7 @@ const CampaignCard = memo(function CampaignCard({
 })
 
 // ─── Hero Banner ──────────────────────────────────────────────────────────
-function AirdropHero() {
+function AirdropHero({ onConnectWallet }: { onConnectWallet: () => void }) {
   return (
     <div style={{
       margin: '0 16px 20px',
@@ -347,13 +346,13 @@ function AirdropHero() {
           Discover and claim premium token airdrops. Connect your wallet to unlock exclusive rewards across Ethereum, Solana, and more.
         </p>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Link href="/wallet" style={{
+          <button onClick={onConnectWallet} style={{
             padding: '12px 22px', borderRadius: 14, background: 'var(--brand-primary)', color: '#000',
             fontWeight: 800, fontSize: 14, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
-          }} className="pressable">
+          }} className="pressable" type="button">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="2" y="6" width="20" height="15" rx="2.5" /><path d="M2 10h20" /><circle cx="16" cy="15" r="1.5" fill="currentColor" /></svg>
             Connect Wallet
-          </Link>
+          </button>
           <button onClick={() => document.getElementById('campaigns')?.scrollIntoView({ behavior: 'smooth' })} style={{
             padding: '12px 22px', borderRadius: 14, background: 'rgba(255,255,255,0.06)', color: 'var(--text-primary)',
             fontWeight: 700, fontSize: 14, border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit',
@@ -393,8 +392,14 @@ export default function AirdropPage() {
   const [campaigns, setCampaigns] = useState<AirdropCampaign[]>(SAMPLE_CAMPAIGNS)
   const [filter, setFilter] = useState<'all' | 'active' | 'upcoming' | 'ended'>('all')
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null)
+  const [walletModalOpen, setWalletModalOpen] = useState(false)
+
+  const handleConnectWallet = useCallback(() => {
+    setWalletModalOpen(true)
+  }, [])
 
   const handleClaim = useCallback((id: string) => {
+    setWalletModalOpen(true)
     setCampaigns((prev) => prev.map((c) => (c.id === id ? { ...c, claimed: true, claimProgress: Math.min(100, c.claimProgress + 5) } : c)))
     setClaimSuccess(id)
     setTimeout(() => setClaimSuccess(null), 3000)
@@ -404,7 +409,7 @@ export default function AirdropPage() {
 
   return (
     <div style={{ padding: '14px 0 22px', minHeight: '100%' }}>
-      <AirdropHero />
+      <AirdropHero onConnectWallet={handleConnectWallet} />
       <StatsBar campaigns={campaigns} />
 
       {/* Filter Tabs */}
@@ -443,6 +448,41 @@ export default function AirdropPage() {
             }}
           >
             Airdrop claimed successfully! Check your wallet.
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
+      <AnimatePresence>
+        {walletModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+            onClick={() => setWalletModalOpen(false)}
+          >
+            <motion.div
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 12, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ width: '100%', maxWidth: 420, borderRadius: 18, background: 'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border: '1px solid var(--border)', padding: 18 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ fontWeight: 800, fontSize: 17 }}>Connect Wallet</div>
+                <button type="button" onClick={() => setWalletModalOpen(false)} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', fontSize: 20, cursor: 'pointer' }}>×</button>
+              </div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginBottom: 12 }}>Choose a wallet to continue your claim.</div>
+              <div style={{ display: 'grid', gap: 10 }}>
+                {['MetaMask', 'WalletConnect', 'Coinbase Wallet'].map((wallet) => (
+                  <button key={wallet} type="button" onClick={() => setWalletModalOpen(false)} style={{ width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)', color: 'var(--text-primary)', fontWeight: 700, cursor: 'pointer' }}>
+                    {wallet}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

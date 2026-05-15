@@ -364,6 +364,8 @@ export default function HomePage() {
         </div>
       </div>
 
+      {sectionsReady && <BalanceChart usdBalance={usdBal} transactions={transactions} />}
+
       {/* ── Widgets Row ── */}
       {sectionsReady && (
         <div style={{ margin: '14px 16px 0' }}>
@@ -372,14 +374,14 @@ export default function HomePage() {
       )}
 
       {sectionsReady && (
-        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
           <FearGreedGauge />
           <MarketStats />
         </div>
       )}
 
       {sectionsReady && (
-        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
           <TrendingCoins />
           <DeFiTVL />
         </div>
@@ -390,8 +392,6 @@ export default function HomePage() {
           <CryptoNews />
         </div>
       )}
-
-      {sectionsReady && <BalanceChart usdBalance={usdBal} transactions={transactions} />}
 
       <HomeSections.PromoBanner user={user} canClaimBonus={canClaimBonus} claimBonus={claimBonus} />
       <HomeSections.BybitSection coins={coins} ready={sectionsReady} />
