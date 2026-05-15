@@ -136,3 +136,10 @@ Addresses are manageable from Admin → Settings.
 - Wallet portfolio mini-chart now uses deterministic transaction/balance-derived data instead of random noise for more accurate motion.
 - Home crypto and top-mover sections now use live provider market data (not placeholder rows).
 - Improved chat message alignment and settings interactivity (push toggle wiring, notification preferences UX).
+
+- Fixed App Router route collision by keeping the authenticated airdrop route-group page as the single `/airdrop` source.
+- Restored missing client modules (`AnimatedPage` and `LanguageContext`) required by app pages so production builds resolve all imports.
+
+- Fixed production type-check break in profile logout modal by removing stale `signOut` usage after next-auth removal and using direct redirect for logout action.
+
+- Fixed `/api/airdrops/claim` fallback response scope bug (`body` was referenced outside `try`) by persisting parsed request payload at handler scope for type-safe error fallback.

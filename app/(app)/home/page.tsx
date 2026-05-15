@@ -333,7 +333,7 @@ const MarketOverview = memo(function MarketOverview() {
       <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)' }}>
           {(Object.keys(tabs) as Array<keyof typeof tabs>).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '10px 0', background: tab === t ? 'rgba(242,186,14,0.08)' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t ? '#F2BA0E' : 'transparent'}`, color: tab === t ? '#F2BA0E' : 'var(--text-muted)', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}>{t}</button>
+            <button key={t} onClick={() => setTab(t as any)} style={{ flex: 1, padding: '10px 0', background: tab === t ? 'rgba(242,186,14,0.08)' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t ? '#F2BA0E' : 'transparent'}`, color: tab === t ? '#F2BA0E' : 'var(--text-muted)', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}>{t}</button>
           ))}
         </div>
         <div style={{ padding: 12 }}>

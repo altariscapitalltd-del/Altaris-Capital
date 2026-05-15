@@ -2,14 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useSession, signOut } from 'next-auth/react'
 import AnimatedPage from '@/components/animations/AnimatedPage'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 export default function ProfilePage() {
-  const { data: session } = useSession()
   const { language, setLanguage, t } = useLanguage()
   const [showLang, setShowLang] = useState(false)
   const [showLogout, setShowLogout] = useState(false)
@@ -27,7 +25,7 @@ export default function ProfilePage() {
     { code: 'ru', name: 'Russian', flag: '🇷🇺' },
   ]
 
-  const menuItems = [
+  const menuItems: any[] = [
     { icon: '◈', label: 'Wallet', href: '/app/wallet', color: '#F2BA0E' },
     { icon: '⊕', label: 'Investments', href: '/app/invest', color: '#0ECB81' },
     { icon: '★', label: 'Airdrops', href: '/app/airdrop', color: '#A855F7', badge: '3 New' },
@@ -54,11 +52,11 @@ export default function ProfilePage() {
           <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full" style={{ background: 'radial-gradient(circle, rgba(242,186,14,0.08), transparent)' }} />
           <div className="relative z-10 flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary)]/70 flex items-center justify-center text-2xl font-black text-[var(--bg-dark)] flex-shrink-0">
-              {session?.user?.name?.[0]?.toUpperCase() || 'U'}
+              U
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-black text-lg truncate">{session?.user?.name || 'User'}</div>
-              <div className="text-[11px] text-[var(--text-muted)] truncate">{session?.user?.email || 'user@altaris.capital'}</div>
+              <div className="font-black text-lg truncate">User</div>
+              <div className="text-[11px] text-[var(--text-muted)] truncate">user@altaris.capital</div>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className="px-2 py-0.5 rounded-md bg-[#0ECB81]/10 text-[#0ECB81] text-[10px] font-extrabold border border-[#0ECB81]/20">Verified</span>
                 <span className="px-2 py-0.5 rounded-md bg-[#3B82F6]/10 text-[#3B82F6] text-[10px] font-extrabold border border-[#3B82F6]/20">KYC Complete</span>
@@ -149,7 +147,7 @@ export default function ProfilePage() {
             <div className="text-[13px] text-[var(--text-muted)] mb-5">Are you sure you want to log out of your account?</div>
             <div className="flex gap-3">
               <button onClick={() => setShowLogout(false)} className="flex-1 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06] font-bold text-sm">Cancel</button>
-              <button onClick={() => signOut({ callbackUrl: '/' })} className="flex-1 py-3 rounded-xl bg-[#F6465D] text-white font-extrabold text-sm">Log Out</button>
+              <button onClick={() => { window.location.href = '/'; }} className="flex-1 py-3 rounded-xl bg-[#F6465D] text-white font-extrabold text-sm">Log Out</button>
             </div>
           </div>
         </div>
