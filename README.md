@@ -120,6 +120,9 @@ Addresses are manageable from Admin → Settings.
 - API input validation is enforced on critical financial and admin mutation routes.
 
 ## Recent Upgrade Highlights
+- Airdrop now uses real Reown AppKit wallet-connect modal (wallet-only, no socials/email) via `NEXT_PUBLIC_REOWN_PROJECT_ID`, and claim/connect flows open that modal when disconnected.
+- Improved header offset stability by recalculating app header height on resize/orientation/focus/visibility and DOM mutations to prevent late overlap regressions.
+- Translation UX tightened: auto language initialization on first visit, hidden Google floating UI artifacts, and key dollar balance values marked as non-translatable.
 - Fixed mobile app-shell spacing so the fixed header no longer overlaps tab content, moved the Home balance chart directly under the portfolio card, and stacked widget grids to single-column on phones for clean alignment.
 - Updated Airdrop flow so Connect Wallet / Claim actions open an in-page wallet connect modal instead of redirecting to app tabs.
 - Hardened critical API routes with strict schema validation (admin auth, deposits, withdrawals, OTP, wallet settings).

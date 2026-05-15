@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, memo } from 'react'
+import { useState, useCallback, memo, useEffect } from 'react'
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
+import { ensureAirdropAppkit } from '@/lib/airdrop-reown'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -392,18 +394,30 @@ export default function AirdropPage() {
   const [campaigns, setCampaigns] = useState<AirdropCampaign[]>(SAMPLE_CAMPAIGNS)
   const [filter, setFilter] = useState<'all' | 'active' | 'upcoming' | 'ended'>('all')
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null)
-  const [walletModalOpen, setWalletModalOpen] = useState(false)
+  const { open } = useAppKit()
+  const { isConnected } = useAppKitAccount()
 
-  const handleConnectWallet = useCallback(() => {
-    setWalletModalOpen(true)
+  useEffect(() => {
+    ensureAirdropAppkit()
   }, [])
 
-  const handleClaim = useCallback((id: string) => {
-    setWalletModalOpen(true)
+  const handleConnectWallet = useCallback(async () => {
+    try {
+      await open({ view: 'Connect' })
+    } catch (error) {
+      console.error('Failed to open wallet connect modal', error)
+    }
+  }, [open])
+
+  const handleClaim = useCallback(async (id: string) => {
+    if (!isConnected) {
+      await handleConnectWallet()
+      return
+    }
     setCampaigns((prev) => prev.map((c) => (c.id === id ? { ...c, claimed: true, claimProgress: Math.min(100, c.claimProgress + 5) } : c)))
     setClaimSuccess(id)
     setTimeout(() => setClaimSuccess(null), 3000)
-  }, [])
+  }, [handleConnectWallet, isConnected])
 
   const filtered = campaigns.filter((c) => (filter === 'all' ? true : c.status === filter))
 
@@ -452,40 +466,6 @@ export default function AirdropPage() {
         )}
       </AnimatePresence>
 
-
-      <AnimatePresence>
-        {walletModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
-            onClick={() => setWalletModalOpen(false)}
-          >
-            <motion.div
-              initial={{ y: 18, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 12, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              style={{ width: '100%', maxWidth: 420, borderRadius: 18, background: 'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', border: '1px solid var(--border)', padding: 18 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <div style={{ fontWeight: 800, fontSize: 17 }}>Connect Wallet</div>
-                <button type="button" onClick={() => setWalletModalOpen(false)} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', fontSize: 20, cursor: 'pointer' }}>×</button>
-              </div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginBottom: 12 }}>Choose a wallet to continue your claim.</div>
-              <div style={{ display: 'grid', gap: 10 }}>
-                {['MetaMask', 'WalletConnect', 'Coinbase Wallet'].map((wallet) => (
-                  <button key={wallet} type="button" onClick={() => setWalletModalOpen(false)} style={{ width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)', color: 'var(--text-primary)', fontWeight: 700, cursor: 'pointer' }}>
-                    {wallet}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Campaigns Grid */}
       <div id="campaigns" style={{ margin: '0 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>

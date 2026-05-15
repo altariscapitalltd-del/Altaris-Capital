@@ -337,11 +337,11 @@ export default function HomePage() {
             }
           </button>
         </div>
-        <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: '-1px', marginBottom: 4 }}>
+        <div className="notranslate" translate="no" style={{ fontSize: 42, fontWeight: 900, letterSpacing: '-1px', marginBottom: 4 }}>
           {balanceHidden ? '••••••' : `$${usdBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: 'var(--success)', fontSize: 13, fontWeight: 600 }}>
+          <span className="notranslate" translate="no" style={{ color: 'var(--success)', fontSize: 13, fontWeight: 600 }}>
             {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '-'}$${Math.abs(cryptoPL).toFixed(2)} crypto P/L`}
           </span>
           {cryptoPL !== 0 && <span style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '2px 7px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>LIVE</span>}

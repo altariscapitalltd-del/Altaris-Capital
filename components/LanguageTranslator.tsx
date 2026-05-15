@@ -53,6 +53,14 @@ function setCookie(name: string, value: string) {
   } catch {}
 }
 
+
+function getBestDetectedLanguage(): string {
+  if (typeof navigator === 'undefined') return 'en'
+  const browserLang = (navigator.languages?.[0] || navigator.language || 'en').toLowerCase()
+  const mapped = ALTARIS_LANGUAGES.find((item) => browserLang === item.code.toLowerCase() || browserLang.startsWith(`${item.code.toLowerCase()}-`))
+  return mapped?.code || 'en'
+}
+
 function getSavedLanguage(): string {
   if (typeof window === 'undefined') return 'en'
   try {
@@ -132,6 +140,17 @@ export default function LanguageTranslator() {
 
     const saved = getSavedLanguage()
     let scriptAdded = false
+
+    // Auto-detect once on first visit before any manual selection
+    if (!window.localStorage.getItem('altaris_language_initialized')) {
+      const autoLanguage = getBestDetectedLanguage()
+      window.localStorage.setItem('altaris_language_initialized', '1')
+      window.localStorage.setItem('altaris_language', autoLanguage)
+      if (autoLanguage !== 'en') {
+        setCookie('googtrans', `/en/${autoLanguage}`)
+        document.documentElement.lang = autoLanguage
+      }
+    }
 
     // Define the global init function
     window.googleTranslateElementInit = () => {

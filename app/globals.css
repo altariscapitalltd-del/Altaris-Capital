@@ -251,6 +251,20 @@ body {
 }
 
 
+
+.goog-te-spinner-pos,
+.goog-te-menu-frame,
+.goog-te-menu2,
+.goog-te-gadget-icon,
+.VIpgJd-ZVi9od-ORHb,
+.VIpgJd-ZVi9od-aZ2wEe,
+.VIpgJd-ZVi9od-l4eHX-hSRGPd,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf {
+  display: none !important;
+  visibility: hidden !important;
+}
+.notranslate,[translate="no"] { unicode-bidi: isolate; }
+
 /* ── RTL language support ── */
 html[dir="rtl"],
 html[lang="ar"],
