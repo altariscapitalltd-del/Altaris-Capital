@@ -3,17 +3,17 @@
 import { useState, useRef, useEffect } from 'react'
 import { useLanguage } from '@/contexts/LanguageContext'
 
-const LANGUAGES = [
-  { code: 'en', name: 'English', flag: '🇬🇧' },
-  { code: 'fr', name: 'Francais', flag: '🇫🇷' },
-  { code: 'es', name: 'Espanol', flag: '🇪🇸' },
-  { code: 'pt', name: 'Portugues', flag: '🇵🇹' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
-  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
-  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
-  { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+export const ALTARIS_LANGUAGES = [
+  { code: 'en', name: 'English', label: 'English', flag: '🇬🇧' },
+  { code: 'fr', name: 'Francais', label: 'Francais', flag: '🇫🇷' },
+  { code: 'es', name: 'Espanol', label: 'Espanol', flag: '🇪🇸' },
+  { code: 'pt', name: 'Portugues', label: 'Portugues', flag: '🇵🇹' },
+  { code: 'de', name: 'Deutsch', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'it', name: 'Italiano', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'zh', name: 'Chinese', label: 'Chinese', flag: '🇨🇳' },
+  { code: 'ja', name: 'Japanese', label: 'Japanese', flag: '🇯🇵' },
+  { code: 'ar', name: 'Arabic', label: 'Arabic', flag: '🇸🇦' },
+  { code: 'ru', name: 'Russian', label: 'Russian', flag: '🇷🇺' },
 ]
 
 interface Props {
@@ -33,7 +33,7 @@ export default function LanguageTranslator({ variant = 'compact' }: Props) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  const current = LANGUAGES.find(l => l.code === language) || LANGUAGES[0]
+  const current = ALTARIS_LANGUAGES.find(l => l.code === language) || ALTARIS_LANGUAGES[0]
 
   if (variant === 'compact') {
     return (
@@ -50,7 +50,7 @@ export default function LanguageTranslator({ variant = 'compact' }: Props) {
 
         {open && (
           <div className="absolute right-0 top-10 bg-[#111] border border-[var(--border)] rounded-xl p-1.5 z-50 min-w-[180px] shadow-2xl">
-            {LANGUAGES.map(l => (
+            {ALTARIS_LANGUAGES.map(l => (
               <button
                 key={l.code}
                 onClick={() => { setLanguage(l.code as any); setOpen(false) }}
@@ -76,7 +76,7 @@ export default function LanguageTranslator({ variant = 'compact' }: Props) {
   return (
     <div className="w-full">
       <div className="flex flex-col gap-1.5 max-h-[320px] overflow-y-auto pr-1">
-        {LANGUAGES.map(l => (
+        {ALTARIS_LANGUAGES.map(l => (
           <button
             key={l.code}
             onClick={() => setLanguage(l.code as any)}

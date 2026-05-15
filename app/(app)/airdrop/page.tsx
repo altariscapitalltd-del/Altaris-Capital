@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/contexts/LanguageContext'
 import AnimatedPage from '@/components/animations/AnimatedPage'
@@ -104,7 +103,6 @@ function ProgressBar({ current, total, color }: { current: number; total: number
 }
 
 export default function InAppAirdropPage() {
-  const { data: session } = useSession()
   const { language } = useLanguage()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'all' | 'claimable' | 'upcoming' | 'ended'>('all')
@@ -122,7 +120,7 @@ export default function InAppAirdropPage() {
     } catch {}
   }, [])
 
-  const handleClaim = (id: string) => {
+  const handleClaim = (id?: string) => {
     if (!walletConnected) {
       setConnecting(true)
       setTimeout(() => {
@@ -134,6 +132,7 @@ export default function InAppAirdropPage() {
       }, 1500)
       return
     }
+    if (!id) return
     const updated = [...claimedIds, id]
     setClaimedIds(updated)
     try { localStorage.setItem('altaris_claimed_airdrops', JSON.stringify(updated)) } catch {}
@@ -166,7 +165,7 @@ export default function InAppAirdropPage() {
                 {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
               </span>
             ) : (
-              <button onClick={handleClaim} className="px-4 py-1.5 bg-[var(--primary)] text-[var(--bg-dark)] rounded-lg font-extrabold text-xs">
+              <button onClick={() => handleClaim()} className="px-4 py-1.5 bg-[var(--primary)] text-[var(--bg-dark)] rounded-lg font-extrabold text-xs">
                 {connecting ? 'Connecting...' : 'Connect Wallet'}
               </button>
             )}

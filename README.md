@@ -136,3 +136,6 @@ Addresses are manageable from Admin → Settings.
 - Wallet portfolio mini-chart now uses deterministic transaction/balance-derived data instead of random noise for more accurate motion.
 - Home crypto and top-mover sections now use live provider market data (not placeholder rows).
 - Improved chat message alignment and settings interactivity (push toggle wiring, notification preferences UX).
+
+- Fixed App Router route collision by keeping the authenticated airdrop route-group page as the single `/airdrop` source.
+- Restored missing client modules (`AnimatedPage` and `LanguageContext`) required by app pages so production builds resolve all imports.

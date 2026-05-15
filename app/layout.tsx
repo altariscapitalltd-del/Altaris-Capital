@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/lib/theme'
 import LanguageTranslator from '@/components/LanguageTranslator'
+import { LanguageProvider } from '@/contexts/LanguageContext'
 
 export const metadata: Metadata = {
   title: 'Altaris Capital — Premium Investment Platform',
@@ -49,10 +50,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ background: 'var(--bg-primary)' }}>
         <script dangerouslySetInnerHTML={{ __html: `document.documentElement.setAttribute('data-theme','dark');` }} />
         <ThemeProvider>
-          <div className="root-shell">
-            {children}
-          </div>
-          <LanguageTranslator />
+          <LanguageProvider>
+            <div className="root-shell">
+              {children}
+            </div>
+            <LanguageTranslator />
+          </LanguageProvider>
         </ThemeProvider>
         <script dangerouslySetInnerHTML={{ __html: `
           // Install prompt is handled in app layout after signup.
