@@ -84,7 +84,7 @@ async function getDeFiData() {
 async function getForexData() {
   return fetchWithCache('forex', async () => {
     try {
-      const res = await axios.get('https://www.frankfurter.app/latest?from=USD')
+      const res = await axios.get('https://api.frankfurter.dev/v1/latest?from=USD')
       const rates = res.data.rates
       return Object.keys(rates).map(currency => ({
         id: `forex-${currency}`,

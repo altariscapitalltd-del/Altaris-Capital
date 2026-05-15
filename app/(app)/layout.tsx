@@ -105,6 +105,7 @@ const NAV = [
 function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
+  const [isMobile, setIsMobile] = useState(false)
   const [user, setUser]               = useState<any>(null)
   const [unread, setUnread]           = useState(0)
   const [bonusUnclaimed, setBonusUnclaimed] = useState(false)
@@ -115,11 +116,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installModalType, setInstallModalType] = useState<'android'|'ios'|null>(null)
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
   const [splashVisible, setSplashVisible] = useState(false)
-  const [isTransitioning, setIsTransitioning] = useState(false)
-  const [displayChildren, setDisplayChildren] = useState(children)
   const headerRef = useRef<HTMLElement | null>(null)
-  const stableChildrenRef = useRef(children)
-  const stablePathRef = useRef(pathname)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)')
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener?.('change', update)
+    return () => mq.removeEventListener?.('change', update)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -143,7 +148,11 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       try {
         const meRes = await fetchWithTimeout('/api/auth/me', 6000)
         if (!meRes.ok) {
-          router.push('/login')
+          const cached = window.localStorage.getItem('altaris_user_cache')
+          if (!cached) {
+            // Avoid hard-redirecting on one transient miss; keep the shell alive and let the next route settle.
+            setSplashVisible(false)
+          }
           return
         }
         const meData = await meRes.json().catch(() => ({}))
@@ -176,12 +185,6 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     run()
     return () => { cancelled = true }
   }, [router])
-
-  useEffect(() => {
-    stableChildrenRef.current = children
-    stablePathRef.current = pathname
-    setDisplayChildren(children)
-  }, [children, pathname])
 
   // Removed synthetic touch-to-click bridge as it can cause main-thread hanging during scroll
   // and interferes with native browser scrolling optimizations.
@@ -232,6 +235,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user?.id) return
+    if (isMobile) return
     let disposed = false
     let cleanup: (() => void) | null = null
 
@@ -258,12 +262,13 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       disposed = true
       cleanup?.()
     }
-  }, [user?.id])
+  }, [user?.id, isMobile])
 
   useEffect(() => {
-    const t = setInterval(() => setTickerIdx(i => (i + 1) % TRENDING.length), 3000)
+    if (isMobile) return
+    const t = setInterval(() => setTickerIdx(i => (i + 1) % TRENDING.length), 12000)
     return () => clearInterval(t)
-  }, [])
+  }, [isMobile])
 
   useEffect(() => {
     const handler = async () => {
@@ -342,19 +347,38 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const updateHeaderOffset = () => {
       const headerHeight = headerRef.current?.offsetHeight || 0
-      document.documentElement.style.setProperty('--app-header-height', `${headerHeight}px`)
+      if (headerHeight > 0) {
+        document.documentElement.style.setProperty('--app-header-height', `${headerHeight}px`)
+      }
     }
 
     updateHeaderOffset()
+    requestAnimationFrame(() => {
+      updateHeaderOffset()
+      setTimeout(updateHeaderOffset, 300)
+    })
+
     window.addEventListener('resize', updateHeaderOffset)
+    window.addEventListener('orientationchange', updateHeaderOffset)
+    window.addEventListener('focus', updateHeaderOffset)
+    document.addEventListener('visibilitychange', updateHeaderOffset)
+
     const observer = new ResizeObserver(updateHeaderOffset)
     if (headerRef.current) observer.observe(headerRef.current)
 
+    const domObserver = new MutationObserver(() => requestAnimationFrame(updateHeaderOffset))
+    domObserver.observe(document.body, { childList: true, subtree: true, attributes: true })
+
     return () => {
       window.removeEventListener('resize', updateHeaderOffset)
+      window.removeEventListener('orientationchange', updateHeaderOffset)
+      window.removeEventListener('focus', updateHeaderOffset)
+      document.removeEventListener('visibilitychange', updateHeaderOffset)
       observer.disconnect()
+      domObserver.disconnect()
     }
-  }, [installBannerVisible, unread, pathname])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // FIX: empty deps — ResizeObserver handles size changes itself; no need to recreate on every state update
 
   useEffect(() => {
     NAV.forEach(({ href }) => {
@@ -531,10 +555,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main className="app-main-scroll" style={{ flex: 1, position: 'relative' }}>
-        <div>
-          {displayChildren}
-        </div>
+      <main className="app-main-scroll" style={{ flex: 1, position: 'relative', overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
+        <div>{children}</div>
       </main>
 
       <AnimatePresence>
@@ -614,10 +636,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* ── Bottom Navigation — safe area bottom ── */}
       <nav className="bottom-nav app-bottom-nav" style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-        background: 'var(--nav-bg)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 120,
+        background: '#0a0a0a',
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
         borderRadius: '20px 20px 0 0',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
@@ -625,7 +647,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         overflow: 'hidden',
       }}>
         <LayoutGroup id="bottom-nav">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 62 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', height: 62, pointerEvents: 'auto' }}>
           {NAV.map(({ href, label, icon }) => {
             const active = activeTab === href
             return (
@@ -637,6 +659,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                   alignItems: 'center', justifyContent: 'center',
                   gap: 4, textDecoration: 'none',
                   position: 'relative',
+                  zIndex: 2,
+                  pointerEvents: 'auto',
                   transition: 'opacity .1s',
                 }}
               >
