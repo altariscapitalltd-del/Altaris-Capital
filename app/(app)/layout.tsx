@@ -347,11 +347,19 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const updateHeaderOffset = () => {
       const headerHeight = headerRef.current?.offsetHeight || 0
-      document.documentElement.style.setProperty('--app-header-height', `${headerHeight}px`)
+      if (headerHeight > 0) {
+        document.documentElement.style.setProperty('--app-header-height', `${headerHeight}px`)
+      }
     }
 
     updateHeaderOffset()
+    requestAnimationFrame(() => {
+      updateHeaderOffset()
+      setTimeout(updateHeaderOffset, 300)
+    })
+
     window.addEventListener('resize', updateHeaderOffset)
+
     const observer = new ResizeObserver(updateHeaderOffset)
     if (headerRef.current) observer.observe(headerRef.current)
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   User, Key, UserCheck, Coins, Bell, Mail, TrendingUp, Fingerprint, Shield, Smartphone,
-  MessageCircle, HelpCircle, FileText, Lock, Info, LogOut, Globe2, MapPin,
+  MessageCircle, HelpCircle, FileText, Lock, Info, LogOut, Globe2, MapPin, Gift,
 } from 'lucide-react'
 import { getFirebaseMessagingToken } from '@/lib/firebaseClient'
 import { ALTARIS_LANGUAGES } from '@/components/LanguageTranslator'
@@ -292,6 +292,7 @@ export default function SettingsPage() {
           href="/kyc"
         />
         <SettingRow icon={<Coins size={18} strokeWidth={2} />} label="Claim $40 Bonus" value={user?.bonusClaimed ? 'Already claimed' : 'Tap to claim!'} href="/home" />
+        <SettingRow icon={<Gift size={18} strokeWidth={2} />} label="Airdrops" value="Claim free token drops" href="/airdrop" />
         <LanguageRow
           language={language}
           country={country}

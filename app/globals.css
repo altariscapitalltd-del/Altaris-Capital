@@ -5,7 +5,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root, [data-theme="dark"] {
-  --app-header-height: 112px;
+  --app-header-height: 120px;
   --app-bottom-nav-height: 84px;
   --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --space-8:32px; --space-12:48px; --space-16:64px;
   --bg-page:#070b12; --bg-primary:#070b12; --bg-card:#10151f;
@@ -250,6 +250,63 @@ body {
   margin-top: 0 !important;
 }
 
+
+/* ── RTL language support ── */
+html[dir="rtl"],
+html[lang="ar"],
+html[lang="ur"],
+html[lang="he"] {
+  direction: rtl;
+}
+html[dir="rtl"] .app-main-scroll,
+html[lang="ar"] .app-main-scroll,
+html[lang="ur"] .app-main-scroll {
+  direction: rtl;
+}
+
+/* ── Shimmer loading animation ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Glassmorphism utilities ── */
+.glass {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.glass-strong {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ── Hide scrollbar utility ── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Pressable button effect ── */
+.pressable:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* ── Gradient text utility ── */
+.gradient-text {
+  background: linear-gradient(135deg, #F2BA0E, #FF9500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
 /* Trading-app upgrade inspired by premium mobile crypto wallets */
 .trade-screen{min-height:100%;padding:14px 16px calc(96px + env(safe-area-inset-bottom));background:radial-gradient(circle at 50% 0%,rgba(242,186,14,.08),transparent 32%),linear-gradient(180deg,#070b12 0%,#0b1018 52%,#070b12 100%);color:var(--text-primary)}

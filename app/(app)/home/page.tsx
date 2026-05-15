@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Download, Upload, TrendingUp, History, UserCheck } from 'lucide-react'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 import * as HomeSections from '@/components/home/HomeSections'
+import { TradingViewTicker, FearGreedGauge, MarketStats, TrendingCoins, DeFiTVL, CryptoNews } from '@/components/widgets'
 
 // ─── Shared mobile hook ───────────────────────────────────────────────────
 function useIsMobile() {
@@ -362,6 +363,33 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* ── Widgets Row ── */}
+      {sectionsReady && (
+        <div style={{ margin: '14px 16px 0' }}>
+          <TradingViewTicker />
+        </div>
+      )}
+
+      {sectionsReady && (
+        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <FearGreedGauge />
+          <MarketStats />
+        </div>
+      )}
+
+      {sectionsReady && (
+        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <TrendingCoins />
+          <DeFiTVL />
+        </div>
+      )}
+
+      {sectionsReady && (
+        <div style={{ margin: '14px 16px 0' }}>
+          <CryptoNews />
+        </div>
+      )}
 
       {sectionsReady && <BalanceChart usdBalance={usdBal} transactions={transactions} />}
 
