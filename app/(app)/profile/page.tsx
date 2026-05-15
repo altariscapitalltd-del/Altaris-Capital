@@ -147,7 +147,7 @@ export default function ProfilePage() {
             <div className="text-[13px] text-[var(--text-muted)] mb-5">Are you sure you want to log out of your account?</div>
             <div className="flex gap-3">
               <button onClick={() => setShowLogout(false)} className="flex-1 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06] font-bold text-sm">Cancel</button>
-              <button onClick={() => signOut({ callbackUrl: '/' })} className="flex-1 py-3 rounded-xl bg-[#F6465D] text-white font-extrabold text-sm">Log Out</button>
+              <button onClick={() => { window.location.href = '/'; }} className="flex-1 py-3 rounded-xl bg-[#F6465D] text-white font-extrabold text-sm">Log Out</button>
             </div>
           </div>
         </div>

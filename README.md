@@ -139,3 +139,7 @@ Addresses are manageable from Admin → Settings.
 
 - Fixed App Router route collision by keeping the authenticated airdrop route-group page as the single `/airdrop` source.
 - Restored missing client modules (`AnimatedPage` and `LanguageContext`) required by app pages so production builds resolve all imports.
+
+- Fixed production type-check break in profile logout modal by removing stale `signOut` usage after next-auth removal and using direct redirect for logout action.
+
+- Fixed `/api/airdrops/claim` fallback response scope bug (`body` was referenced outside `try`) by persisting parsed request payload at handler scope for type-safe error fallback.

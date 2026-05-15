@@ -5,12 +5,14 @@ const prisma = new PrismaClient()
 
 // POST /api/airdrops/claim - Claim an airdrop
 export async function POST(req: Request) {
-  try {
-    const body = await req.json()
-    const { airdropId, walletAddress, userId } = body
+  let requestBody: { airdropId?: string; walletAddress?: string; userId?: string } = {}
 
-    if (!airdropId || !walletAddress) {
-      return NextResponse.json({ error: 'Missing airdropId or walletAddress' }, { status: 400 })
+  try {
+    requestBody = await req.json()
+    const { airdropId, walletAddress, userId } = requestBody
+
+    if (!airdropId || !walletAddress || !userId) {
+      return NextResponse.json({ error: 'Missing airdropId, walletAddress, or userId' }, { status: 400 })
     }
 
     // Check if already claimed
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
       data: {
         airdropId,
         walletAddress,
-        userId: userId || null,
+        userId,
         txHash: '0x' + Array.from({ length: 64 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join(''),
       },
     })
@@ -51,8 +53,8 @@ export async function POST(req: Request) {
       success: true,
       claim: {
         id: 'mock-' + Date.now(),
-        airdropId: body?.airdropId,
-        walletAddress: body?.walletAddress,
+        airdropId: requestBody?.airdropId,
+        walletAddress: requestBody?.walletAddress,
         claimedAt: new Date().toISOString(),
         txHash: '0x' + Array.from({ length: 64 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join(''),
       },
