@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   User, Key, UserCheck, Coins, Bell, Mail, TrendingUp, Fingerprint, Shield, Smartphone,
-  MessageCircle, HelpCircle, FileText, Lock, Info, LogOut, Globe2, MapPin, Gift,
+  MessageCircle, HelpCircle, FileText, Lock, Info, LogOut, Globe2 , Gift,
 } from 'lucide-react'
 import { getFirebaseMessagingToken } from '@/lib/firebaseClient'
 import { ALTARIS_LANGUAGES } from '@/components/LanguageTranslator'
@@ -54,8 +54,8 @@ const COUNTRY_LANGUAGE: Record<string, string> = {
   IN: 'hi', PK: 'ur', BD: 'bn', ID: 'id', TR: 'tr', VN: 'vi', SA: 'ar', AE: 'ar', EG: 'ar', MA: 'ar', KE: 'sw', TZ: 'sw', UG: 'sw',
 }
 
-function LanguageRow({ language, country, detecting, onLanguageChange, onDetect }:
-  { language:string; country:string; detecting:boolean; onLanguageChange:(code:string)=>void; onDetect:()=>void }) {
+function LanguageRow({ language, country, onLanguageChange }:
+  { language:string; country:string; onLanguageChange:(code:string)=>void }) {
   const selected = ALTARIS_LANGUAGES.find(item => item.code === language)?.label || 'English'
   return (
     <div className="row-item" style={{ background:'transparent', borderBottom:'1px solid var(--border)' }}>
@@ -74,16 +74,7 @@ function LanguageRow({ language, country, detecting, onLanguageChange, onDetect 
       >
         {ALTARIS_LANGUAGES.map(item => <option key={item.code} value={item.code}>{item.label}</option>)}
       </select>
-      <button
-        type="button"
-        onClick={onDetect}
-        disabled={detecting}
-        aria-label="Auto-detect language from IP"
-        title="Auto-detect from IP"
-        style={{ border:'none', background:'transparent', color:'var(--text-muted)', display:'flex', alignItems:'center', justifyContent:'center', padding:0, opacity:detecting?.6:1 }}
-      >
-        <MapPin size={16} strokeWidth={2} />
-      </button>
+      <div style={{ width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true" />
     </div>
   )
 }
@@ -122,6 +113,15 @@ export default function SettingsPage() {
     setLanguage(localStorage.getItem('altaris_language') || 'en')
     setCountry(localStorage.getItem('altaris_country') || '')
   }, [])
+
+  useEffect(() => {
+    const initialized = localStorage.getItem('altaris_language_autodetected')
+    if (!initialized && language === 'en') {
+      localStorage.setItem('altaris_language_autodetected', '1')
+      detectLanguageFromIp().catch(() => {})
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language])
 
   async function logout() {
     setLoggingOut(true)
@@ -296,9 +296,7 @@ export default function SettingsPage() {
         <LanguageRow
           language={language}
           country={country}
-          detecting={detectingLanguage}
           onLanguageChange={(code) => changeLanguage(code, code === 'en')}
-          onDetect={detectLanguageFromIp}
         />
       </SectionCard>
 

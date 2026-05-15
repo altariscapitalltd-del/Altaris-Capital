@@ -132,7 +132,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .app-main-scroll {
   position: absolute;
   inset: 0;
-  top: var(--app-header-height);
+  top: max(calc(env(safe-area-inset-top) + 72px), calc(var(--app-header-height) + 8px));
   bottom: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -250,6 +250,20 @@ body {
   margin-top: 0 !important;
 }
 
+
+
+.goog-te-spinner-pos,
+.goog-te-menu-frame,
+.goog-te-menu2,
+.goog-te-gadget-icon,
+.VIpgJd-ZVi9od-ORHb,
+.VIpgJd-ZVi9od-aZ2wEe,
+.VIpgJd-ZVi9od-l4eHX-hSRGPd,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf {
+  display: none !important;
+  visibility: hidden !important;
+}
+.notranslate,[translate="no"] { unicode-bidi: isolate; }
 
 /* ── RTL language support ── */
 html[dir="rtl"],

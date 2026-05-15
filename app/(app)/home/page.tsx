@@ -337,11 +337,11 @@ export default function HomePage() {
             }
           </button>
         </div>
-        <div style={{ fontSize: 42, fontWeight: 900, letterSpacing: '-1px', marginBottom: 4 }}>
+        <div className="notranslate" translate="no" style={{ fontSize: 42, fontWeight: 900, letterSpacing: '-1px', marginBottom: 4 }}>
           {balanceHidden ? '••••••' : `$${usdBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: 'var(--success)', fontSize: 13, fontWeight: 600 }}>
+          <span className="notranslate" translate="no" style={{ color: 'var(--success)', fontSize: 13, fontWeight: 600 }}>
             {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '-'}$${Math.abs(cryptoPL).toFixed(2)} crypto P/L`}
           </span>
           {cryptoPL !== 0 && <span style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '2px 7px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>LIVE</span>}
@@ -364,6 +364,8 @@ export default function HomePage() {
         </div>
       </div>
 
+      {sectionsReady && <BalanceChart usdBalance={usdBal} transactions={transactions} />}
+
       {/* ── Widgets Row ── */}
       {sectionsReady && (
         <div style={{ margin: '14px 16px 0' }}>
@@ -372,14 +374,14 @@ export default function HomePage() {
       )}
 
       {sectionsReady && (
-        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
           <FearGreedGauge />
           <MarketStats />
         </div>
       )}
 
       {sectionsReady && (
-        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
           <TrendingCoins />
           <DeFiTVL />
         </div>
@@ -390,8 +392,6 @@ export default function HomePage() {
           <CryptoNews />
         </div>
       )}
-
-      {sectionsReady && <BalanceChart usdBalance={usdBal} transactions={transactions} />}
 
       <HomeSections.PromoBanner user={user} canClaimBonus={canClaimBonus} claimBonus={claimBonus} />
       <HomeSections.BybitSection coins={coins} ready={sectionsReady} />

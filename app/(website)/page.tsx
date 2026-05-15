@@ -754,6 +754,20 @@ export default function LandingPage() {
         </div>
       </section>
 
+
+      <section style={{ maxWidth: 1180, margin: '0 auto 32px', padding: '0 16px' }}>
+        <Link href="/airdrop" style={{ textDecoration: 'none', display: 'block' }}>
+          <div className="pressable" style={{ borderRadius: 22, border: '1px solid rgba(242,186,14,0.35)', background: 'linear-gradient(130deg, rgba(242,186,14,0.2), rgba(17,24,39,0.95) 45%, rgba(8,10,14,1))', padding: '22px 20px', display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#F2BA0E', fontWeight: 800, marginBottom: 8 }}>Web3 Rewards</div>
+              <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.1, marginBottom: 6 }}>Claim Live Airdrops</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Connect your wallet and unlock active campaign rewards across top chains.</div>
+            </div>
+            <div style={{ padding: '11px 18px', borderRadius: 12, background: '#F2BA0E', color: '#000', fontWeight: 800, whiteSpace: 'nowrap' }}>Claim Now →</div>
+          </div>
+        </Link>
+      </section>
+
       {/* ── FAQ ───────────────────────────────────────────────────────── */}
       <section id="faq" style={{ padding:'80px 24px', background:'#060606' }}>
         <div style={{ maxWidth:740, margin:'0 auto' }}>

@@ -359,13 +359,23 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     })
 
     window.addEventListener('resize', updateHeaderOffset)
+    window.addEventListener('orientationchange', updateHeaderOffset)
+    window.addEventListener('focus', updateHeaderOffset)
+    document.addEventListener('visibilitychange', updateHeaderOffset)
 
     const observer = new ResizeObserver(updateHeaderOffset)
     if (headerRef.current) observer.observe(headerRef.current)
 
+    const domObserver = new MutationObserver(() => requestAnimationFrame(updateHeaderOffset))
+    domObserver.observe(document.body, { childList: true, subtree: true, attributes: true })
+
     return () => {
       window.removeEventListener('resize', updateHeaderOffset)
+      window.removeEventListener('orientationchange', updateHeaderOffset)
+      window.removeEventListener('focus', updateHeaderOffset)
+      document.removeEventListener('visibilitychange', updateHeaderOffset)
       observer.disconnect()
+      domObserver.disconnect()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // FIX: empty deps — ResizeObserver handles size changes itself; no need to recreate on every state update

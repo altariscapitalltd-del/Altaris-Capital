@@ -13,11 +13,10 @@ const metadata = {
 export const airdropAppkit = createAppKit({
   adapters: [wagmiAdapter],
   projectId,
-  networks,
+  networks: networks as any,
   metadata,
-  showWallets: true,
-  themeMode: 'dark',
   features: { analytics: false, socials: false, email: false },
+  themeMode: 'dark',
   themeVariables: {
     '--w3m-accent': '#F2BA0B',
   },

@@ -90,6 +90,16 @@ If it does not load, ensure:
 - local firewall allows port `3000`,
 - `HOST=0.0.0.0` is set (already default in this project).
 
+
+## Vercel Deployment
+
+This repository is configured to deploy with **npm** on Vercel to match the committed lockfile (`package-lock.json`).
+
+- Install command: `npm ci --legacy-peer-deps`
+- Build command: `npm run build`
+
+If Vercel previously cached a different package manager, trigger a fresh deploy after this change so dependency installation uses npm consistently.
+
 ## URLs
 - **App**: http://localhost:3000
 - **Admin Panel**: http://localhost:3000/admin/login
@@ -110,6 +120,14 @@ Addresses are manageable from Admin → Settings.
 - API input validation is enforced on critical financial and admin mutation routes.
 
 ## Recent Upgrade Highlights
+- Prevented translator-induced React crashes on app-shell pages by disabling Google DOM-translation injection on authenticated app routes while preserving translator behavior for website/auth surfaces.
+- Hardened translator state handling with safe localStorage helpers and delayed language apply after script load to prevent client-side crashes when switching language on iOS Safari.
+- Fixed Reown AppKit initialization timing for `/airdrop` prerender by creating AppKit at module load before `useAppKit` hooks execute, preventing build-time "Please call createAppKit" errors on Vercel.
+- Airdrop now uses real Reown AppKit wallet-connect modal (wallet-only, no socials/email) via `NEXT_PUBLIC_REOWN_PROJECT_ID`, and claim/connect flows open that modal when disconnected.
+- Improved header offset stability by recalculating app header height on resize/orientation/focus/visibility and DOM mutations to prevent late overlap regressions.
+- Translation UX tightened: auto language initialization on first visit, hidden Google floating UI artifacts, and key dollar balance values marked as non-translatable.
+- Fixed mobile app-shell spacing so the fixed header no longer overlaps tab content, moved the Home balance chart directly under the portfolio card, and stacked widget grids to single-column on phones for clean alignment.
+- Updated Airdrop flow so Connect Wallet / Claim actions open an in-page wallet connect modal instead of redirecting to app tabs.
 - Hardened critical API routes with strict schema validation (admin auth, deposits, withdrawals, OTP, wallet settings).
 - Added idempotency protections for admin deposit approval to prevent duplicate balance credits.
 - Corrected balance snapshot creation to persist the exact post-update balance.

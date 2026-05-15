@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, memo } from 'react'
-import Link from 'next/link'
+import { useState, useCallback, memo } from 'react'
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
+import '@/lib/airdrop-reown'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -328,7 +329,7 @@ const CampaignCard = memo(function CampaignCard({
 })
 
 // ─── Hero Banner ──────────────────────────────────────────────────────────
-function AirdropHero() {
+function AirdropHero({ onConnectWallet }: { onConnectWallet: () => void }) {
   return (
     <div style={{
       margin: '0 16px 20px',
@@ -347,13 +348,13 @@ function AirdropHero() {
           Discover and claim premium token airdrops. Connect your wallet to unlock exclusive rewards across Ethereum, Solana, and more.
         </p>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Link href="/wallet" style={{
+          <button onClick={onConnectWallet} style={{
             padding: '12px 22px', borderRadius: 14, background: 'var(--brand-primary)', color: '#000',
             fontWeight: 800, fontSize: 14, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
-          }} className="pressable">
+          }} className="pressable" type="button">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="2" y="6" width="20" height="15" rx="2.5" /><path d="M2 10h20" /><circle cx="16" cy="15" r="1.5" fill="currentColor" /></svg>
             Connect Wallet
-          </Link>
+          </button>
           <button onClick={() => document.getElementById('campaigns')?.scrollIntoView({ behavior: 'smooth' })} style={{
             padding: '12px 22px', borderRadius: 14, background: 'rgba(255,255,255,0.06)', color: 'var(--text-primary)',
             fontWeight: 700, fontSize: 14, border: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit',
@@ -393,18 +394,33 @@ export default function AirdropPage() {
   const [campaigns, setCampaigns] = useState<AirdropCampaign[]>(SAMPLE_CAMPAIGNS)
   const [filter, setFilter] = useState<'all' | 'active' | 'upcoming' | 'ended'>('all')
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null)
+  const { open } = useAppKit()
+  const { isConnected } = useAppKitAccount()
 
-  const handleClaim = useCallback((id: string) => {
+
+  const handleConnectWallet = useCallback(async () => {
+    try {
+      await open({ view: 'Connect' })
+    } catch (error) {
+      console.error('Failed to open wallet connect modal', error)
+    }
+  }, [open])
+
+  const handleClaim = useCallback(async (id: string) => {
+    if (!isConnected) {
+      await handleConnectWallet()
+      return
+    }
     setCampaigns((prev) => prev.map((c) => (c.id === id ? { ...c, claimed: true, claimProgress: Math.min(100, c.claimProgress + 5) } : c)))
     setClaimSuccess(id)
     setTimeout(() => setClaimSuccess(null), 3000)
-  }, [])
+  }, [handleConnectWallet, isConnected])
 
   const filtered = campaigns.filter((c) => (filter === 'all' ? true : c.status === filter))
 
   return (
     <div style={{ padding: '14px 0 22px', minHeight: '100%' }}>
-      <AirdropHero />
+      <AirdropHero onConnectWallet={handleConnectWallet} />
       <StatsBar campaigns={campaigns} />
 
       {/* Filter Tabs */}
@@ -446,6 +462,7 @@ export default function AirdropPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
 
       {/* Campaigns Grid */}
       <div id="campaigns" style={{ margin: '0 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
