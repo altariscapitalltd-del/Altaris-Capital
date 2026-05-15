@@ -90,6 +90,16 @@ If it does not load, ensure:
 - local firewall allows port `3000`,
 - `HOST=0.0.0.0` is set (already default in this project).
 
+
+## Vercel Deployment
+
+This repository is configured to deploy with **npm** on Vercel to match the committed lockfile (`package-lock.json`).
+
+- Install command: `npm ci --legacy-peer-deps`
+- Build command: `npm run build`
+
+If Vercel previously cached a different package manager, trigger a fresh deploy after this change so dependency installation uses npm consistently.
+
 ## URLs
 - **App**: http://localhost:3000
 - **Admin Panel**: http://localhost:3000/admin/login
