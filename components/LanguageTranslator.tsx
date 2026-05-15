@@ -40,6 +40,21 @@ declare global {
   }
 }
 
+
+function safeStorageGet(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function safeStorageSet(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {}
+}
+
 function setCookie(name: string, value: string) {
   const maxAge = 60 * 60 * 24 * 365
   document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`
@@ -64,7 +79,7 @@ function getBestDetectedLanguage(): string {
 function getSavedLanguage(): string {
   if (typeof window === 'undefined') return 'en'
   try {
-    return window.localStorage.getItem('altaris_language') || 'en'
+    return safeStorageGet('altaris_language') || 'en'
   } catch {
     return 'en'
   }
@@ -78,7 +93,7 @@ export function applyAltarisLanguage(code: string, reloadEnglish = false) {
   document.documentElement.lang = code
 
   try {
-    window.localStorage.setItem('altaris_language', code)
+    safeStorageSet('altaris_language', code)
   } catch {}
 
   // Dispatch custom event for other components to react
@@ -142,10 +157,10 @@ export default function LanguageTranslator() {
     let scriptAdded = false
 
     // Auto-detect once on first visit before any manual selection
-    if (!window.localStorage.getItem('altaris_language_initialized')) {
+    if (!safeStorageGet('altaris_language_initialized')) {
       const autoLanguage = getBestDetectedLanguage()
-      window.localStorage.setItem('altaris_language_initialized', '1')
-      window.localStorage.setItem('altaris_language', autoLanguage)
+      safeStorageSet('altaris_language_initialized', '1')
+      safeStorageSet('altaris_language', autoLanguage)
       if (autoLanguage !== 'en') {
         setCookie('googtrans', `/en/${autoLanguage}`)
         document.documentElement.lang = autoLanguage
@@ -189,6 +204,8 @@ export default function LanguageTranslator() {
       if (!detail?.language) return
       if (detail.language !== 'en' && !scriptLoaded) {
         loadTranslate()
+        window.setTimeout(() => applyAltarisLanguage(detail.language!, Boolean(detail.reloadEnglish)), 900)
+        return
       }
       applyAltarisLanguage(detail.language, Boolean(detail.reloadEnglish))
     }
