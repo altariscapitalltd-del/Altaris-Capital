@@ -1,151 +1,161 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
-import Link from 'next/link'
 
-function StatIcon({ type }: { type: 'member' | 'kyc' | 'id' }) {
-  if (type === 'member') return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-  if (type === 'kyc') return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21V7a2 2 0 0 0-2-2h-3"/><path d="M4 21V7a2 2 0 0 1 2-2h3"/><path d="M9 12h6"/><path d="M9 16h6"/><path d="M9 8h6"/></svg>
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11h16"/><path d="M4 15h16"/><path d="M10 7h4"/><rect x="2" y="3" width="20" height="18" rx="2"/></svg>
-}
+import { useState } from 'react'
+import Link from 'next/link'
+import { useSession, signOut } from 'next-auth/react'
+import AnimatedPage from '@/components/animations/AnimatedPage'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { BottomNav } from '@/components/layout/BottomNav'
+import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null)
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
+  const { data: session } = useSession()
+  const { language, setLanguage, t } = useLanguage()
+  const [showLang, setShowLang] = useState(false)
+  const [showLogout, setShowLogout] = useState(false)
 
-  useEffect(() => {
-    fetch('/api/user/profile').then(r=>r.json()).then(d => {
-      setUser(d.user)
-      setName(d.user?.name||'')
-      setPhone(d.user?.phone||'')
-      setAvatarPreview(d.user?.profilePicture || null)
-    }).catch(() => {})
-  }, [])
+  const languages = [
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'fr', name: 'Francais', flag: '🇫🇷' },
+    { code: 'es', name: 'Espanol', flag: '🇪🇸' },
+    { code: 'pt', name: 'Portugues', flag: '🇵🇹' },
+    { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+    { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+    { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
+    { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+    { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+  ]
 
-  async function save() {
-    setSaving(true)
-
-    try {
-      const formData = new FormData()
-      formData.append('name', name.trim())
-      formData.append('phone', phone.trim())
-      if (avatarFile) formData.append('avatar', avatarFile)
-
-      let res = await fetch('/api/user/profile', { method: 'PATCH', body: formData })
-      let data = await res.json().catch(() => ({}))
-
-      if (!res.ok) {
-        const fallbackRes = await fetch('/api/user/profile', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
-        })
-        const fallbackData = await fallbackRes.json().catch(() => ({}))
-        if (!fallbackRes.ok) {
-          return
-        }
-        res = fallbackRes
-        data = fallbackData
-      }
-
-      setUser(data.user)
-      try { window.localStorage.setItem('altaris_user_cache', JSON.stringify(data.user)) } catch {}
-      setAvatarPreview(data.user?.profilePicture || avatarPreview)
-      setAvatarFile(null)
-    } catch {
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (!user) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh' }}>
-      <div style={{ width:32, height:32, border:'3px solid rgba(242,186,14,0.2)', borderTopColor:'#F2BA0E', borderRadius:'50%', animation:'spin .8s linear infinite' }}/>
-    </div>
-  )
+  const menuItems = [
+    { icon: '◈', label: 'Wallet', href: '/app/wallet', color: '#F2BA0E' },
+    { icon: '⊕', label: 'Investments', href: '/app/invest', color: '#0ECB81' },
+    { icon: '★', label: 'Airdrops', href: '/app/airdrop', color: '#A855F7', badge: '3 New' },
+    { icon: '🌍', label: 'Language', action: () => setShowLang(true), color: '#3B82F6', value: languages.find(l => l.code === language)?.name || 'English' },
+    { icon: '⚙', label: 'Settings', href: '/app/settings', color: '#666' },
+    { icon: '?', label: 'Help & Support', href: '/app/support', color: '#666' },
+  ]
 
   return (
-    <div style={{ padding:'0 16px 32px' }}>
-      <div style={{ padding:'12px 0 20px', display:'flex', alignItems:'center', gap:12 }}>
-        <Link href="/settings" style={{ width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', color:'var(--text-secondary)' }}>
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-        </Link>
-        <h1 style={{ fontSize:20, fontWeight:800 }}>Edit Profile</h1>
-      </div>
+    <AnimatedPage className="min-h-[100dvh]" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-2xl border-b border-[var(--border)]">
+        <div className="max-w-[430px] mx-auto px-5 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <AltarisLogoMark size={24} />
+            <span className="font-extrabold text-sm tracking-widest uppercase">Profile</span>
+          </div>
+          <Link href="/app/home" className="font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors text-[11px]">&larr; Home</Link>
+        </div>
+      </header>
 
-      {/* Avatar */}
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:28 }}>
-        <div style={{ position:'relative', cursor:'pointer' }} onClick={()=>fileRef.current?.click()}>
-          <div style={{ width:84, height:84, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'3px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:32, color:'#000', overflow:'hidden', position:'relative' }}>
-            {avatarPreview ? (
-              <img
-                src={avatarPreview}
-                alt=""
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+      <div className="max-w-[430px] mx-auto px-4 pb-24">
+        {/* User Card */}
+        <div className="mt-4 mb-4 bg-gradient-to-br from-[#F2BA0E]/10 via-transparent to-transparent border border-[#F2BA0E]/20 rounded-2xl p-5 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full" style={{ background: 'radial-gradient(circle, rgba(242,186,14,0.08), transparent)' }} />
+          <div className="relative z-10 flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary)]/70 flex items-center justify-center text-2xl font-black text-[var(--bg-dark)] flex-shrink-0">
+              {session?.user?.name?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-black text-lg truncate">{session?.user?.name || 'User'}</div>
+              <div className="text-[11px] text-[var(--text-muted)] truncate">{session?.user?.email || 'user@altaris.capital'}</div>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="px-2 py-0.5 rounded-md bg-[#0ECB81]/10 text-[#0ECB81] text-[10px] font-extrabold border border-[#0ECB81]/20">Verified</span>
+                <span className="px-2 py-0.5 rounded-md bg-[#3B82F6]/10 text-[#3B82F6] text-[10px] font-extrabold border border-[#3B82F6]/20">KYC Complete</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {[
+            { label: 'Invested', value: '$12,500', color: '#F2BA0E' },
+            { label: 'Returns', value: '$3,240', color: '#0ECB81' },
+            { label: 'Airdrops', value: '3', color: '#A855F7' },
+          ].map(s => (
+            <div key={s.label} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl p-3 text-center">
+              <div className="font-black text-sm" style={{ color: s.color }}>{s.value}</div>
+              <div className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Menu Items */}
+        <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-3">Menu</div>
+        <div className="flex flex-col gap-2">
+          {menuItems.map(item => (
+            item.href ? (
+              <Link key={item.label} href={item.href} className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] hover:bg-white/[0.02] transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold" style={{ background: item.color + '15', color: item.color }}>{item.icon}</div>
+                  <span className="font-bold text-sm">{item.label}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {item.badge && <span className="px-2 py-0.5 rounded-md bg-[#F6465D]/10 text-[#F6465D] text-[10px] font-extrabold">{item.badge}</span>}
+                  {item.value && <span className="text-[11px] text-[var(--text-muted)]">{item.value}</span>}
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#444" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </Link>
             ) : (
-              user.name?.[0]?.toUpperCase()||'A'
-            )}
-          </div>
-          <div style={{ position:'absolute', bottom:0, right:0, width:26, height:26, borderRadius:'50%', background:'var(--brand-primary)', display:'flex', alignItems:'center', justifyContent:'center', border:'2px solid var(--bg-page)' }}>
-            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#000" strokeWidth="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" strokeLinecap="round"/></svg>
-          </div>
+              <button key={item.label} onClick={item.action} className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] hover:bg-white/[0.02] transition-all w-full text-left">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold" style={{ background: item.color + '15', color: item.color }}>{item.icon}</div>
+                  <span className="font-bold text-sm">{item.label}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {item.value && <span className="text-[11px] text-[var(--text-muted)]">{item.value}</span>}
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#444" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </button>
+            )
+          ))}
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          style={{ display:'none' }}
-          onChange={e => {
-            const file = e.target.files?.[0]
-            if (!file) return
-            setAvatarFile(file)
-            setAvatarPreview(URL.createObjectURL(file))
-          }}
-        />
-        <p style={{ color:'var(--text-muted)', fontSize:12, marginTop:8 }}>Tap to change photo</p>
+
+        {/* Logout */}
+        <button onClick={() => setShowLogout(true)} className="w-full mt-4 p-3.5 rounded-xl bg-[#F6465D]/5 border border-[#F6465D]/15 hover:bg-[#F6465D]/10 transition-all flex items-center justify-center gap-2">
+          <span className="text-[#F6465D] font-bold text-sm">Log Out</span>
+        </button>
       </div>
 
-      {/* Form */}
-      <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-        <div>
-          <label style={{ display:'block', color:'var(--text-muted)', fontSize:12, fontWeight:600, marginBottom:7 }}>Full Name</label>
-          <input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/>
-        </div>
-        <div>
-          <label style={{ display:'block', color:'var(--text-muted)', fontSize:12, fontWeight:600, marginBottom:7 }}>Email</label>
-          <input className="input" value={user.email} disabled style={{ opacity:0.5 }}/>
-        </div>
-        <div>
-          <label style={{ display:'block', color:'var(--text-muted)', fontSize:12, fontWeight:600, marginBottom:7 }}>Phone Number</label>
-          <input className="input" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+1 (555) 000-0000"/>
-        </div>
-      </div>
-
-
-
-      <button onClick={save} disabled={saving} className="btn-primary" style={{ width:'100%', marginTop:20 }}>
-        {saving ? 'Saving...' : 'Save Changes'}
-      </button>
-
-      {/* Account info */}
-      <div style={{ marginTop:28, background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
-        {[
-          { type:'member', label:'Member Since', value: new Date(user.createdAt||Date.now()).toLocaleDateString('en-US',{month:'long',year:'numeric'}) },
-          { type:'kyc', label:'KYC Status', value: user.kycStatus==='APPROVED'?'Verified':'Not verified' },
-          { type:'id', label:'User ID', value: user.id?.slice(0,12)+'...' },
-        ].map(({type,label,value}) => (
-          <div key={label} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderBottom:'1px solid var(--border)' }}>
-            <span style={{ color:'var(--brand-primary)', display:'inline-flex' }}><StatIcon type={type as any} /></span>
-            <span style={{ color:'var(--text-muted)', fontSize:13, flex:1 }}>{label}</span>
-            <span style={{ fontWeight:600, fontSize:13 }}>{value}</span>
+      {/* Language Modal */}
+      {showLang && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end justify-center" onClick={() => setShowLang(false)}>
+          <div className="bg-[#0A0A0A] border border-[var(--border)] rounded-t-3xl p-6 max-w-[430px] w-full" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-[#333] rounded-full mx-auto mb-5" />
+            <div className="font-bold text-base mb-4 text-center">Select Language</div>
+            <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+              {languages.map(l => (
+                <button key={l.code} onClick={() => { setLanguage(l.code as any); setShowLang(false) }}
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all ${language === l.code ? 'bg-[var(--primary)]/10 border-[var(--primary)]/25' : 'bg-white/[0.02] border-white/[0.04]'}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{l.flag}</span>
+                    <span className={`font-bold text-sm ${language === l.code ? 'text-[var(--primary)]' : ''}`}>{l.name}</span>
+                  </div>
+                  {language === l.code && <div className="w-4 h-4 rounded-full bg-[var(--primary)] flex items-center justify-center"><svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg></div>}
+                </button>
+              ))}
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
+      )}
+
+      {/* Logout Confirm */}
+      {showLogout && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-6" onClick={() => setShowLogout(false)}>
+          <div className="bg-[#0A0A0A] border border-[var(--border)] rounded-3xl p-6 max-w-[360px] w-full text-center" onClick={e => e.stopPropagation()}>
+            <div className="text-3xl mb-3">👋</div>
+            <div className="font-bold text-lg mb-2">Log Out?</div>
+            <div className="text-[13px] text-[var(--text-muted)] mb-5">Are you sure you want to log out of your account?</div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowLogout(false)} className="flex-1 py-3 rounded-xl bg-white/[0.04] border border-white/[0.06] font-bold text-sm">Cancel</button>
+              <button onClick={() => signOut({ callbackUrl: '/' })} className="flex-1 py-3 rounded-xl bg-[#F6465D] text-white font-extrabold text-sm">Log Out</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <BottomNav />
+    </AnimatedPage>
   )
 }

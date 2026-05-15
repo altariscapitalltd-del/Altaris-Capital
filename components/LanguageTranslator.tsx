@@ -1,119 +1,104 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useLanguage } from '@/contexts/LanguageContext'
 
-export const ALTARIS_LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'ar', label: 'Arabic' },
-  { code: 'bn', label: 'Bengali' },
-  { code: 'bg', label: 'Bulgarian' },
-  { code: 'zh-CN', label: 'Chinese' },
-  { code: 'nl', label: 'Dutch' },
-  { code: 'fr', label: 'French' },
-  { code: 'de', label: 'German' },
-  { code: 'el', label: 'Greek' },
-  { code: 'hi', label: 'Hindi' },
-  { code: 'hu', label: 'Hungarian' },
-  { code: 'id', label: 'Indonesian' },
-  { code: 'it', label: 'Italian' },
-  { code: 'ja', label: 'Japanese' },
-  { code: 'ko', label: 'Korean' },
-  { code: 'pl', label: 'Polish' },
-  { code: 'pt', label: 'Portuguese' },
-  { code: 'ro', label: 'Romanian' },
-  { code: 'ru', label: 'Russian' },
-  { code: 'es', label: 'Spanish' },
-  { code: 'sw', label: 'Swahili' },
-  { code: 'sv', label: 'Swedish' },
-  { code: 'th', label: 'Thai' },
-  { code: 'tr', label: 'Turkish' },
-  { code: 'ur', label: 'Urdu' },
-  { code: 'vi', label: 'Vietnamese' },
-  { code: 'yo', label: 'Yoruba' },
+const LANGUAGES = [
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'fr', name: 'Francais', flag: '🇫🇷' },
+  { code: 'es', name: 'Espanol', flag: '🇪🇸' },
+  { code: 'pt', name: 'Portugues', flag: '🇵🇹' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+  { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
+  { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+  { code: 'ar', name: 'Arabic', flag: '🇸🇦' },
+  { code: 'ru', name: 'Russian', flag: '🇷🇺' },
 ]
 
-declare global {
-  interface Window {
-    googleTranslateElementInit?: () => void
-    google?: any
-  }
+interface Props {
+  variant?: 'compact' | 'full'
 }
 
-function setCookie(name: string, value: string) {
-  const maxAge = 60 * 60 * 24 * 365
-  document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`
-  try {
-    document.cookie = `${name}=${value};path=/;domain=${window.location.hostname};max-age=${maxAge};SameSite=Lax`
-  } catch {}
-}
+export default function LanguageTranslator({ variant = 'compact' }: Props) {
+  const { language, setLanguage } = useLanguage()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
-function getSavedLanguage() {
-  if (typeof window === 'undefined') return 'en'
-  return window.localStorage.getItem('altaris_language') || 'en'
-}
-
-export function applyAltarisLanguage(code: string, reloadEnglish = false) {
-  const value = code === 'en' ? '/en/en' : `/en/${code}`
-  setCookie('googtrans', value)
-  document.documentElement.lang = code
-  try { window.localStorage.setItem('altaris_language', code) } catch {}
-
-  const combo = document.querySelector<HTMLSelectElement>('.goog-te-combo')
-  if (combo) {
-    combo.value = code
-    combo.dispatchEvent(new Event('change'))
-  }
-
-  if (code === 'en' && reloadEnglish) window.location.reload()
-}
-
-export default function LanguageTranslator() {
   useEffect(() => {
-    const saved = getSavedLanguage()
-    let scriptRequested = false
-
-    window.googleTranslateElementInit = () => {
-      if (!window.google?.translate?.TranslateElement) return
-      if (!document.querySelector('#google_translate_element .goog-te-gadget')) {
-        new window.google.translate.TranslateElement(
-          {
-            pageLanguage: 'en',
-            includedLanguages: ALTARIS_LANGUAGES.map((item) => item.code).join(','),
-            autoDisplay: false,
-          },
-          'google_translate_element'
-        )
-      }
-      setTimeout(() => applyAltarisLanguage(saved), 500)
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-
-    const loadTranslate = () => {
-      if (window.google?.translate?.TranslateElement) {
-        window.googleTranslateElementInit?.()
-        return
-      }
-      if (scriptRequested || document.querySelector('script[data-altaris-google-translate]')) return
-      scriptRequested = true
-      const script = document.createElement('script')
-      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
-      script.async = true
-      script.setAttribute('data-altaris-google-translate', 'true')
-      document.body.appendChild(script)
-    }
-
-    const onChangeLanguage = (event: Event) => {
-      const detail = (event as CustomEvent<{ language?: string; reloadEnglish?: boolean }>).detail
-      if (!detail?.language) return
-      if (detail.language !== 'en') loadTranslate()
-      applyAltarisLanguage(detail.language, Boolean(detail.reloadEnglish))
-    }
-
-    window.addEventListener('altaris:set-language', onChangeLanguage as EventListener)
-
-    if (saved !== 'en') loadTranslate()
-
-    return () => window.removeEventListener('altaris:set-language', onChangeLanguage as EventListener)
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  return <div id="google_translate_element" className="notranslate" translate="no" aria-hidden="true" />
+  const current = LANGUAGES.find(l => l.code === language) || LANGUAGES[0]
+
+  if (variant === 'compact') {
+    return (
+      <div ref={ref} className="relative">
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-all"
+          aria-label="Select language"
+        >
+          <span className="text-sm">{current.flag}</span>
+          <span className="text-[11px] font-bold text-[#999] uppercase hidden sm:inline">{current.code}</span>
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#666" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+
+        {open && (
+          <div className="absolute right-0 top-10 bg-[#111] border border-[var(--border)] rounded-xl p-1.5 z-50 min-w-[180px] shadow-2xl">
+            {LANGUAGES.map(l => (
+              <button
+                key={l.code}
+                onClick={() => { setLanguage(l.code as any); setOpen(false) }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all ${
+                  language === l.code
+                    ? 'bg-[var(--primary)]/10 text-[var(--primary)]'
+                    : 'hover:bg-white/[0.03] text-[var(--text-secondary)]'
+                }`}
+              >
+                <span className="text-base">{l.flag}</span>
+                <span className="text-xs font-bold">{l.name}</span>
+                {language === l.code && (
+                  <svg className="ml-auto" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full">
+      <div className="flex flex-col gap-1.5 max-h-[320px] overflow-y-auto pr-1">
+        {LANGUAGES.map(l => (
+          <button
+            key={l.code}
+            onClick={() => setLanguage(l.code as any)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+              language === l.code
+                ? 'bg-[var(--primary)]/10 border-[var(--primary)]/25'
+                : 'bg-white/[0.02] border-white/[0.04] hover:bg-white/[0.04]'
+            }`}
+          >
+            <span className="text-xl">{l.flag}</span>
+            <div className="text-left">
+              <div className={`text-sm font-bold ${language === l.code ? 'text-[var(--primary)]' : ''}`}>{l.name}</div>
+              <div className="text-[10px] text-[var(--text-muted)] uppercase">{l.code}</div>
+            </div>
+            {language === l.code && (
+              <div className="ml-auto w-5 h-5 rounded-full bg-[var(--primary)] flex items-center justify-center">
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }

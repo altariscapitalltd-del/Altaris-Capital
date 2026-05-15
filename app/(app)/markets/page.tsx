@@ -1,224 +1,147 @@
 'use client'
-import { useEffect, useState, useRef, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import CoinIcon from '@/components/ui/CoinIcon'
 
-function ShadowCard({ h = 92 }: { h?: number }) {
-  return (
-    <div style={{
-      height: h,
-      borderRadius: 18,
-      background: '#050505',
-      border: '1px solid rgba(255,255,255,0.06)',
-      overflow: 'hidden',
-      position: 'relative',
-    }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(110deg, transparent 18%, rgba(255,255,255,0.06) 32%, transparent 46%)', backgroundSize: '200% 100%', opacity: 0.35 }} />
-      <div style={{ position: 'absolute', top: 12, left: 12, right: 76, height: 10, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }} />
-      <div style={{ position: 'absolute', top: 32, left: 12, width: '42%', height: 12, borderRadius: 999, background: 'rgba(255,255,255,0.08)' }} />
-      <div style={{ position: 'absolute', bottom: 12, left: 12, right: 12, height: 26, borderRadius: 999, background: 'rgba(255,255,255,0.05)' }} />
-    </div>
-  )
-}
-
-function Sparkline({ data, color, width=60, height=28 }: { data:number[], color:string, width?:number, height?:number }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return
-    const ctx = canvas.getContext('2d'); if (!ctx) return
-    const dpr = window.devicePixelRatio||1; canvas.width=width*dpr; canvas.height=height*dpr; ctx.scale(dpr,dpr)
-    if (data.length === 0) return
-    const min=Math.min(...data),max=Math.max(...data),range=max-min||1
-    const xs=data.map((_,i)=>(i/(data.length-1))*width)
-    const ys=data.map(v=>height-((v-min)/range)*(height-4)-2)
-    const grad=ctx.createLinearGradient(0,0,0,height)
-    grad.addColorStop(0,color+'28'); grad.addColorStop(1,color+'00')
-    ctx.beginPath(); ctx.moveTo(xs[0],ys[0]); for(let i=1;i<xs.length;i++) ctx.lineTo(xs[i],ys[i])
-    ctx.lineTo(xs[xs.length-1],height); ctx.lineTo(xs[0],height); ctx.closePath()
-    ctx.fillStyle=grad; ctx.fill()
-    ctx.beginPath(); ctx.moveTo(xs[0],ys[0]); for(let i=1;i<xs.length;i++) ctx.lineTo(xs[i],ys[i])
-    ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.lineJoin='round'; ctx.stroke()
-  },[data,color,width,height])
-  return <canvas ref={canvasRef} style={{width,height,display:'block'}}/>
-}
-
-type Coin = {
-  id: string
-  symbol: string
-  name: string
-  image: string
-  price: number
-  change24h: number
-  volumeFormatted: string
-  marketCapRank: number
-  spark: number[]
-}
-
-const RANK_TABS = [
-  { id: 'all',     label: 'All',     type: 'all'     as const },
-  { id: 'gainers', label: '↑ Gainers', type: 'gainers' as const },
-  { id: 'losers',  label: '↓ Losers',  type: 'losers'  as const },
-  { id: 'top_10',  label: 'Top 10',  type: 'rank'    as const, rank: 10 },
-  { id: 'top_50',  label: 'Top 50',  type: 'rank'    as const, rank: 50 },
-  { id: 'top_100', label: 'Top 100', type: 'rank'    as const, rank: 100 },
-]
-
-const CHAIN_TABS = [
-  { id: 'ethereum-ecosystem', label: '⬡ Ethereum' },
-  { id: 'bnb-chain-ecosystem', label: '◆ BNB Chain' },
-  { id: 'solana-ecosystem', label: '◎ Solana' },
-  { id: 'avalanche-ecosystem', label: '▲ Avalanche' },
-  { id: 'polygon-ecosystem', label: '⬟ Polygon' },
-  { id: 'arbitrum-ecosystem', label: '🔵 Arbitrum' },
-  { id: 'optimism-ecosystem', label: '🔴 Optimism' },
-  { id: 'base-ecosystem', label: '🔷 Base' },
-  { id: 'tron-ecosystem', label: '🔶 TRON' },
-  { id: 'sui-ecosystem', label: '🌊 Sui' },
-  { id: 'layer-1', label: 'Layer 1' },
-  { id: 'layer-2', label: 'Layer 2' },
-  { id: 'defi', label: '🏦 DeFi' },
-  { id: 'stablecoins', label: '💵 Stablecoins' },
-  { id: 'real-world-assets-rwa', label: '🏠 RWA' },
-  { id: 'artificial-intelligence', label: '🤖 AI' },
-  { id: 'gaming', label: '🎮 Gaming' },
-  { id: 'meme-token', label: '🐸 Memes' },
-]
+import { useState } from 'react'
+import Link from 'next/link'
+import AnimatedPage from '@/components/animations/AnimatedPage'
+import { useLiveCrypto } from '@/hooks/useLiveCrypto'
+import { BottomNav } from '@/components/layout/BottomNav'
+import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 export default function MarketsPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const q = (searchParams?.get('q') || '').trim().toLowerCase()
+  const { prices } = useLiveCrypto(5000)
+  const [activeFilter, setActiveFilter] = useState('All')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState<'change'|'cap'>('cap')
+  const [showSort, setShowSort] = useState(false)
 
-  const [list, setList] = useState<Coin[]>([])
-  const [tab, setTab] = useState('all')
-  const [loading, setLoading] = useState(true)
+  const filters = ['All', 'Crypto', 'Stocks', 'Forex', 'Commodities']
 
-  const fetchList = useCallback(async (categoryId?: string) => {
-    setLoading(true)
-    const url = categoryId
-      ? `/api/markets/list?category_id=${encodeURIComponent(categoryId)}&per_page=100`
-      : '/api/markets/list?per_page=100'
-    try {
-      const res = await fetch(url)
-      const data = await res.json().catch(() => ({ list: [] }))
-      setList(data.list || [])
-    } catch {
-      setList([])
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    const isRankTab = RANK_TABS.some(t => t.id === tab)
-    const isChainTab = CHAIN_TABS.some(t => t.id === tab)
-    if (isChainTab) fetchList(tab)
-    else fetchList()
-  }, [tab, fetchList])
-
-  const filtered = list
-    .filter(c => {
-      if (!q) return true
-      return c.symbol.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)
-    })
-    .filter(c => {
-      const r = RANK_TABS.find(t => t.id === tab)
-      if (!r) return true
-      if (r.type === 'gainers') return c.change24h > 0
-      if (r.type === 'losers') return c.change24h < 0
-      if (r.type === 'rank' && r.rank) return c.marketCapRank <= r.rank
-      return true
-    })
-    .sort((a, b) => {
-      if (tab === 'gainers') return b.change24h - a.change24h
-      if (tab === 'losers') return a.change24h - b.change24h
-      return a.marketCapRank - b.marketCapRank
-    })
-
-  const allTabs = [
-    ...RANK_TABS,
-    { id: '_divider', label: '— Chains —', type: 'divider' as any },
-    ...CHAIN_TABS.map(c => ({ ...c, type: 'category' as const })),
+  const marketData = [
+    { symbol: 'BTC', name: 'Bitcoin', price: prices?.bitcoin?.usd || 108420, change: prices?.bitcoin?.usd_24h_change || 2.34, cap: 2.1, type: 'Crypto', color: '#F7931A' },
+    { symbol: 'ETH', name: 'Ethereum', price: prices?.ethereum?.usd || 3650, change: prices?.ethereum?.usd_24h_change || 1.87, cap: 0.42, type: 'Crypto', color: '#627EEA' },
+    { symbol: 'SOL', name: 'Solana', price: prices?.solana?.usd || 198, change: prices?.solana?.usd_24h_change || 3.56, cap: 0.085, type: 'Crypto', color: '#9945FF' },
+    { symbol: 'XRP', name: 'XRP', price: prices?.ripple?.usd || 2.45, change: prices?.ripple?.usd_24h_change || 5.12, cap: 0.13, type: 'Crypto', color: '#E74C3C' },
+    { symbol: 'BNB', name: 'BNB', price: prices?.binancecoin?.usd || 720, change: prices?.binancecoin?.usd_24h_change || 0.89, cap: 0.11, type: 'Crypto', color: '#F0B90B' },
+    { symbol: 'AAPL', name: 'Apple', price: 198.5, change: 1.23, cap: 3.0, type: 'Stocks', color: '#555' },
+    { symbol: 'NVDA', name: 'NVIDIA', price: 142.3, change: -2.15, cap: 3.5, type: 'Stocks', color: '#76B900' },
+    { symbol: 'TSLA', name: 'Tesla', price: 248.7, change: 3.45, cap: 0.78, type: 'Stocks', color: '#CC0000' },
+    { symbol: 'MSFT', name: 'Microsoft', price: 432.1, change: 0.67, cap: 3.2, type: 'Stocks', color: '#00A4EF' },
+    { symbol: 'EURUSD', name: 'EUR/USD', price: 1.0845, change: -0.23, cap: 0, type: 'Forex', color: '#3B82F6' },
+    { symbol: 'GBPUSD', name: 'GBP/USD', price: 1.2740, change: 0.15, cap: 0, type: 'Forex', color: '#0ECB81' },
+    { symbol: 'USDJPY', name: 'USD/JPY', price: 149.82, change: -0.45, cap: 0, type: 'Forex', color: '#F6465D' },
+    { symbol: 'GOLD', name: 'Gold', price: 2650, change: 0.45, cap: 0, type: 'Commodities', color: '#FFD700' },
+    { symbol: 'OIL', name: 'Crude Oil', price: 78.45, change: -1.23, cap: 0, type: 'Commodities', color: '#666' },
+    { symbol: 'SILVER', name: 'Silver', price: 31.85, change: 0.78, cap: 0, type: 'Commodities', color: '#C0C0C0' },
   ]
 
-  return (
-    <div style={{ padding: '0 0 12px' }}>
-      <div style={{ padding: '8px 16px 0' }}>
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, alignItems: 'center' }} className="no-scrollbar">
-          {allTabs.map(t => {
-            if (t.id === '_divider') {
-              return <div key="_divider" style={{ width: 1, height: 20, background: 'var(--border)', flexShrink: 0, margin: '0 2px' }} />
-            }
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`chip ${tab === t.id ? 'active' : ''}`}
-                style={{ flexShrink: 0, fontSize: 12 }}
-              >
-                {t.label}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+  const filtered = marketData
+    .filter(item => activeFilter === 'All' || item.type === activeFilter)
+    .filter(item => !searchTerm || item.symbol.toLowerCase().includes(searchTerm.toLowerCase()) || item.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => sortBy === 'change' ? Math.abs(b.change) - Math.abs(a.change) : b.cap - a.cap)
 
-      <div style={{ padding: '14px 16px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto 70px', gap: 8, padding: '8px 0', borderBottom: '1px solid var(--border)', marginBottom: 2 }}>
-          {['Asset', 'Price', '24h', ''].map(h => (
-            <span key={h} style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
+  const topGainer = marketData.reduce((best, c) => c.change > best.change ? c : best, marketData[0])
+  const topLoser = marketData.reduce((worst, c) => c.change < worst.change ? c : worst, marketData[0])
+
+  return (
+    <AnimatedPage className="min-h-[100dvh]" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-2xl border-b border-[var(--border)]">
+        <div className="max-w-[430px] mx-auto px-5 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <AltarisLogoMark size={24} />
+            <span className="font-extrabold text-sm tracking-widest uppercase">Markets</span>
+          </div>
+          <Link href="/app/home" className="font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors text-[11px]">&larr; Home</Link>
+        </div>
+      </header>
+
+      <div className="max-w-[430px] mx-auto px-4 pb-24">
+        <div className="mt-4 mb-3">
+          <input type="text" placeholder="Search assets..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+            className="w-full py-2.5 px-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] text-sm focus:outline-none focus:border-[var(--primary)]/50 transition-colors" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="bg-gradient-to-br from-[#0ECB81]/10 to-transparent border border-[#0ECB81]/20 rounded-2xl p-3.5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-2 h-2 rounded-full bg-[#0ECB81]" />
+              <span className="text-[10px] font-bold text-[#0ECB81] uppercase tracking-wider">Top Gainer</span>
+            </div>
+            <div className="font-extrabold text-base">{topGainer.symbol}</div>
+            <div className="text-[#0ECB81] font-bold text-sm">+{topGainer.change.toFixed(2)}%</div>
+          </div>
+          <div className="bg-gradient-to-br from-[#F6465D]/10 to-transparent border border-[#F6465D]/20 rounded-2xl p-3.5">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-2 h-2 rounded-full bg-[#F6465D]" />
+              <span className="text-[10px] font-bold text-[#F6465D] uppercase tracking-wider">Top Loser</span>
+            </div>
+            <div className="font-extrabold text-base">{topLoser.symbol}</div>
+            <div className="text-[#F6465D] font-bold text-sm">{topLoser.change.toFixed(2)}%</div>
+          </div>
+        </div>
+
+        <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
+          {filters.map(f => (
+            <button key={f} onClick={() => setActiveFilter(f)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${activeFilter === f ? 'bg-[var(--primary)]/12 text-[var(--primary)] border-[var(--primary)]/25' : 'bg-white/[0.02] text-[#666] border-white/[0.06]'}`}>
+              {f}
+            </button>
           ))}
         </div>
 
-        {loading ? (
-          <div style={{ display: 'grid', gap: 12, paddingTop: 10 }}>
-            {Array.from({ length: 6 }).map((_, i) => <ShadowCard key={i} h={78} />)}
-          </div>
-        ) : (
-          <>
-            {filtered.map(coin => (
-              <div
-                key={coin.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => router.push(`/markets/${coin.symbol.toLowerCase()}`)}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); router.push(`/markets/${coin.symbol.toLowerCase()}`) } }}
-                style={{ display: 'grid', gridTemplateColumns: '1fr auto auto 70px', gap: 8, alignItems: 'center', padding: '13px 0', borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
-                className="pressable"
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {coin.image ? (
-                    <img src={coin.image} alt="" style={{ width: 38, height: 38, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
-                  ) : (
-                    <CoinIcon symbol={coin.symbol} size={38} />
-                  )}
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{coin.symbol}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{coin.name}</div>
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, fontSize: 14 }}>
-                    ${coin.price < 0.01 ? coin.price.toFixed(6) : coin.price.toLocaleString('en-US', { minimumFractionDigits: coin.price < 1 ? 4 : coin.price < 100 ? 2 : 0, maximumFractionDigits: 8 })}
-                  </div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: 10 }}>Vol {coin.volumeFormatted}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: coin.change24h >= 0 ? 'var(--success)' : 'var(--danger)', background: coin.change24h >= 0 ? 'var(--success-bg)' : 'var(--danger-bg)', padding: '4px 9px', borderRadius: 99, whiteSpace: 'nowrap' }}>
-                    {(coin.change24h >= 0 ? '+' : '') + coin.change24h.toFixed(2)}%
-                  </span>
-                </div>
-                <Sparkline data={coin.spark.length ? coin.spark : [coin.price, coin.price]} color={coin.change24h >= 0 ? '#0ECB81' : '#F6465D'} width={70} height={30} />
-              </div>
-            ))}
-
-            {!loading && filtered.length === 0 && (
-              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-                {q ? `No coins match "${q}"` : 'No coins in this category'}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{filtered.length} Assets</span>
+          <div className="relative">
+            <button onClick={() => setShowSort(!showSort)} className="text-xs font-bold text-[#666] flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-white/[0.03]">
+              Sort <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            {showSort && (
+              <div className="absolute right-0 top-8 bg-[#111] border border-[var(--border)] rounded-xl p-1 z-10 min-w-[120px]">
+                {[{k:'cap' as const,l:'Market Cap'},{k:'change' as const,l:'24h Change'}].map(s => (
+                  <button key={s.k} onClick={() => { setSortBy(s.k); setShowSort(false) }} className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold ${sortBy === s.k ? 'text-[var(--primary)] bg-[var(--primary)]/10' : 'text-[#666] hover:bg-white/[0.03]'}`}>{s.l}</button>
+                ))}
               </div>
             )}
-          </>
+          </div>
+        </div>
+
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-2.5 border-b border-[var(--border)]">
+            <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Asset</span>
+            <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider text-right">Price</span>
+            <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider text-right">24h</span>
+          </div>
+          {filtered.map(item => {
+            const up = item.change >= 0
+            return (
+              <div key={item.symbol} className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-3 border-b border-[var(--border)]/50 hover:bg-white/[0.02] transition-colors items-center">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs flex-shrink-0" style={{ background: item.color + '15', border: '1px solid ' + item.color + '30', color: item.color }}>
+                    {item.symbol.slice(0,2)}
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm">{item.symbol}</div>
+                    <div className="text-[11px] text-[var(--text-muted)]">{item.name}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-extrabold text-sm tabular-nums">${item.price >= 1000 ? item.price.toLocaleString(undefined, {maximumFractionDigits:0}) : item.price >= 10 ? item.price.toFixed(2) : item.price.toFixed(4)}</div>
+                </div>
+                <span className={`font-extrabold text-xs px-2 py-1 rounded-md ${up ? 'text-[#0ECB81] bg-[#0ECB81]/10' : 'text-[#F6465D] bg-[#F6465D]/10'}`}>
+                  {up ? '+' : ''}{item.change.toFixed(2)}%
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
+        {filtered.length === 0 && (
+          <div className="text-center py-16 text-[#444]">
+            <div className="font-bold text-base text-[#666]">No assets found</div>
+          </div>
         )}
       </div>
-    </div>
+
+      <BottomNav />
+    </AnimatedPage>
   )
 }

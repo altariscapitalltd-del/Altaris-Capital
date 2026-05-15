@@ -99,6 +99,44 @@ model Investment {
   @@map("investments")
 }
 
+model Airdrop {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  title         String
+  token         String
+  tokenSymbol   String
+  amount        Float
+  valueUsd      String
+  status        AirdropStatus @default(UPCOMING)
+  description   String   @db.Text
+  eligibility   String[] @default([])
+  endsAt        DateTime
+  totalClaimed  Int      @default(0)
+  totalSupply   Int
+  chain         String
+  color         String   @default("#F2BA0E")
+  icon          String   @default("◆")
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  claims        AirdropClaim[]
+
+  @@map("airdrops")
+}
+
+model AirdropClaim {
+  id          String   @id @default(cuid())
+  airdropId   String
+  userId      String
+  walletAddress String
+  claimedAt   DateTime @default(now())
+  txHash      String?
+  airdrop     Airdrop  @relation(fields: [airdropId], references: [id], onDelete: Cascade)
+
+  @@unique([airdropId, walletAddress])
+  @@map("airdrop_claims")
+}
+
 model OTP {
   id        String     @id @default(cuid())
   userId    String
@@ -280,6 +318,12 @@ enum OTPPurpose {
   LOGIN
   WITHDRAWAL
   KYC
+}
+
+enum AirdropStatus {
+  UPCOMING
+  CLAIMABLE
+  ENDED
 }
 
 enum ReferralStatus {

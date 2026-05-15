@@ -5,83 +5,141 @@ import { Download, Upload, TrendingUp, History, UserCheck } from 'lucide-react'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 import * as HomeSections from '@/components/home/HomeSections'
 
-// ─── TradingView widget loader (shared by all widgets) ────────────────────
-function TradingViewWidget({
-  widgetName,
-  config,
-  height = 400,
-  style,
-}: {
-  widgetName: string
-  config: Record<string, any>
-  height?: number
-  style?: React.CSSProperties
-}) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const loaded = useRef(false)
+// ─── Live Market widget loader (custom built, no external branding) ───────
+function MarketChartWidget({ symbol, title, height = 400 }: { symbol: string; title: string; height?: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [price, setPrice] = useState<string>('—')
+  const [change, setChange] = useState<number>(0)
 
   useEffect(() => {
-    if (loaded.current || !containerRef.current) return
-    loaded.current = true
-
-    const script = document.createElement('script')
-    script.src = `https://s.tradingview.com/external-embedding/embed-widget-${widgetName}.js`
-    script.async = true
-    script.innerHTML = JSON.stringify({
-      ...config,
-      colorTheme: 'dark',
-      locale: 'en',
-      isTransparent: true,
-      width: '100%',
-      height,
-    })
-    containerRef.current.appendChild(script)
-
-    return () => {
-      if (containerRef.current) containerRef.current.innerHTML = ''
-      loaded.current = false
+    let cancelled = false
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`/api/markets/chart?symbol=${encodeURIComponent(symbol)}`)
+        const data = await res.json()
+        if (cancelled) return
+        if (data.price) setPrice(data.price)
+        if (data.change !== undefined) setChange(data.change)
+        if (data.spark && canvasRef.current) {
+          drawChart(canvasRef.current, data.spark, data.change >= 0 ? '#0ECB81' : '#F6465D')
+        }
+      } catch {}
     }
-  }, [])
+    fetchData()
+    const interval = setInterval(fetchData, 30000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [symbol])
 
   return (
-    <div
-      ref={containerRef}
-      className="tradingview-widget-container"
-      style={{ width: '100%', height, overflow: 'hidden', ...style }}
-    />
+    <div style={{ width: '100%', height, overflow: 'hidden', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 14 }}>{title}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{symbol}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontWeight: 900, fontSize: 18, fontVariantNumeric: 'tabular-nums' }}>{price}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: change >= 0 ? '#0ECB81' : '#F6465D' }}>{change >= 0 ? '+' : ''}{change.toFixed(2)}%</div>
+        </div>
+      </div>
+      <div style={{ flex: 1, position: 'relative' }}>
+        <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
+      </div>
+    </div>
   )
 }
 
-// ─── 1. Ticker Tape (always-on, top of page) ──────────────────────────────
+function drawChart(canvas: HTMLCanvasElement, data: number[], color: string) {
+  const ctx = canvas.getContext('2d')
+  if (!ctx || data.length < 2) return
+  const dpr = window.devicePixelRatio || 1
+  const rect = canvas.getBoundingClientRect()
+  canvas.width = rect.width * dpr
+  canvas.height = rect.height * dpr
+  ctx.scale(dpr, dpr)
+  const w = rect.width
+  const h = rect.height
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const range = max - min || 1
+  const points = data.map((v, i) => ({
+    x: (i / (data.length - 1)) * w,
+    y: h - ((v - min) / range) * (h - 16) - 8,
+  }))
+  ctx.clearRect(0, 0, w, h)
+  const grad = ctx.createLinearGradient(0, 0, 0, h)
+  grad.addColorStop(0, color + '20')
+  grad.addColorStop(1, color + '00')
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, points[0].y)
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y)
+  ctx.lineTo(w, h)
+  ctx.lineTo(0, h)
+  ctx.closePath()
+  ctx.fillStyle = grad
+  ctx.fill()
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, points[0].y)
+  for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y)
+  ctx.strokeStyle = color
+  ctx.lineWidth = 2
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  ctx.stroke()
+}
+
+// ─── 1. Live Ticker Tape (custom built) ───────────────────────────────────
 const TickerTape = memo(function TickerTape() {
-  const ref = useRef<HTMLDivElement>(null)
-  const loaded = useRef(false)
+  const [prices, setPrices] = useState<Record<string, { price: number; change: number }>>({})
+
   useEffect(() => {
-    if (loaded.current || !ref.current) return
-    loaded.current = true
-    const script = document.createElement('script')
-    script.src = 'https://s.tradingview.com/external-embedding/embed-widget-ticker-tape.js'
-    script.async = true
-    script.innerHTML = JSON.stringify({
-      symbols: [
-        { proName: 'BINANCE:BTCUSDT', title: 'BTC' },
-        { proName: 'BINANCE:ETHUSDT', title: 'ETH' },
-        { proName: 'BINANCE:XRPUSDT', title: 'XRP' },
-        { proName: 'BINANCE:SOLUSDT', title: 'SOL' },
-        { proName: 'BINANCE:BNBUSDT', title: 'BNB' },
-        { description: 'Gold', proName: 'OANDA:XAUUSD' },
-        { description: 'S&P 500', proName: 'FOREXCOM:SPXUSD' },
-        { description: 'EUR/USD', proName: 'FX:EURUSD' },
-      ],
-      showSymbolLogo: true,
-      isTransparent: true,
-      displayMode: 'adaptive',
-      colorTheme: 'dark',
-      locale: 'en',
-    })
-    ref.current.appendChild(script)
+    const fetchPrices = () => {
+      fetch('/api/markets/live-ticker')
+        .then(r => r.json())
+        .then(d => { if (d.prices) setPrices(d.prices) })
+        .catch(() => {})
+    }
+    fetchPrices()
+    const interval = setInterval(fetchPrices, 30000)
+    return () => clearInterval(interval)
   }, [])
-  return <div ref={ref} style={{ width: '100%', minHeight: 46, overflow: 'hidden' }} />
+
+  const assets = [
+    { sym: 'BTC', name: 'Bitcoin', color: '#F7931A' },
+    { sym: 'ETH', name: 'Ethereum', color: '#627EEA' },
+    { sym: 'XRP', name: 'XRP', color: '#E74C3C' },
+    { sym: 'SOL', name: 'Solana', color: '#9945FF' },
+    { sym: 'BNB', name: 'BNB', color: '#F0B90B' },
+    { sym: 'GOLD', name: 'Gold', color: '#FFD700' },
+    { sym: 'SPX', name: 'S&P 500', color: '#0ECB81' },
+    { sym: 'EURUSD', name: 'EUR/USD', color: '#3B82F6' },
+  ]
+
+  return (
+    <div style={{ width: '100%', overflow: 'hidden', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', height: 46, animation: 'tickerScroll 35s linear infinite', whiteSpace: 'nowrap' }}>
+        {[...assets, ...assets].map((a, i) => {
+          const p = prices[a.sym]
+          return (
+            <div key={`${a.sym}-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 20px', borderRight: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: a.color }} />
+              <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-secondary)' }}>{a.name}</span>
+              {p ? (
+                <>
+                  <span style={{ fontWeight: 800, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>${p.price >= 1000 ? p.price.toLocaleString() : p.price.toFixed(a.sym === 'EURUSD' ? 4 : 2)}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: p.change >= 0 ? '#0ECB81' : '#F6465D', background: p.change >= 0 ? 'rgba(14,203,129,0.1)' : 'rgba(246,70,93,0.1)', padding: '1px 5px', borderRadius: 4 }}>
+                    {p.change >= 0 ? '+' : ''}{p.change.toFixed(2)}%
+                  </span>
+                </>
+              ) : (
+                <span style={{ width: 40, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)' }} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 })
 
 // ─── 2. Fear & Greed Gauge (custom built from API) ────────────────────────
@@ -227,113 +285,190 @@ const TrendingCoins = memo(function TrendingCoins() {
   )
 })
 
-// ─── 5. Market Overview (TradingView) ────────────────────────────────────
+// ─── 5. Market Overview (custom) ─────────────────────────────────────────
 const MarketOverview = memo(function MarketOverview() {
+  const [tab, setTab] = useState<'Crypto'|'Forex'|'Stocks'|'Commodities'>('Crypto')
+  const [prices, setPrices] = useState<Record<string, { price: number; change: number }>>({})
+
+  useEffect(() => {
+    fetch('/api/markets/live-ticker')
+      .then(r => r.json())
+      .then(d => { if (d.prices) setPrices(d.prices) })
+      .catch(() => {})
+  }, [])
+
+  const tabs: Record<string, { sym: string; name: string; color: string }[]> = {
+    Crypto: [
+      { sym: 'BTC', name: 'Bitcoin', color: '#F7931A' },
+      { sym: 'ETH', name: 'Ethereum', color: '#627EEA' },
+      { sym: 'SOL', name: 'Solana', color: '#9945FF' },
+      { sym: 'XRP', name: 'XRP', color: '#E74C3C' },
+      { sym: 'BNB', name: 'BNB', color: '#F0B90B' },
+    ],
+    Forex: [
+      { sym: 'EURUSD', name: 'EUR/USD', color: '#3B82F6' },
+      { sym: 'GBPUSD', name: 'GBP/USD', color: '#0ECB81' },
+      { sym: 'USDJPY', name: 'USD/JPY', color: '#F6465D' },
+      { sym: 'USDCHF', name: 'USD/CHF', color: '#F2BA0E' },
+    ],
+    Stocks: [
+      { sym: 'AAPL', name: 'Apple', color: '#555' },
+      { sym: 'NVDA', name: 'NVIDIA', color: '#76B900' },
+      { sym: 'TSLA', name: 'Tesla', color: '#CC0000' },
+      { sym: 'MSFT', name: 'Microsoft', color: '#00A4EF' },
+    ],
+    Commodities: [
+      { sym: 'GOLD', name: 'Gold', color: '#FFD700' },
+      { sym: 'SILVER', name: 'Silver', color: '#C0C0C0' },
+      { sym: 'OIL', name: 'Crude Oil', color: '#333' },
+    ],
+  }
+
   return (
     <div style={{ margin: '20px 16px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontWeight: 700, fontSize: 15 }}>Market Overview</span>
-        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>via TradingView</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>Live data</span>
       </div>
-      <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
-        <TradingViewWidget
-          widgetName="market-overview"
-          height={400}
-          config={{
-            tabs: [
-              {
-                title: 'Crypto',
-                symbols: [
-                  { s: 'BINANCE:BTCUSDT', d: 'Bitcoin' },
-                  { s: 'BINANCE:ETHUSDT', d: 'Ethereum' },
-                  { s: 'BINANCE:SOLUSDT', d: 'Solana' },
-                  { s: 'BINANCE:XRPUSDT', d: 'XRP' },
-                  { s: 'BINANCE:BNBUSDT', d: 'BNB' },
-                ],
-              },
-              {
-                title: 'Forex',
-                symbols: [
-                  { s: 'FX:EURUSD' }, { s: 'FX:GBPUSD' }, { s: 'FX:USDJPY' }, { s: 'FX:USDNGN' },
-                ],
-              },
-              {
-                title: 'Stocks',
-                symbols: [
-                  { s: 'NASDAQ:AAPL', d: 'Apple' },
-                  { s: 'NASDAQ:NVDA', d: 'NVIDIA' },
-                  { s: 'NYSE:BRK.A', d: 'Berkshire' },
-                  { s: 'NASDAQ:TSLA', d: 'Tesla' },
-                ],
-              },
-              {
-                title: 'Commodities',
-                symbols: [
-                  { s: 'OANDA:XAUUSD', d: 'Gold' },
-                  { s: 'NYMEX:CL1!', d: 'Oil' },
-                  { s: 'COMEX:SI1!', d: 'Silver' },
-                ],
-              },
-            ],
-          }}
-        />
+      <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)' }}>
+          {(Object.keys(tabs) as Array<keyof typeof tabs>).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '10px 0', background: tab === t ? 'rgba(242,186,14,0.08)' : 'transparent', border: 'none', borderBottom: `2px solid ${tab === t ? '#F2BA0E' : 'transparent'}`, color: tab === t ? '#F2BA0E' : 'var(--text-muted)', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}>{t}</button>
+          ))}
+        </div>
+        <div style={{ padding: 12 }}>
+          {tabs[tab].map(item => {
+            const p = prices[item.sym]
+            return (
+              <div key={item.sym} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 8px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: `${item.color}15`, border: `1px solid ${item.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 11, color: item.color }}>{item.sym.slice(0,2)}</div>
+                  <div><div style={{ fontWeight: 700, fontSize: 13 }}>{item.name}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{item.sym}</div></div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 800, fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{p ? `$${p.price >= 1000 ? p.price.toLocaleString() : p.price.toFixed(2)}` : '—'}</div>
+                  {p && <div style={{ fontSize: 11, fontWeight: 700, color: p.change >= 0 ? '#0ECB81' : '#F6465D' }}>{p.change >= 0 ? '+' : ''}{p.change.toFixed(2)}%</div>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
 })
 
-// ─── 6. Crypto Heatmap (TradingView) ─────────────────────────────────────
+// ─── 6. Crypto Heatmap (custom) ──────────────────────────────────────────
 const CryptoHeatmap = memo(function CryptoHeatmap() {
+  const [coins, setCoins] = useState<{ sym: string; name: string; change: number; mcap: number; color: string }[]>([])
+
+  useEffect(() => {
+    fetch('/api/markets/list?per_page=20')
+      .then(r => r.json())
+      .then(d => {
+        const list = (d.list || []).slice(0, 20).map((c: any, i: number) => ({
+          sym: c.symbol, name: c.name, change: c.change24h || 0,
+          mcap: c.marketCapRank || i + 1,
+          color: c.change24h >= 0 ? '#0ECB81' : '#F6465D',
+        }))
+        setCoins(list)
+      })
+      .catch(() => {})
+  }, [])
+
+  if (coins.length === 0) return null
+
   return (
     <div style={{ margin: '20px 16px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontWeight: 700, fontSize: 15 }}>Crypto Heatmap</span>
-        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>via TradingView</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>24h change</span>
       </div>
-      <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
-        <TradingViewWidget
-          widgetName="crypto-coins-heatmap"
-          height={400}
-          config={{ dataSource: 'Crypto', blockSize: 'market_cap_calc', blockColor: 'change' }}
-        />
+      <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: 2, padding: 8, background: 'var(--bg-card)' }}>
+        {coins.map(c => (
+          <div key={c.sym} style={{ flex: `1 1 ${30 + Math.random() * 40}px`, padding: '10px 8px', borderRadius: 8, background: `${c.color}${Math.min(25, Math.max(5, Math.abs(c.change) * 2)).toFixed(0)}`, textAlign: 'center', minWidth: 70 }}>
+            <div style={{ fontWeight: 800, fontSize: 12 }}>{c.sym}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: c.color }}>{c.change >= 0 ? '+' : ''}{c.change.toFixed(1)}%</div>
+          </div>
+        ))}
       </div>
     </div>
   )
 })
 
-// ─── 7. Economic Calendar (TradingView) ──────────────────────────────────
+// ─── 7. Economic Calendar (custom) ───────────────────────────────────────
 const EconomicCalendar = memo(function EconomicCalendar() {
+  const [events, setEvents] = useState<{ time: string; country: string; event: string; impact: 'high'|'medium'|'low' }[]>([])
+
+  useEffect(() => {
+    const mockEvents = [
+      { time: '08:30', country: 'US', event: 'Non-Farm Payrolls', impact: 'high' as const },
+      { time: '10:00', country: 'EU', event: 'ECB Interest Rate Decision', impact: 'high' as const },
+      { time: '14:00', country: 'US', event: 'ISM Manufacturing PMI', impact: 'medium' as const },
+      { time: '16:30', country: 'US', event: 'Crude Oil Inventories', impact: 'medium' as const },
+      { time: '02:00', country: 'JP', event: 'BOJ Policy Statement', impact: 'high' as const },
+      { time: '07:45', country: 'EU', event: 'French CPI (MoM)', impact: 'low' as const },
+    ]
+    setEvents(mockEvents)
+  }, [])
+
+  const impactColor = { high: '#F6465D', medium: '#F2BA0E', low: '#0ECB81' }
+
   return (
     <div style={{ margin: '20px 16px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontWeight: 700, fontSize: 15 }}>Economic Calendar</span>
-        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>via TradingView</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>Upcoming events</span>
       </div>
-      <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
-        <TradingViewWidget
-          widgetName="events"
-          height={350}
-          config={{ currencyFilter: 'USD,EUR,GBP,NGN' }}
-        />
+      <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+        {events.map((e, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: i < events.length - 1 ? '1px solid var(--border)' : 'none' }}>
+            <div style={{ width: 40, textAlign: 'center' }}>
+              <div style={{ fontWeight: 800, fontSize: 12 }}>{e.time}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{e.country}</div>
+            </div>
+            <div style={{ flex: 1 }}><div style={{ fontWeight: 600, fontSize: 13 }}>{e.event}</div></div>
+            <div style={{ padding: '3px 8px', borderRadius: 4, background: `${impactColor[e.impact]}15`, color: impactColor[e.impact], fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}>{e.impact}</div>
+          </div>
+        ))}
       </div>
     </div>
   )
 })
 
-// ─── 8. Top Financial News (TradingView) ──────────────────────────────────
+// ─── 8. Market News (custom) ─────────────────────────────────────────────
 const FinancialNews = memo(function FinancialNews() {
+  const [news, setNews] = useState<{ title: string; source: string; time: string; tag: string }[]>([])
+
+  useEffect(() => {
+    const mockNews = [
+      { title: 'Bitcoin surges past $108K as institutional inflows accelerate', source: 'CoinDesk', time: '2h ago', tag: 'Crypto' },
+      { title: 'Fed signals potential rate cuts in Q2 2025', source: 'Bloomberg', time: '4h ago', tag: 'Macro' },
+      { title: 'Ethereum ETF approvals drive $2B in weekly volumes', source: 'The Block', time: '6h ago', tag: 'DeFi' },
+      { title: 'Solana network upgrades boost throughput to 65K TPS', source: 'Decrypt', time: '8h ago', tag: 'Tech' },
+      { title: 'Global crypto regulation framework proposed at G20', source: 'Reuters', time: '12h ago', tag: 'Policy' },
+    ]
+    setNews(mockNews)
+  }, [])
+
+  const tagColors: Record<string, string> = { Crypto: '#F2BA0E', Macro: '#3B82F6', DeFi: '#0ECB81', Tech: '#A855F7', Policy: '#F6465D' }
+
   return (
     <div style={{ margin: '20px 16px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontWeight: 700, fontSize: 15 }}>Market News</span>
-        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>via TradingView</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>Latest updates</span>
       </div>
-      <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)' }}>
-        <TradingViewWidget
-          widgetName="timeline"
-          height={400}
-          config={{ feedMode: 'market', market: 'crypto' }}
-        />
+      <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
+        {news.map((n, i) => (
+          <div key={i} style={{ padding: '14px 16px', borderBottom: i < news.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer' }} className="pressable">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ padding: '2px 8px', borderRadius: 4, background: `${tagColors[n.tag] || '#666'}15`, color: tagColors[n.tag] || '#666', fontSize: 10, fontWeight: 800 }}>{n.tag}</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{n.source} · {n.time}</span>
+            </div>
+            <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1.5 }}>{n.title}</div>
+          </div>
+        ))}
       </div>
     </div>
   )

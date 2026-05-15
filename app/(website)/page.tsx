@@ -735,6 +735,31 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Airdrop CTA ───────────────────────────────────────────────── */}
+      <section style={{ padding:'0 24px 40px' }}>
+        <div style={{ maxWidth:900, margin:'0 auto', background:'linear-gradient(135deg, #0A0618 0%, #080510 50%, #000 100%)', border:'1px solid rgba(168,85,247,0.2)', borderRadius:24, padding:'50px 40px', textAlign:'center', position:'relative', overflow:'hidden' }}>
+          <div style={{ position:'absolute', top:-60, left:'50%', transform:'translateX(-50%)', width:400, height:400, borderRadius:'50%', background:'radial-gradient(circle, rgba(168,85,247,0.1), transparent 70%)', pointerEvents:'none' }} />
+          <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 16px', borderRadius:99, background:'rgba(168,85,247,0.1)', border:'1px solid rgba(168,85,247,0.25)', color:'#A855F7', fontSize:12, fontWeight:700, marginBottom:20 }}>
+            <div style={{ width:6, height:6, borderRadius:'50%', background:'#0ECB81', boxShadow:'0 0 8px rgba(14,203,129,0.5)', animation:'pulseLive 2s infinite' }} />
+            Live Airdrops — Claim Without Login
+          </div>
+          <h2 style={{ fontSize:'clamp(24px, 4vw, 40px)', fontWeight:900, marginBottom:14 }}>
+            Claim <span style={{ color:'#A855F7' }}>$2,400+</span> in Web3 Airdrops
+          </h2>
+          <p style={{ color:'#666', fontSize:15, maxWidth:480, margin:'0 auto 32px', lineHeight:1.7 }}>
+            Connect your wallet and claim exclusive token airdrops. No signup required — just verify eligibility and claim instantly on our new Web3 airdrop platform.
+          </p>
+          <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
+            <Link href="/airdrop" style={{ padding:'16px 40px', background:'#A855F7', color:'#fff', textDecoration:'none', borderRadius:14, fontWeight:900, fontSize:16, boxShadow:'0 12px 40px rgba(168,85,247,0.25)' }}>
+              View Airdrops →
+            </Link>
+            <Link href="/signup" style={{ padding:'16px 32px', background:'rgba(255,255,255,0.04)', color:'#ccc', textDecoration:'none', borderRadius:14, fontWeight:600, fontSize:15, border:'1px solid rgba(255,255,255,0.09)' }}>
+              Create Account
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── Bonus CTA ─────────────────────────────────────────────────── */}
       <section style={{ padding:'0 24px 80px' }}>
         <div style={{ maxWidth:900, margin:'0 auto', background:'linear-gradient(135deg, #1A1200 0%, #0F0A00 50%, #000 100%)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:24, padding:'60px 40px', textAlign:'center', position:'relative', overflow:'hidden' }}>
