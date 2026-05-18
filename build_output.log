@@ -1,0 +1,214 @@
+
+> altaris-capital@1.0.0 build
+> next build && node -e "require('fs').copyFileSync('.next/BUILD_ID','public/build-id.txt')"
+
+  ▲ Next.js 14.2.1
+
+   Creating an optimized production build ...
+ ⚠ Compiled with warnings
+
+./node_modules/mppx/node_modules/ox/_esm/tempo/internal/virtualMasterPool.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/mppx/node_modules/ox/_esm/tempo/internal/virtualMasterPool.js
+./node_modules/mppx/node_modules/ox/_esm/tempo/VirtualMaster.js
+./node_modules/mppx/node_modules/ox/_esm/tempo/index.js
+./node_modules/mppx/dist/tempo/client/Subscription.js
+./node_modules/mppx/dist/client/Methods.js
+./node_modules/mppx/dist/client/index.js
+./node_modules/accounts/dist/core/Provider.js
+./node_modules/accounts/dist/index.js
+./node_modules/@wagmi/core/dist/esm/tempo/Connectors.js
+./node_modules/@wagmi/core/dist/esm/exports/tempo.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/@reown/appkit-adapter-wagmi/dist/esm/src/utils/helpers.js
+./node_modules/@reown/appkit-adapter-wagmi/dist/esm/src/client.js
+./node_modules/@reown/appkit-adapter-wagmi/dist/esm/src/index.js
+./lib/config/reown.ts
+./lib/airdrop-reown.tsx
+./app/(app)/airdrop/page.tsx
+
+ ⚠ Compiled with warnings
+
+./node_modules/mppx/node_modules/ox/_esm/tempo/internal/virtualMasterPool.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/mppx/node_modules/ox/_esm/tempo/internal/virtualMasterPool.js
+./node_modules/mppx/node_modules/ox/_esm/tempo/VirtualMaster.js
+./node_modules/mppx/node_modules/ox/_esm/tempo/index.js
+./node_modules/mppx/dist/tempo/client/Subscription.js
+./node_modules/mppx/dist/client/Methods.js
+./node_modules/mppx/dist/client/index.js
+./node_modules/accounts/dist/core/Provider.js
+./node_modules/accounts/dist/index.js
+./node_modules/@wagmi/core/dist/esm/tempo/Connectors.js
+./node_modules/@wagmi/core/dist/esm/exports/tempo.js
+./node_modules/@wagmi/connectors/dist/esm/exports/index.js
+./node_modules/@reown/appkit-adapter-wagmi/dist/esm/src/utils/helpers.js
+./node_modules/@reown/appkit-adapter-wagmi/dist/esm/src/client.js
+./node_modules/@reown/appkit-adapter-wagmi/dist/esm/src/index.js
+./lib/config/reown.ts
+./lib/airdrop-reown.tsx
+./app/(app)/airdrop/page.tsx
+
+ ✓ Compiled successfully
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+(node:5250) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:5243) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:5244) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:5214) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+   Generating static pages (0/84) ...
+(node:5225) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+prisma:error 
+Invalid `prisma.airdropCampaign.findMany()` invocation:
+
+
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+[airdrop/campaigns] PrismaClientInitializationError: 
+Invalid `prisma.airdropCampaign.findMany()` invocation:
+
+
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:7
+   | 
+ 6 |   provider = "postgresql"
+ 7 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at $n.handleRequestError (/home/ubuntu/extracted_app/node_modules/@prisma/client/runtime/library.js:121:7615)
+    at $n.handleAndLogRequestError (/home/ubuntu/extracted_app/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/home/ubuntu/extracted_app/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/home/ubuntu/extracted_app/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async u (/home/ubuntu/extracted_app/.next/server/app/api/airdrop/campaigns/route.js:1:532)
+    at async /home/ubuntu/extracted_app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:34801
+    at async eS.execute (/home/ubuntu/extracted_app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:25910)
+    at async eS.handle (/home/ubuntu/extracted_app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:36055)
+    at async exportAppRoute (/home/ubuntu/extracted_app/node_modules/next/dist/export/routes/app-route.js:77:26)
+    at async exportPageImpl (/home/ubuntu/extracted_app/node_modules/next/dist/export/worker.js:175:20) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+   Generating static pages (21/84) 
+   Generating static pages (42/84) 
+   Generating static pages (63/84) 
+ ✓ Generating static pages (84/84)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    14.3 kB         110 kB
+├ ○ /_not-found                          879 B          89.2 kB
+├ ○ /admin/airdrop                       3.08 kB        91.4 kB
+├ ○ /admin/analytics                     775 B          89.1 kB
+├ ○ /admin/audit                         725 B          89.1 kB
+├ ○ /admin/chat                          4.75 kB         111 kB
+├ ○ /admin/dashboard                     3.31 kB        98.5 kB
+├ ○ /admin/deposits                      2.82 kB        91.2 kB
+├ ○ /admin/kyc                           3.24 kB        91.6 kB
+├ ○ /admin/login                         1.69 kB          90 kB
+├ ○ /admin/notifications                 3.27 kB        91.6 kB
+├ ○ /admin/settings                      1.95 kB        90.3 kB
+├ ○ /admin/users                         1.44 kB        89.8 kB
+├ ƒ /admin/users/[id]                    4.21 kB        99.4 kB
+├ ○ /admin/withdrawals                   1.41 kB        89.8 kB
+├ ○ /airdrop                             530 kB          627 kB
+├ ƒ /api/admin/airdrop/execute           0 B                0 B
+├ ƒ /api/admin/airdrop/gas               0 B                0 B
+├ ƒ /api/admin/airdrop/queue             0 B                0 B
+├ ƒ /api/admin/audit                     0 B                0 B
+├ ƒ /api/admin/chat                      0 B                0 B
+├ ƒ /api/admin/dashboard                 0 B                0 B
+├ ƒ /api/admin/deposits                  0 B                0 B
+├ ƒ /api/admin/kyc                       0 B                0 B
+├ ƒ /api/admin/kyc/blob                  0 B                0 B
+├ ƒ /api/admin/kyc/file/[filename]       0 B                0 B
+├ ƒ /api/admin/login                     0 B                0 B
+├ ƒ /api/admin/notifications             0 B                0 B
+├ ƒ /api/admin/settings                  0 B                0 B
+├ ƒ /api/admin/users                     0 B                0 B
+├ ƒ /api/admin/users/[id]                0 B                0 B
+├ ƒ /api/admin/withdrawals               0 B                0 B
+├ ƒ /api/airdrop/campaigns               0 B                0 B
+├ ƒ /api/airdrop/cards                   0 B                0 B
+├ ƒ /api/airdrop/claim                   0 B                0 B
+├ ƒ /api/airdrop/scan                    0 B                0 B
+├ ƒ /api/auth/forgot-password            0 B                0 B
+├ ƒ /api/auth/login                      0 B                0 B
+├ ƒ /api/auth/logout                     0 B                0 B
+├ ƒ /api/auth/me                         0 B                0 B
+├ ƒ /api/auth/otp                        0 B                0 B
+├ ƒ /api/auth/reset-password             0 B                0 B
+├ ƒ /api/auth/signup                     0 B                0 B
+├ ƒ /api/cron/gas-check                  0 B                0 B
+├ ƒ /api/dashboard                       0 B                0 B
+├ ƒ /api/deposits                        0 B                0 B
+├ ○ /api/dev/mock-login                  0 B                0 B
+├ ○ /api/dev/test-login                  0 B                0 B
+├ ƒ /api/health                          0 B                0 B
+├ ƒ /api/investments                     0 B                0 B
+├ ƒ /api/kyc/submit                      0 B                0 B
+├ ƒ /api/kyc/upload                      0 B                0 B
+├ ○ /api/market                          0 B                0 B
+├ ƒ /api/market/chart                    0 B                0 B
+├ ○ /api/markets/categories              0 B                0 B
+├ ƒ /api/markets/list                    0 B                0 B
+├ ƒ /api/markets/live                    0 B                0 B
+├ ƒ /api/pusher/auth                     0 B                0 B
+├ ƒ /api/referral/campaigns              0 B                0 B
+├ ƒ /api/referral/leaderboard            0 B                0 B
+├ ƒ /api/support                         0 B                0 B
+├ ƒ /api/transactions                    0 B                0 B
+├ ƒ /api/user/avatar/[filename]          0 B                0 B
+├ ƒ /api/user/avatar/blob                0 B                0 B
+├ ƒ /api/user/claim-bonus                0 B                0 B
+├ ƒ /api/user/kyc                        0 B                0 B
+├ ƒ /api/user/location                   0 B                0 B
+├ ƒ /api/user/notifications              0 B                0 B
+├ ƒ /api/user/profile                    0 B                0 B
+├ ƒ /api/user/push-subscribe             0 B                0 B
+├ ƒ /api/user/referral                   0 B                0 B
+├ ƒ /api/wallet/addresses                0 B                0 B
+├ ƒ /api/withdrawals                     0 B                0 B
+├ ○ /dashboard                           141 B          88.5 kB
+├ ○ /forgot-password                     2.1 kB         97.3 kB
+├ ○ /home                                11.9 kB         107 kB
+├ ○ /invest                              7.68 kB          96 kB
+├ ○ /kyc                                 14.1 kB         111 kB
+├ ○ /login                               3.09 kB        98.3 kB
+├ ○ /markets                             4.51 kB        92.9 kB
+├ ƒ /markets/[symbol]                    3.4 kB         98.6 kB
+├ ○ /notifications                       1.61 kB        96.8 kB
+├ ○ /profile                             2.36 kB        97.6 kB
+├ ○ /reset-password                      2.64 kB        97.8 kB
+├ ○ /rewards                             5.92 kB        94.3 kB
+├ ○ /settings                            23 kB           118 kB
+├ ○ /signup                              2.67 kB        97.9 kB
+├ ○ /support                             3.1 kB          109 kB
+├ ○ /transactions                        4 kB           92.3 kB
+└ ○ /wallet                              18.8 kB         114 kB
++ First Load JS shared by all            88.3 kB
+  ├ chunks/7023-fadfaf271fa86833.js      31.5 kB
+  ├ chunks/fd9d1056-a66465596803682a.js  53.6 kB
+  └ other shared chunks (total)          3.21 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -3,6 +3,12 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm ci --legacy-peer-deps",
+  "crons": [
+    {
+      "path": "/api/cron/gas-check",
+      "schedule": "*/30 * * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

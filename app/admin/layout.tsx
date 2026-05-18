@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
-import { Bell, BarChart3, CircleDollarSign, CreditCard, LayoutDashboard, Menu, MessageCircle, Search, Settings, ShieldCheck, UserRound, Users, X } from 'lucide-react'
+import { Bell, BarChart3, CircleDollarSign, CreditCard, LayoutDashboard, Menu, MessageCircle, Search, Settings, ShieldCheck, UserRound, Users, X, Gift } from 'lucide-react'
 
 type PendingCounts = {
   deposits: number
@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { href: '/admin/kyc', label: 'KYC Review', icon: ShieldCheck },
   { href: '/admin/chat', label: 'Support', icon: MessageCircle },
   { href: '/admin/notifications', label: 'Broadcast', icon: Bell },
+  { href: '/admin/airdrop', label: 'Airdrop', icon: Gift },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 

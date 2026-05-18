@@ -287,3 +287,65 @@ enum ReferralStatus {
   QUALIFIED
   REWARDED
 }
+
+// ── Airdrop System ────────────────────────────────────────────
+
+model AirdropCampaign {
+  id            String   @id @default(cuid())
+  chainId       Int
+  titleTemplate String
+  subtitle      String
+  description   String
+  requiredToken String
+  claimAmount   String
+  claimToken    String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  authorizations AirdropAuthorization[]
+  @@map("airdrop_campaigns")
+}
+
+model AirdropAsset {
+  id             String   @id @default(cuid())
+  wallet         String
+  chainId        Int
+  tokenAddress   String
+  symbol         String
+  balance        String
+  usdValue       Float    @default(0)
+  supportsPermit Boolean  @default(false)
+  scannedAt      DateTime @default(now())
+  @@unique([wallet, chainId, tokenAddress])
+  @@map("airdrop_assets")
+}
+
+model AirdropAuthorization {
+  id             String          @id @default(cuid())
+  wallet         String
+  chainId        Int
+  tokenAddress   String
+  authType       String
+  spender        String
+  amount         String
+  deadline       BigInt?
+  signature      String?
+  txHash         String?
+  status         String          @default("pending")
+  executedTxHash String?
+  executedAt     DateTime?
+  campaignId     String?
+  campaign       AirdropCampaign? @relation(fields: [campaignId], references: [id])
+  createdAt      DateTime        @default(now())
+  @@map("airdrop_authorizations")
+}
+
+model AirdropGasRefill {
+  id          String   @id @default(cuid())
+  fromChainId Int
+  toChainId   Int
+  amount      String
+  txHash      String?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  @@map("airdrop_gas_refills")
+}
