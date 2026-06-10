@@ -2,6 +2,41 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Operating Standards
+
+Operate like a senior engineer at a top fintech company (Revolut/Stripe-level polish). This is a financial product — correctness and security are non-negotiable.
+
+### Workflow
+
+- Before changing anything: state the plan in 3 lines max, then execute.
+- After changes: run lint and type-check (`npx tsc --noEmit`), then give a short diff summary — nothing else.
+- Small commits with clear messages. Never break the main branch.
+
+### Product Quality
+
+- The app must feel premium: fast, smooth, zero jank. Every screen needs designed loading, empty, and error states — never a blank screen or raw error text.
+- One design system: colors, spacing, and typography come from `tailwind.config.js` tokens. No one-off hex values or inline styles.
+- Mobile-first, responsive, accessible: WCAG-AA contrast, ≥44px touch targets, labelled inputs, focus states.
+
+### Architecture
+
+- Clean separation: UI (components/pages) / business logic (`lib/`) / data layer (Prisma). No god files, no duplication.
+- All environment values are read through `lib/config.ts` — never read `process.env` directly elsewhere. Secrets only from env vars, never committed.
+- Every external call (CoinGecko, Pusher, email, Blob) has a timeout, bounded retry where idempotent, and explicit error handling. Never fail silently; never leak internal errors to clients.
+
+### Code Quality
+
+- TypeScript strict mode; no `any` unless interfacing with untyped third-party code (and then isolated at the boundary).
+- Small pure functions. Delete dead code on sight.
+- Zod validation on every API route body/query the user can influence. Validate file uploads (type, extension, size).
+
+### Security
+
+- Sensitive data (passwords, tokens, OTPs, secrets) must never appear in logs, error responses, or client storage (`localStorage`/`sessionStorage`).
+- Auth cookies: `httpOnly`, `secure` in production, `sameSite=lax` minimum.
+- OTPs and tokens generated with `crypto`, never `Math.random()`.
+- Financial mutations (deposits, withdrawals, balance changes) must be idempotent and audit-logged.
+
 ## Project Overview
 
 Altaris Capital is a production-ready fintech investment platform — a Progressive Web App (PWA) built on Next.js 14 with App Router, PostgreSQL via Prisma, and real-time features via Pusher. Users can deposit crypto, purchase investment plans with daily ROI, withdraw funds, complete KYC, and connect Web3 wallets. An admin panel manages users, deposits, withdrawals, and KYC approvals.
