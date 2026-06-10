@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
+import { buildPlans } from '@/lib/investmentPlans'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -237,7 +238,10 @@ export async function GET(req: NextRequest) {
   const all = [
     ...safe(cryptoR), ...safe(defiR), ...safe(stocksR),
     ...safe(forexR),  ...safe(bondsR), ...COMMODITIES,
-  ]
+  ].map((a: any) => ({
+    ...a,
+    plans: buildPlans(a.id, a.category, parseFloat(a.dailyReturn) || 0.5, a.minInvestment || 100),
+  }))
 
   const filtered = category === 'All' ? all : all.filter((a: any) => a.category === category)
   const hot = all.filter((a: any) => Math.abs(a.change24h as number) > 2).slice(0, 10)

@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { useBodyScrollLock } from '@/lib/useBodyScrollLock'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
+import { buildPlans, type InvestmentPlan } from '@/lib/investmentPlans'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -11,9 +12,8 @@ type Asset = {
   id: string; symbol: string; name: string; category: string
   image: string; price: number | null; change24h: number
   spark: number[]; dailyReturn: string; riskLevel: number; minInvestment: number
+  plans?: InvestmentPlan[]
 }
-
-type Plan = { label: string; days: number; daily: number; min: number; badge?: string }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -31,58 +31,14 @@ const FALLBACK: Asset[] = [
   { id: 'forex-eur', symbol: 'USD/EUR',name: 'US Dollar / EUR', category: 'Forex',       image: 'https://flagcdn.com/w40/eu.png',                                  price: 0.918,  change24h:  0.0,  spark: [0.91,0.912,0.915,0.916,0.917,0.918,0.918],    dailyReturn: '0.09', riskLevel: 2, minInvestment: 50  },
 ]
 
-// ─── Plans per category ────────────────────────────────────────────────────────
-
-function getPlans(asset: Asset): Plan[] {
-  const base = parseFloat(asset.dailyReturn) || 0.5
-  const min  = asset.minInvestment || 100
-  const r    = (v: number) => +v.toFixed(2)
-
-  switch (asset.category) {
-    case 'Crypto': return [
-      { label: 'Flash',     days: 7,   daily: r(base * 0.80), min                               },
-      { label: 'Sprint',    days: 14,  daily: r(base * 0.88), min: min * 2                      },
-      { label: 'Standard',  days: 30,  daily: base,           min: min * 3                      },
-      { label: 'Pro',       days: 90,  daily: r(base * 1.12), min: min * 5,   badge: 'Popular'  },
-      { label: 'Apex',      days: 180, daily: r(base * 1.22), min: min * 10,  badge: 'Best ROI' },
-    ]
-    case 'Stocks': return [
-      { label: 'Starter',   days: 30,  daily: base,           min                               },
-      { label: 'Growth',    days: 60,  daily: r(base * 1.06), min: min * 2                      },
-      { label: 'Premium',   days: 90,  daily: r(base * 1.14), min: min * 3,   badge: 'Popular'  },
-      { label: 'Prime',     days: 180, daily: r(base * 1.24), min: min * 5                      },
-      { label: 'Elite',     days: 365, daily: r(base * 1.38), min: min * 10,  badge: 'Best ROI' },
-    ]
-    case 'DeFi': return [
-      { label: 'Yield',     days: 7,   daily: r(base * 0.88), min,            badge: 'Flexible' },
-      { label: 'Boost',     days: 14,  daily: base,           min: min * 2                      },
-      { label: 'Vault',     days: 30,  daily: r(base * 1.15), min: min * 3,   badge: 'Popular'  },
-    ]
-    case 'Forex': return [
-      { label: 'Trade',     days: 30,  daily: base,           min                               },
-      { label: 'Leverage',  days: 60,  daily: r(base * 1.10), min: min * 3                      },
-      { label: 'Compound',  days: 90,  daily: r(base * 1.22), min: min * 6,   badge: 'Popular'  },
-    ]
-    case 'Bonds': return [
-      { label: 'Secure',    days: 90,  daily: base,           min                               },
-      { label: 'Shield',    days: 180, daily: r(base * 1.14), min: min * 2,   badge: 'Popular'  },
-      { label: 'Sovereign', days: 365, daily: r(base * 1.28), min: min * 5,   badge: 'Best ROI' },
-    ]
-    case 'Commodities': return [
-      { label: 'Spot',      days: 30,  daily: base,           min                               },
-      { label: 'Futures',   days: 60,  daily: r(base * 1.08), min: min * 2                      },
-      { label: 'Hedge',     days: 90,  daily: r(base * 1.16), min: min * 3,   badge: 'Popular'  },
-      { label: 'Position',  days: 120, daily: r(base * 1.24), min: min * 5,   badge: 'Best ROI' },
-    ]
-    default: return [
-      { label: '30 Day',    days: 30,  daily: base,           min                               },
-      { label: '90 Day',    days: 90,  daily: r(base * 1.10), min: min * 3,   badge: 'Popular'  },
-      { label: '180 Day',   days: 180, daily: r(base * 1.20), min: min * 5,   badge: 'Best ROI' },
-    ]
-  }
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// Plans come from the API (asset.plans). buildPlans is only used to derive
+// plans for the static FALLBACK assets shown before the first API response.
+function plansOf(asset: Asset): InvestmentPlan[] {
+  if (asset.plans && asset.plans.length > 0) return asset.plans
+  return buildPlans(asset.id, asset.category, parseFloat(asset.dailyReturn) || 0.5, asset.minInvestment || 100)
+}
 
 function fmtPrice(price: number | null, category: string): string {
   if (price === null) return '—'
@@ -189,7 +145,7 @@ function CardSkel() {
 function AssetCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
   const up    = asset.change24h >= 0
   const daily = parseFloat(asset.dailyReturn) || 0.5
-  const plans = getPlans(asset)
+  const plans = plansOf(asset)
   const best  = plans[plans.length - 1]
 
   return (
@@ -281,18 +237,17 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
 
   useEffect(() => {
     if (asset && open) {
-      const ps = getPlans(asset)
+      const ps = plansOf(asset)
       setPlanIdx(0); setAmount(String(ps[0].min)); setMsg(null)
     }
   }, [asset, open])
 
   if (!asset) return null
-  const plans = getPlans(asset)
+  const plans = plansOf(asset)
   const plan  = plans[planIdx]
   const amt   = parseFloat(amount) || 0
-  const dailyProfit  = amt * plan.daily / 100
-  const totalProfit  = dailyProfit * plan.days
-  const maturity     = new Date(Date.now() + plan.days * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const totalReturnPct = plan.totalReturnPct ?? +(plan.daily * plan.days).toFixed(1)
+  const maturity       = new Date(Date.now() + plan.days * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const up           = asset.change24h >= 0
 
   async function submit() {
@@ -302,7 +257,7 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
     try {
       const res  = await fetch('/api/investments', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: `${assetId}-${plan.days}d`, planName: `${assetName} ${plan.label}`, amount: amt, dailyRoi: plan.daily / 100 }),
+        body: JSON.stringify({ planId: plan.id, planName: `${assetName} ${plan.label}`, amount: amt, dailyRoi: plan.daily / 100 }),
       })
       const data = await res.json()
       if (!res.ok) setMsg({ ok: false, text: data.error || 'Investment failed' })
@@ -396,13 +351,13 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
             </div>
           </div>
 
-          {/* Profit estimate */}
+          {/* Return estimate — shown as percentages */}
           {amt >= plan.min && (
             <div style={{ background: 'rgba(14,203,129,0.05)', border: '1px solid rgba(14,203,129,0.15)', borderRadius: 14, padding: 16, marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(14,203,129,0.55)', letterSpacing: '0.1em', marginBottom: 12 }}>PROFIT ESTIMATE</div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(14,203,129,0.55)', letterSpacing: '0.1em', marginBottom: 12 }}>RETURN ESTIMATE</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, textAlign: 'center' }}>
-                <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Per day</div><div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+${dailyProfit.toFixed(2)}</div></div>
-                <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Total return</div><div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+${totalProfit.toFixed(2)}</div></div>
+                <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Daily</div><div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+{plan.daily}%</div></div>
+                <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Total return</div><div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+{totalReturnPct}%</div></div>
                 <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Matures</div><div style={{ fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>{maturity}</div></div>
               </div>
             </div>
