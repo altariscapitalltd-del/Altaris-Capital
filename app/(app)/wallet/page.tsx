@@ -14,14 +14,14 @@ const DEPOSIT_COINS = [
 type FiatCoin = 'BTC' | 'ETH' | 'USDT'
 
 const FIAT_COINS: { sym: FiatCoin; name: string; color: string }[] = [
-  { sym: 'BTC', name: 'Bitcoin',  color: '#F7931A' },
-  { sym: 'ETH', name: 'Ethereum', color: '#627EEA' },
-  { sym: 'USDT', name: 'Tether',  color: '#26A17B' },
+  { sym: 'BTC',  name: 'Bitcoin',  color: '#F7931A' },
+  { sym: 'ETH',  name: 'Ethereum', color: '#627EEA' },
+  { sym: 'USDT', name: 'Tether',   color: '#26A17B' },
 ]
 
 interface FiatProvider {
   id: string; name: string; tagline: string; fee: string
-  gradient: string; logoChar: string; methods: string[]
+  gradient: string; logoChar: string; logoUrl: string; methods: string[]
   buildUrl: (coin: FiatCoin, address: string, amount: string) => string
 }
 
@@ -32,6 +32,7 @@ const FIAT_PROVIDERS: FiatProvider[] = [
     fee: 'From 1.9%',
     gradient: 'linear-gradient(135deg,#7B2EF8,#3D00B0)',
     logoChar: 'M',
+    logoUrl: 'https://www.moonpay.com/favicon-32x32.png',
     methods: ['Visa', 'Mastercard', 'Apple Pay', 'Google Pay'],
     buildUrl: (coin, addr, amt) => {
       const p = new URLSearchParams({ currencyCode: coin.toLowerCase() })
@@ -48,6 +49,7 @@ const FIAT_PROVIDERS: FiatProvider[] = [
     fee: 'From 0.99%',
     gradient: 'linear-gradient(135deg,#0065FF,#0040B0)',
     logoChar: 'T',
+    logoUrl: 'https://global.transak.com/favicon.ico',
     methods: ['Visa', 'Mastercard', 'Bank', 'UPI'],
     buildUrl: (coin, addr, amt) => {
       const p = new URLSearchParams({ cryptoCurrencyCode: coin })
@@ -64,6 +66,7 @@ const FIAT_PROVIDERS: FiatProvider[] = [
     fee: 'From 0.49%',
     gradient: 'linear-gradient(135deg,#00C47D,#007A50)',
     logoChar: 'R',
+    logoUrl: 'https://ramp.network/favicon.ico',
     methods: ['Visa', 'Mastercard', 'Apple Pay', 'Bank'],
     buildUrl: (coin, addr, amt) => {
       const RAMP_CODES: Record<string, string> = { BTC: 'BTC_BTC', ETH: 'ETH_ETH', USDT: 'USDT_ETH' }
@@ -73,6 +76,23 @@ const FIAT_PROVIDERS: FiatProvider[] = [
       if (addr) p.set('userAddress', addr)
       if (amt) p.set('fiatValue', amt)
       return `https://ramp.network/buy/?${p}`
+    },
+  },
+  {
+    id: 'mercuryo', name: 'Mercuryo',
+    tagline: 'SEPA, cards & Apple Pay',
+    fee: 'From 1.99%',
+    gradient: 'linear-gradient(135deg,#5B47F5,#3B27D8)',
+    logoChar: 'Mc',
+    logoUrl: 'https://mercuryo.io/favicon.ico',
+    methods: ['Visa', 'Mastercard', 'SEPA', 'Apple Pay'],
+    buildUrl: (coin, addr, amt) => {
+      const p = new URLSearchParams({ type: 'buy', currency: coin })
+      const widgetId = process.env.NEXT_PUBLIC_MERCURYO_WIDGET_ID
+      if (widgetId) p.set('widget_id', widgetId)
+      if (addr) p.set('address', addr)
+      if (amt) p.set('fiat_amount', amt)
+      return `https://exchange.mercuryo.io/?${p}`
     },
   },
 ]
@@ -196,8 +216,7 @@ export default function WalletPage() {
   const [refCode, setRefCode] = useState('')
   const [fiatCoin, setFiatCoin] = useState<FiatCoin>('ETH')
   const [fiatAmount, setFiatAmount] = useState('')
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null)
-  const [iframeLoaded, setIframeLoaded] = useState(false)
+  const [checkoutProvider, setCheckoutProvider] = useState<FiatProvider | null>(null)
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
 
   function loadProfile() {
@@ -467,11 +486,15 @@ export default function WalletPage() {
 
   function openFiatCheckout(providerId: string) {
     const provider = FIAT_PROVIDERS.find(p => p.id === providerId)
-    if (!provider) return
+    if (provider) setCheckoutProvider(provider)
+  }
+
+  function launchCheckout() {
+    if (!checkoutProvider) return
     const addr = walletAddresses[fiatCoin] || (fiatCoin === 'USDT' ? walletAddresses['ETH'] : '') || ''
-    const url = provider.buildUrl(fiatCoin, addr, fiatAmount)
-    setIframeLoaded(false)
-    setCheckoutUrl(url)
+    const url = checkoutProvider.buildUrl(fiatCoin, addr, fiatAmount)
+    window.open(url, '_blank', 'noopener,noreferrer')
+    setCheckoutProvider(null)
   }
 
   async function shareReferral() {
@@ -988,7 +1011,21 @@ export default function WalletPage() {
                 display: 'flex', alignItems: 'center', gap: 14,
               }} className="pressable">
                 {/* Logo */}
-                <div style={{ width: 50, height: 50, borderRadius: 16, background: p.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 900, color: '#fff', flexShrink: 0, letterSpacing: '-0.02em' }}>{p.logoChar}</div>
+                <div style={{ width: 50, height: 50, borderRadius: 16, background: p.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+                  <img
+                    src={p.logoUrl}
+                    alt={p.name}
+                    width={28} height={28}
+                    style={{ objectFit: 'contain', borderRadius: 4, imageRendering: 'auto' }}
+                    onError={e => {
+                      const img = e.currentTarget
+                      img.style.display = 'none'
+                      const fb = img.nextElementSibling as HTMLElement | null
+                      if (fb) fb.style.display = 'flex'
+                    }}
+                  />
+                  <div style={{ display: 'none', position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>{p.logoChar}</div>
+                </div>
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800, fontSize: 15, color: '#fff', marginBottom: 2 }}>{p.name}</div>
@@ -1015,53 +1052,95 @@ export default function WalletPage() {
         </div>
       )}
 
-      {/* ── Provider iframe checkout overlay ── */}
-      {checkoutUrl && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', background: '#000' }}>
-          {/* Header bar */}
-          <div style={{ padding: '0 12px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.07)', background: '#07090c', flexShrink: 0 }}>
-            <button
-              onClick={() => { setCheckoutUrl(null); setIframeLoaded(false) }}
-              type="button"
-              aria-label="Close checkout"
-              style={{ border: 'none', background: 'rgba(255,255,255,0.07)', color: '#fff', width: 36, height: 36, borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-            <div style={{ fontWeight: 800, fontSize: 15 }}>
-              Buy {fiatCoin}
-            </div>
-            <a
-              href={checkoutUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Open in browser"
-              title="Open in browser"
-              style={{ border: 'none', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
-          </div>
-          {/* Loading state */}
-          {!iframeLoaded && (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, background: '#07090c' }}>
-              <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.08)', borderTopColor: '#F2BA0E', animation: 'spinRing 0.75s linear infinite' }} />
-              <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, fontWeight: 600 }}>Loading checkout…</div>
-            </div>
-          )}
-          {/* Iframe */}
-          <iframe
-            src={checkoutUrl}
-            onLoad={() => setIframeLoaded(true)}
-            allow="payment; camera; microphone; clipboard-write; accelerometer"
-            allowFullScreen
-            style={{ flex: 1, border: 'none', display: iframeLoaded ? 'block' : 'none', background: '#fff' }}
-            title="Fiat on-ramp checkout"
+      {/* ── Provider confirmation bottom sheet ── */}
+      {checkoutProvider && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'flex-end' }}>
+          {/* Backdrop */}
+          <div
+            onClick={() => setCheckoutProvider(null)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
           />
+          {/* Sheet */}
+          <div style={{ position: 'relative', background: '#0d1017', borderRadius: '24px 24px 0 0', padding: '8px 20px 0', paddingBottom: 'calc(28px + env(safe-area-inset-bottom))', boxShadow: '0 -20px 60px rgba(0,0,0,0.6)' }}>
+            {/* Drag handle */}
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.14)', margin: '10px auto 20px' }} />
+
+            {/* Provider header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16, padding: '14px 14px', borderRadius: 18, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ width: 54, height: 54, borderRadius: 16, background: checkoutProvider.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+                <img
+                  src={checkoutProvider.logoUrl}
+                  alt={checkoutProvider.name}
+                  width={30} height={30}
+                  style={{ objectFit: 'contain', borderRadius: 4 }}
+                  onError={e => {
+                    const img = e.currentTarget
+                    img.style.display = 'none'
+                    const fb = img.nextElementSibling as HTMLElement | null
+                    if (fb) fb.style.display = 'flex'
+                  }}
+                />
+                <div style={{ display: 'none', position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center', fontSize: 19, fontWeight: 900, color: '#fff' }}>{checkoutProvider.logoChar}</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 17, color: '#fff', marginBottom: 3 }}>{checkoutProvider.name}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>{checkoutProvider.tagline}</div>
+              </div>
+              <div style={{ padding: '5px 10px', borderRadius: 8, background: 'rgba(14,203,129,0.1)', border: '1px solid rgba(14,203,129,0.2)', color: '#0ECB81', fontWeight: 800, fontSize: 12, flexShrink: 0 }}>
+                {checkoutProvider.fee}
+              </div>
+            </div>
+
+            {/* Purchase summary */}
+            <div style={{ marginBottom: 14, padding: '14px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 800, letterSpacing: '0.1em', marginBottom: 12 }}>PURCHASE SUMMARY</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13 }}>Buying</span>
+                <span style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>
+                  {FIAT_COINS.find(c => c.sym === fiatCoin)?.name} ({fiatCoin})
+                </span>
+              </div>
+              {fiatAmount && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13 }}>Spend</span>
+                  <span style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>${fiatAmount} USD</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13 }}>To address</span>
+                <span style={{ fontWeight: 700, fontSize: 12, color: '#0ECB81', fontFamily: 'monospace' }}>
+                  {(() => {
+                    const addr = walletAddresses[fiatCoin] || walletAddresses['ETH'] || ''
+                    return addr ? `${addr.slice(0, 7)}…${addr.slice(-5)}` : 'Your deposit address'
+                  })()}
+                </span>
+              </div>
+            </div>
+
+            {/* Notice */}
+            <div style={{ marginBottom: 16, padding: '10px 12px', borderRadius: 10, background: 'rgba(242,186,14,0.06)', border: '1px solid rgba(242,186,14,0.12)', fontSize: 11, color: 'rgba(242,186,14,0.75)', lineHeight: 1.6 }}>
+              You will be redirected to {checkoutProvider.name} to complete your purchase. Funds go directly to your Altaris deposit address.
+            </div>
+
+            {/* CTA */}
+            <button
+              onClick={launchCheckout}
+              type="button"
+              style={{ width: '100%', padding: '17px', borderRadius: 16, border: 'none', background: checkoutProvider.gradient, color: '#fff', fontWeight: 900, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            >
+              <span>Continue to {checkoutProvider.name}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </button>
+            <button
+              onClick={() => setCheckoutProvider(null)}
+              type="button"
+              style={{ width: '100%', padding: '14px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
-
-      <style>{`@keyframes spinRing { to { transform: rotate(360deg) } }`}</style>
     </div>
   )
 }
