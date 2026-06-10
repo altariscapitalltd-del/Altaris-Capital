@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Operating Standards
 
-Operate like a senior engineer at a top fintech company (Revolut/Stripe-level polish). This is a financial product — correctness and security are non-negotiable.
+Operate like a senior engineer at Bybit or Binance — a professional trading platform. This is a financial product: correctness, security, and visual discipline are non-negotiable.
 
 ### Workflow
 
@@ -15,8 +15,66 @@ Operate like a senior engineer at a top fintech company (Revolut/Stripe-level po
 ### Product Quality
 
 - The app must feel premium: fast, smooth, zero jank. Every screen needs designed loading, empty, and error states — never a blank screen or raw error text.
-- One design system: colors, spacing, and typography come from `tailwind.config.js` tokens. No one-off hex values or inline styles.
+- One design system: colors, spacing, and typography come from CSS custom properties in `globals.css`. No one-off hex values except the canonical palette below.
 - Mobile-first, responsive, accessible: WCAG-AA contrast, ≥44px touch targets, labelled inputs, focus states.
+
+### Design System — Exchange-Grade UI (Bybit / Binance standard)
+
+**Reference aesthetic:** Bybit, Binance — professional trading platform, NOT consumer fintech or generic SaaS. Dense data, neutral chrome, color used only to convey financial meaning.
+
+**Canonical palette (only these values, ever):**
+- Page bg: `#0B0E11`
+- Section/card bg: `#161A1F`
+- Elevated bg: `#1E2329`
+- Border: `rgba(255,255,255,0.06)` — dividers; `rgba(255,255,255,0.10)` — focus/hover
+- Text primary: `#EAECEF`
+- Text secondary: `#848E9C`
+- Text muted: `#474D57`
+- Brand / primary CTA only: `#F2BA0E`
+- Gain / positive: `#0ECB81`
+- Loss / negative: `#F6465D`
+- USDC blue: `#2775CA`
+
+**Border-radius rules:**
+- Page-level section cards: `12px`
+- Rows, chips, badges: `8px`
+- Input fields: `8px`
+- Buttons: `8px` (pill: `999px` only for status badges)
+- NEVER use `> 16px` on any card or container
+
+**Color discipline — the #1 rule:**
+- `#F2BA0E` appears ONLY on the single primary CTA per screen, active tab/range indicators, and brand marks. Nowhere else.
+- `#0ECB81` / `#F6465D` appear ONLY on numerical gain/loss values, status indicators, and deposit/withdrawal direction icons. NEVER as a button color, card tint, or background gradient.
+- `#848E9C` for ALL secondary labels, captions, and metadata. Not custom muted tones per element.
+- No per-element accent theming (e.g. green Deposit button, red Withdraw button, purple Rewards — pick neutral grey for all three and use icons to distinguish).
+
+**Typography rules:**
+- Labels / captions: `11–12px`, weight `500`, color `#848E9C`
+- Row values / data: `13–15px`, weight `600`, color `#EAECEF`
+- Section balances: `28–40px`, weight `600` (NOT 800–900 — heavy weights look amateur), `#EAECEF`
+- `fontVariantNumeric: 'tabular-nums'` on every monetary value
+- Letter-spacing ONLY on uppercase labels (`0.06em`); never on large display numbers
+
+**Card / section rules:**
+- Backgrounds are FLAT: `#161A1F`. No `linear-gradient` on card backgrounds.
+- No `radial-gradient` glow blobs, no `box-shadow` glow effects, no animated shimmer on loaded content.
+- Borders are 1px `rgba(255,255,255,0.06)` — use only to separate sections. Do not add borders as decoration.
+- Icon backgrounds: `rgba(color,0.12)` tint, `8px` radius. No rings, no halos, no multiple border layers.
+
+**Spacing rules:**
+- Horizontal gutter: `20px` from screen edge
+- Section gap: `8px` between sections
+- Row internal padding: `14px 18px`
+- Do NOT use `gap: 14` or `margin: 16` everywhere — be intentional
+
+**What to NEVER do:**
+- `linear-gradient(135deg, #1A1500, #0D0D0D)` or any decorative gradient card background
+- Colored tinted backgrounds on action buttons (e.g. `rgba(14,203,129,0.12)` as a button background)
+- Different accent colors per action in the same row (multi-color icon button rows)
+- `font-weight: 800` or `900` on large display text
+- Emojis in UI unless in the referral/gamification section only
+- `border-radius: 18px`, `20px`, `22px`, `24px` on anything
+- `box-shadow` for decoration (only use for overlay elevation: `0 8px 32px rgba(0,0,0,0.6)`)
 
 ### Architecture
 
