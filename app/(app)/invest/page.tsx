@@ -247,6 +247,7 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
   const plan  = plans[planIdx]
   const amt   = parseFloat(amount) || 0
   const totalReturnPct = plan.totalReturnPct ?? +(plan.daily * plan.days).toFixed(1)
+  const totalReturnUsd = amt * totalReturnPct / 100
   const maturity       = new Date(Date.now() + plan.days * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   const up           = asset.change24h >= 0
 
@@ -357,7 +358,7 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
               <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(14,203,129,0.55)', letterSpacing: '0.1em', marginBottom: 12 }}>RETURN ESTIMATE</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, textAlign: 'center' }}>
                 <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Daily</div><div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+{plan.daily}%</div></div>
-                <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Total return</div><div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+{totalReturnPct}%</div></div>
+                <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Total return</div><div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+${totalReturnUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
                 <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Matures</div><div style={{ fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>{maturity}</div></div>
               </div>
             </div>
