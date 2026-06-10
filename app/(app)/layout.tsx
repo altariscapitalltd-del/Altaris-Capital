@@ -439,7 +439,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         left: 0,
         right: 0,
         zIndex: 60,
-        background: '#000000',
+        background: '#0B0E11',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
         display: 'flex',
         flexDirection: 'column',
         boxShadow: 'none',
@@ -482,7 +483,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           <Link href="/profile" style={{ flexShrink: 0, textDecoration: 'none' }}>
             <div style={{
               width: 34, height: 34, borderRadius: '50%',
-              background: '#1A1A1A',
+              background: '#1E2329',
               border: '1px solid rgba(255,255,255,0.08)',
               position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -503,7 +504,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           {(isMarkets || isHome) ? (
             <div style={{
               flex: 1,
-              background: '#1A1A1A',
+              background: '#1E2329',
               borderRadius: 99,
               padding: '7px 12px',
               display: 'flex',
@@ -531,7 +532,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
           {!isMarkets && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <Link href="/notifications" style={{ position: 'relative', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 10, background: '#1A1A1A' }}>
+              <Link href="/notifications" style={{ position: 'relative', width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', borderRadius: 8, background: '#1E2329' }}>
                 <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="#7A7A7A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8c0-3.31-2.69-6-6-6S6 4.69 6 8c0 5-3 6-3 6h18s-3-1-3-6"/>
                   <path d="M13.73 21a2 2 0 01-3.46 0"/>
@@ -637,13 +638,11 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       {/* ── Bottom Navigation — safe area bottom ── */}
       <nav className="bottom-nav app-bottom-nav" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 120,
-        background: '#0a0a0a',
+        background: '#0B0E11',
         backdropFilter: 'none',
         WebkitBackdropFilter: 'none',
-        borderRadius: '20px 20px 0 0',
-        borderTop: '1px solid rgba(255,255,255,0.07)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
-        boxShadow: '0 -2px 18px rgba(0,0,0,0.35)',
         overflow: 'hidden',
       }}>
         <LayoutGroup id="bottom-nav">
