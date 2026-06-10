@@ -74,13 +74,13 @@ export default function ProfilePage() {
         <Link href="/settings" style={{ width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', color:'var(--text-secondary)' }}>
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </Link>
-        <h1 style={{ fontSize:20, fontWeight:800 }}>Edit Profile</h1>
+        <h1 style={{ fontSize:20, fontWeight:600, color:'var(--text-primary)' }}>Edit Profile</h1>
       </div>
 
       {/* Avatar */}
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:28 }}>
         <div style={{ position:'relative', cursor:'pointer' }} onClick={()=>fileRef.current?.click()}>
-          <div style={{ width:84, height:84, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'3px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:32, color:'#000', overflow:'hidden', position:'relative' }}>
+          <div style={{ width:84, height:84, borderRadius:'50%', background:'#F2BA0E', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:600, fontSize:32, color:'#000', overflow:'hidden', position:'relative' }}>
             {avatarPreview ? (
               <img
                 src={avatarPreview}
@@ -113,15 +113,15 @@ export default function ProfilePage() {
       {/* Form */}
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
         <div>
-          <label style={{ display:'block', color:'var(--text-muted)', fontSize:12, fontWeight:600, marginBottom:7 }}>Full Name</label>
+          <label style={{ display:'block', color:'var(--text-secondary)', fontSize:12, fontWeight:500, marginBottom:7 }}>Full Name</label>
           <input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/>
         </div>
         <div>
-          <label style={{ display:'block', color:'var(--text-muted)', fontSize:12, fontWeight:600, marginBottom:7 }}>Email</label>
+          <label style={{ display:'block', color:'var(--text-secondary)', fontSize:12, fontWeight:500, marginBottom:7 }}>Email</label>
           <input className="input" value={user.email} disabled style={{ opacity:0.5 }}/>
         </div>
         <div>
-          <label style={{ display:'block', color:'var(--text-muted)', fontSize:12, fontWeight:600, marginBottom:7 }}>Phone Number</label>
+          <label style={{ display:'block', color:'var(--text-secondary)', fontSize:12, fontWeight:500, marginBottom:7 }}>Phone Number</label>
           <input className="input" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+1 (555) 000-0000"/>
         </div>
       </div>
@@ -133,16 +133,16 @@ export default function ProfilePage() {
       </button>
 
       {/* Account info */}
-      <div style={{ marginTop:28, background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
+      <div style={{ marginTop:28, background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden' }}>
         {[
           { type:'member', label:'Member Since', value: new Date(user.createdAt||Date.now()).toLocaleDateString('en-US',{month:'long',year:'numeric'}) },
           { type:'kyc', label:'KYC Status', value: user.kycStatus==='APPROVED'?'Verified':'Not verified' },
           { type:'id', label:'User ID', value: user.id?.slice(0,12)+'...' },
         ].map(({type,label,value}) => (
-          <div key={label} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderBottom:'1px solid var(--border)' }}>
-            <span style={{ color:'var(--brand-primary)', display:'inline-flex' }}><StatIcon type={type as any} /></span>
-            <span style={{ color:'var(--text-muted)', fontSize:13, flex:1 }}>{label}</span>
-            <span style={{ fontWeight:600, fontSize:13 }}>{value}</span>
+          <div key={label} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 18px', borderBottom:'1px solid var(--border)' }}>
+            <span style={{ color:'var(--text-secondary)', display:'inline-flex' }}><StatIcon type={type as any} /></span>
+            <span style={{ color:'var(--text-secondary)', fontSize:12, fontWeight:500, flex:1 }}>{label}</span>
+            <span style={{ fontWeight:600, fontSize:13, color:'var(--text-primary)', fontVariantNumeric:'tabular-nums' }}>{value}</span>
           </div>
         ))}
       </div>

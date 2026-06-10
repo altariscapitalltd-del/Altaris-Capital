@@ -17,8 +17,8 @@ const TYPE_ICON: Record<string, { bg: string; icon: JSX.Element }> = {
     icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#F6465D" strokeWidth="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
   },
   kyc: {
-    bg: 'rgba(99,102,241,0.12)',
-    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#818CF8" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    bg: 'rgba(132,142,156,0.12)',
+    icon: <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#848E9C" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
   },
 }
 
@@ -31,8 +31,8 @@ function getTypeIcon(category?: string) {
 
 function NotifSkel() {
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, display: 'flex', gap: 12 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--bg-elevated)', flexShrink: 0 }} />
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 14, display: 'flex', gap: 12 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--bg-elevated)', flexShrink: 0 }} />
       <div style={{ flex: 1 }}>
         <div style={{ height: 13, width: '55%', background: 'var(--bg-elevated)', borderRadius: 5, marginBottom: 8 }} />
         <div style={{ height: 11, width: '85%', background: 'var(--bg-elevated)', borderRadius: 4, marginBottom: 6 }} />
@@ -93,9 +93,9 @@ export default function NotificationsPage() {
         <Link href="/settings" style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: 'var(--text-secondary)' }}>
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </Link>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Notifications</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>Notifications</h1>
         <button onClick={markAllRead} disabled={marking || notifications.length === 0}
-          style={{ padding: '10px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer' }}>
+          style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
           {marking ? 'Marking…' : 'Mark all read'}
         </button>
       </div>
@@ -105,12 +105,12 @@ export default function NotificationsPage() {
           {[1,2,3,4].map(i => <NotifSkel key={i} />)}
         </div>
       ) : notifications.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 24px', background: 'var(--bg-card)', borderRadius: 20, border: '1px dashed var(--border)' }}>
+        <div style={{ textAlign: 'center', padding: '60px 24px', background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border)' }}>
           <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" strokeWidth="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
           </div>
-          <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8 }}>All caught up</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Notifications about your account and investments will appear here.</div>
+          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>All caught up</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Notifications about your account and investments will appear here.</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -121,17 +121,17 @@ export default function NotificationsPage() {
                 key={n.id}
                 type="button"
                 onClick={() => openNotification(n)}
-                style={{ textAlign: 'left', background: n.read ? 'var(--bg-card)' : 'rgba(242,186,14,0.07)', border: `1px solid ${n.read ? 'var(--border)' : 'rgba(242,186,14,0.18)'}`, borderRadius: 14, padding: 14, cursor: 'pointer', fontFamily: 'inherit', color: 'inherit', transition: 'background .15s' }}
+                style={{ textAlign: 'left', background: n.read ? 'var(--bg-card)' : 'var(--bg-elevated)', border: `1px solid ${n.read ? 'var(--border)' : 'rgba(255,255,255,0.10)'}`, borderRadius: 12, padding: 14, cursor: 'pointer', fontFamily: 'inherit', color: 'inherit', transition: 'background .15s' }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
+                  <div style={{ width: 40, height: 40, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{icon}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.3 }}>{n.title}</div>
-                      {!n.read && <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 99, background: 'rgba(242,186,14,0.15)', color: 'var(--brand-primary)', whiteSpace: 'nowrap', flexShrink: 0 }}>NEW</span>}
+                      <div style={{ fontWeight: 600, fontSize: 14, lineHeight: 1.3, color: 'var(--text-primary)' }}>{n.title}</div>
+                      {!n.read && <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(242,186,14,0.12)', color: 'var(--brand-primary)', whiteSpace: 'nowrap', flexShrink: 0 }}>NEW</span>}
                     </div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.45, marginBottom: 6 }}>{n.body}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}>{fmtDate(n.createdAt)}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>{fmtDate(n.createdAt)}</div>
                   </div>
                 </div>
               </button>
@@ -158,10 +158,11 @@ export default function NotificationsPage() {
             style={{
               width: '100%',
               maxWidth: 480,
-              background: 'var(--bg-page)',
-              borderRadius: 18,
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
               padding: 22,
-              boxShadow: '0 20px 40px rgba(0,0,0,0.35)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
               position: 'relative',
             }}
             onClick={(e) => e.stopPropagation()}
@@ -173,11 +174,11 @@ export default function NotificationsPage() {
             >
               ×
             </button>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>{selected.title}</h2>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>{selected.title}</h2>
             <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 4 }}>{new Date(selected.createdAt).toLocaleString()}</div>
             <div style={{ marginTop: 14, color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.5 }}>{selected.body}</div>
             {selected.url && (
-              <Link href={selected.url} style={{ display: 'block', marginTop: 14, color: 'var(--brand-primary)', fontWeight: 700 }}>
+              <Link href={selected.url} style={{ display: 'block', marginTop: 14, color: 'var(--brand-primary)', fontWeight: 600, fontSize: 14 }}>
                 View details →
               </Link>
             )}
