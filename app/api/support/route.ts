@@ -3,6 +3,11 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { trigger, adminChannel } from '@/lib/pusher'
 import { notifyAdminTelegram } from '@/lib/push'
+import { z } from 'zod'
+
+const messageSchema = z.object({
+  content: z.string().trim().min(1, 'Message required').max(2000),
+})
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -27,8 +32,12 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { content } = await req.json()
-  if (!content?.trim()) return NextResponse.json({ error: 'Message required' }, { status: 400 })
+  let content: string
+  try {
+    content = messageSchema.parse(await req.json()).content
+  } catch {
+    return NextResponse.json({ error: 'Message required' }, { status: 400 })
+  }
 
   let conv = await prisma.conversation.findUnique({ where: { userId: user.id } })
   if (!conv) {

@@ -5,6 +5,14 @@ import { notifyUser } from '@/lib/push'
 import { notifyAdminTelegram } from '@/lib/push'
 import { cookies } from 'next/headers'
 import { calcInvestmentState } from '@/lib/investmentMath'
+import { z } from 'zod'
+
+const investSchema = z.object({
+  planId: z.string().trim().min(1).max(64).optional(),
+  planName: z.string().trim().min(1).max(120).optional(),
+  amount: z.number().positive().finite().max(10_000_000),
+  dailyRoi: z.number().min(0).max(0.1).optional(),
+})
 
 export async function GET() {
   const token = (await cookies()).get('token')?.value
@@ -40,8 +48,13 @@ export async function POST(req: Request) {
   const payload = (await verifyToken(token)) as any
   if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { planId, planName, amount, dailyRoi } = await req.json()
-  if (!amount || amount <= 0) return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
+  let parsed: z.infer<typeof investSchema>
+  try {
+    parsed = investSchema.parse(await req.json())
+  } catch {
+    return NextResponse.json({ error: 'Invalid investment request' }, { status: 400 })
+  }
+  const { planId, planName, amount, dailyRoi } = parsed
 
   const balance = await prisma.balance.findFirst({ where: { userId: payload.userId, currency: 'USD' } })
   if (!balance || balance.amount < amount) return NextResponse.json({ error: 'Insufficient USD balance' }, { status: 400 })
@@ -57,7 +70,7 @@ export async function POST(req: Request) {
     'clean-energy': 90, 'health-etf': 120,
     'global-macro': 30, 'longshort': 30,
   }
-  const durationDays = DURATIONS[planId] || 30
+  const durationDays = (planId && DURATIONS[planId]) || 30
 
   const startDate = new Date()
   const endDate = new Date(startDate.getTime() + durationDays * 86400000)
