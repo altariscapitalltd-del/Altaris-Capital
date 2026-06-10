@@ -124,6 +124,7 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
   const [refCode, setRefCode] = useState('')
+  const [depositAddress, setDepositAddress] = useState('')
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
 
   function loadProfile() {
@@ -210,6 +211,17 @@ export default function WalletPage() {
     return () => window.removeEventListener('balance:refresh', handler)
   }, [])
 
+  // Fetch the user's own per-user deposit address when the deposit screen opens.
+  useEffect(() => {
+    if (tab !== 'deposit') return
+    let cancelled = false
+    fetch('/api/wallet/deposit-address')
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled && d?.address) setDepositAddress(d.address) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [tab])
+
   useEffect(() => {
     if (tab !== 'deposit') {
       setQrDataUrl(null)
@@ -219,7 +231,7 @@ export default function WalletPage() {
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, walletAddresses])
+  }, [tab, walletAddresses, depositAddress])
 
   const usdBalance = balances.USD || 0
   const cryptoValue = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'USDT'].reduce((sum, sym) => sum + (balances[sym] || 0) * (marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)), 0)
@@ -283,7 +295,7 @@ export default function WalletPage() {
     }
   }, [transactions])
 
-  const activeAddress = walletAddresses['USDC'] || USDC_ADDRESS
+  const activeAddress = depositAddress || walletAddresses['USDC'] || USDC_ADDRESS
 
   async function submitWithdraw() {
     if (!amount || !withdrawAddress.trim()) {
@@ -333,7 +345,7 @@ export default function WalletPage() {
 
   async function shareAddress() {
     if (!activeAddress) return
-    const payload = `USDC (ERC-20) deposit address:\n${activeAddress}`
+    const payload = `My USDC deposit address (any EVM chain):\n${activeAddress}`
     if (navigator.share) {
       try {
         await navigator.share({ title: 'USDC Deposit Address', text: payload })
@@ -638,7 +650,7 @@ export default function WalletPage() {
               <div style={{ fontSize: 19, fontWeight: 900, letterSpacing: '-0.02em' }}>Deposit USDC</div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 3, padding: '3px 10px', borderRadius: 99, background: 'rgba(39,117,202,0.12)', border: '1px solid rgba(39,117,202,0.25)' }}>
                 <span style={{ width: 6, height: 6, borderRadius: 99, background: USDC_COLOR }} />
-                <span style={{ color: '#6FA8DC', fontSize: 11, fontWeight: 800, letterSpacing: '0.04em' }}>ERC-20 · ETHEREUM</span>
+                <span style={{ color: '#6FA8DC', fontSize: 11, fontWeight: 800, letterSpacing: '0.04em' }}>USDC · ANY EVM CHAIN</span>
               </div>
             </div>
             <div style={{ width: 38 }} />
@@ -706,7 +718,7 @@ export default function WalletPage() {
           <div style={{ maxWidth: 360, margin: '0 auto 16px', padding: '12px 14px', borderRadius: 14, background: 'rgba(242,186,14,0.07)', border: '1px solid rgba(242,186,14,0.16)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2BA0E" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div style={{ fontSize: 12, color: 'rgba(242,186,14,0.85)', lineHeight: 1.55 }}>
-              Send only <strong>USDC</strong> on the <strong>Ethereum (ERC-20)</strong> network. Deposits on other networks or in other assets will be lost. Minimum deposit: <strong>${USDC_MIN_DEPOSIT} USDC</strong>.
+              Send only <strong>USDC</strong> on an <strong>EVM network</strong> (Ethereum, Base, Polygon, Arbitrum or Optimism) to this address. Other assets or non-EVM chains will be lost. Minimum deposit: <strong>${USDC_MIN_DEPOSIT} USDC</strong>.
             </div>
           </div>
 

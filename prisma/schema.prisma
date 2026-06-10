@@ -8,43 +8,44 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  name             String
-  phone            String?
-  passwordHash     String
-  role             Role      @default(USER)
-  kycStatus        KycStatus @default(NOT_SUBMITTED)
-  isActive         Boolean   @default(true)
-  withdrawEnabled  Boolean   @default(true)
-  bonusClaimed     Boolean   @default(false)
-  profilePicture   String?
-  pushSubscription Json?
-  lastKnownLat     Float?
-  lastKnownLng     Float?
-  lastKnownCity    String?
-  lastKnownCountry String?
-  locationUpdatedAt DateTime?
-  createdAt        DateTime  @default(now())
-  lastLoginAt           DateTime?
-  passwordResetToken    String?
-  passwordResetExpires  DateTime?
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  name                 String
+  phone                String?
+  passwordHash         String
+  role                 Role      @default(USER)
+  kycStatus            KycStatus @default(NOT_SUBMITTED)
+  isActive             Boolean   @default(true)
+  withdrawEnabled      Boolean   @default(true)
+  bonusClaimed         Boolean   @default(false)
+  profilePicture       String?
+  pushSubscription     Json?
+  lastKnownLat         Float?
+  lastKnownLng         Float?
+  lastKnownCity        String?
+  lastKnownCountry     String?
+  locationUpdatedAt    DateTime?
+  createdAt            DateTime  @default(now())
+  lastLoginAt          DateTime?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
 
-  referralCode          String?   @unique
+  referralCode          String? @unique
   referredById          String?
-  referralRewardBalance Float     @default(0)
+  referralRewardBalance Float   @default(0)
 
-  balances         Balance[]
-  transactions     Transaction[]
-  investments      Investment[]
-  otps             OTP[]
-  kyc              KycSubmission?
-  notifications    Notification[]
-  conversation     Conversation?
-  auditTargets     AdminAuditLog[]  @relation("TargetUser")
-  referrals        Referral[]       @relation("ReferrerReferrals")
-  referredByLink   Referral?        @relation("ReferredUserReferral")
-  referralRewards  ReferralReward[]
+  balances        Balance[]
+  transactions    Transaction[]
+  investments     Investment[]
+  otps            OTP[]
+  kyc             KycSubmission?
+  notifications   Notification[]
+  conversation    Conversation?
+  auditTargets    AdminAuditLog[]  @relation("TargetUser")
+  referrals       Referral[]       @relation("ReferrerReferrals")
+  referredByLink  Referral?        @relation("ReferredUserReferral")
+  referralRewards ReferralReward[]
+  depositAddress  DepositAddress?
 
   @@map("users")
 }
@@ -56,6 +57,7 @@ model Balance {
   amount    Float             @default(0)
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   snapshots BalanceSnapshot[]
+
   @@unique([userId, currency])
   @@map("balances")
 }
@@ -66,6 +68,7 @@ model BalanceSnapshot {
   amount    Float
   createdAt DateTime @default(now())
   balance   Balance  @relation(fields: [balanceId], references: [id], onDelete: Cascade)
+
   @@map("balance_snapshots")
 }
 
@@ -81,6 +84,7 @@ model Transaction {
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("transactions")
 }
 
@@ -96,6 +100,7 @@ model Investment {
   status      InvestmentStatus @default(ACTIVE)
   totalEarned Float            @default(0)
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("investments")
 }
 
@@ -109,6 +114,7 @@ model OTP {
   attempts  Int        @default(0)
   createdAt DateTime   @default(now())
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("otps")
 }
 
@@ -127,6 +133,7 @@ model KycSubmission {
   submittedAt     DateTime  @default(now())
   reviewedAt      DateTime?
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("kyc_submissions")
 }
 
@@ -140,6 +147,7 @@ model Notification {
   url       String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("notifications")
 }
 
@@ -151,6 +159,7 @@ model Conversation {
   updatedAt DateTime  @updatedAt
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  Message[]
+
   @@map("conversations")
 }
 
@@ -163,6 +172,7 @@ model Message {
   readStatus     String       @default("sent")
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
   @@map("messages")
 }
 
@@ -172,7 +182,36 @@ model WalletAddress {
   address   String
   updatedAt DateTime @updatedAt
   updatedBy String   @default("system")
+
   @@map("wallet_addresses")
+}
+
+// Per-user deposit address derived from the platform HD wallet xpub.
+// The same 0x address receives USDC across every EVM chain.
+model DepositAddress {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  index     Int      @unique @default(autoincrement())
+  address   String   @unique
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("deposit_addresses")
+}
+
+// Idempotency ledger for on-chain deposit events seen by the watcher.
+// A unique (txHash, logIndex, network) guarantees a deposit is credited once.
+model ProcessedDeposit {
+  id        String   @id @default(cuid())
+  txHash    String
+  logIndex  Int      @default(0)
+  network   String
+  userId    String
+  amount    Float
+  createdAt DateTime @default(now())
+
+  @@unique([txHash, logIndex, network])
+  @@map("processed_deposits")
 }
 
 model AdminAuditLog {
@@ -183,6 +222,7 @@ model AdminAuditLog {
   details      Json?
   createdAt    DateTime @default(now())
   targetUser   User?    @relation("TargetUser", fields: [targetUserId], references: [id])
+
   @@map("admin_audit_logs")
 }
 
@@ -199,6 +239,7 @@ model Referral {
   createdAt     DateTime       @default(now())
   referrer      User           @relation("ReferrerReferrals", fields: [referrerId], references: [id])
   referred      User           @relation("ReferredUserReferral", fields: [referredId], references: [id])
+
   @@map("referrals")
 }
 
@@ -210,6 +251,7 @@ model ReferralReward {
   referralId String?
   createdAt  DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("referral_rewards")
 }
 
@@ -224,6 +266,7 @@ model Campaign {
   isActive    Boolean                @default(true)
   progresses  UserCampaignProgress[]
   createdAt   DateTime               @default(now())
+
   @@map("campaigns")
 }
 
@@ -235,6 +278,7 @@ model UserCampaignProgress {
   rewarded   Boolean   @default(false)
   rewardedAt DateTime?
   campaign   Campaign  @relation(fields: [campaignId], references: [id])
+
   @@unique([userId, campaignId])
   @@map("user_campaign_progress")
 }
