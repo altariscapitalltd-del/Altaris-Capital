@@ -109,7 +109,7 @@ function Logo({ src, symbol, size = 32 }: { src: string; symbol: string; size?: 
   }
 
   return (
-    <div style={{ width: size, height: size, borderRadius: rr, background: `hsl(${hue},48%,18%)`, border: `1.5px solid hsl(${hue},55%,32%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.4, fontWeight: 900, color: `hsl(${hue},75%,68%)`, flexShrink: 0, userSelect: 'none' }}>
+    <div style={{ width: size, height: size, borderRadius: rr, background: `hsl(${hue},48%,18%)`, border: `1.5px solid hsl(${hue},55%,32%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.4, fontWeight: 600, color: `hsl(${hue},75%,68%)`, flexShrink: 0, userSelect: 'none' }}>
       {(symbol?.[0] ?? '?').toUpperCase()}
     </div>
   )
@@ -119,9 +119,9 @@ function Logo({ src, symbol, size = 32 }: { src: string; symbol: string; size?: 
 
 function CardSkel() {
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '14px 16px' }}>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-elevated)' }} />
+        <div style={{ width: 44, height: 44, borderRadius: 8, background: 'var(--bg-elevated)' }} />
         <div style={{ flex: 1 }}>
           <div style={{ height: 13, width: '45%', background: 'var(--bg-elevated)', borderRadius: 5, marginBottom: 8 }} />
           <div style={{ height: 10, width: '28%', background: 'var(--bg-elevated)', borderRadius: 4 }} />
@@ -149,23 +149,23 @@ function AssetCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
   const best  = plans[plans.length - 1]
 
   return (
-    <button onClick={onTap} className="pressable" style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '14px 16px', cursor: 'pointer', textAlign: 'left', color: 'inherit', fontFamily: 'inherit', WebkitTapHighlightColor: 'transparent' }}>
+    <button onClick={onTap} className="pressable" style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', cursor: 'pointer', textAlign: 'left', color: 'inherit', fontFamily: 'inherit', WebkitTapHighlightColor: 'transparent' }}>
       {/* Row 1: logo + name + price */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 44, height: 44, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Logo src={asset.image} symbol={asset.symbol} size={28} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.name}</div>
+          <div style={{ fontWeight: 600, fontSize: 15, lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.name}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>{asset.symbol}</span>
-            <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', letterSpacing: '0.04em' }}>{asset.category.toUpperCase()}</span>
-            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'rgba(242,186,14,0.08)', color: 'rgba(242,186,14,0.7)', letterSpacing: '0.03em' }}>{plans.length} PLANS</span>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', letterSpacing: '0.04em' }}>{asset.category.toUpperCase()}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', letterSpacing: '0.03em' }}>{plans.length} PLANS</span>
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 15 }}>{fmtPrice(asset.price, asset.category)}</div>
-          <div style={{ marginTop: 3, fontSize: 12, fontWeight: 700, color: up ? 'var(--success)' : 'var(--danger)' }}>
+          <div style={{ fontWeight: 600, fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(asset.price, asset.category)}</div>
+          <div style={{ marginTop: 3, fontSize: 12, fontWeight: 600, color: up ? 'var(--success)' : 'var(--danger)', fontVariantNumeric: 'tabular-nums' }}>
             {up ? '▲' : '▼'} {Math.abs(asset.change24h).toFixed(2)}%
           </div>
         </div>
@@ -175,7 +175,7 @@ function AssetCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-            <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--brand-primary)', lineHeight: 1 }}>{daily}%</span>
+            <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--success)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{daily}%</span>
             <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>–{best.daily}% / day</span>
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>
@@ -186,8 +186,8 @@ function AssetCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
           ? <Sparkline data={asset.spark} up={up} w={72} h={34} />
           : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-primary)' }}>Invest</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>Invest</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
             </div>
           )
         }
@@ -202,18 +202,18 @@ function HotCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
   const up    = asset.change24h >= 0
   const daily = parseFloat(asset.dailyReturn) || 0.5
   return (
-    <button onClick={onTap} className="pressable" style={{ minWidth: 148, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: 'inherit', fontFamily: 'inherit', flexShrink: 0, WebkitTapHighlightColor: 'transparent' }}>
+    <button onClick={onTap} className="pressable" style={{ minWidth: 148, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: 'inherit', fontFamily: 'inherit', flexShrink: 0, WebkitTapHighlightColor: 'transparent' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Logo src={asset.image} symbol={asset.symbol} size={22} />
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--brand-primary)', lineHeight: 1 }}>{daily}%</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--success)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{daily}%</div>
           <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, marginTop: 1 }}>DAILY</div>
         </div>
       </div>
-      <div style={{ fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>{asset.name}</div>
-      <div style={{ fontSize: 11, color: up ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
+      <div style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>{asset.name}</div>
+      <div style={{ fontSize: 11, color: up ? 'var(--success)' : 'var(--danger)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
         {up ? '▲' : '▼'} {Math.abs(asset.change24h).toFixed(2)}%
       </div>
       {asset.spark && asset.spark.length > 2 && (
@@ -278,8 +278,8 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
         position: 'fixed', left: 0, right: 0, bottom: 0,
         transform: open ? 'translateY(0)' : 'translateY(105%)',
         transition: 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
-        background: '#0e1420', borderRadius: '24px 24px 0 0',
-        border: '1px solid rgba(255,255,255,0.09)', borderBottom: 'none',
+        background: '#161A1F', borderRadius: '16px 16px 0 0',
+        border: '1px solid rgba(255,255,255,0.10)', borderBottom: 'none',
         maxHeight: '92svh', display: 'flex', flexDirection: 'column',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
@@ -292,41 +292,41 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px' }}>
 
           {/* Asset header */}
-          <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 20, paddingBottom: 18, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Logo src={asset.image} symbol={asset.symbol} size={34} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 18, lineHeight: 1.25 }}>{asset.name}</div>
+              <div style={{ fontWeight: 600, fontSize: 18, lineHeight: 1.25 }}>{asset.name}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                <span style={{ fontWeight: 700, fontSize: 14 }}>{fmtPrice(asset.price, asset.category)}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: up ? 'var(--success)' : 'var(--danger)' }}>
+                <span style={{ fontWeight: 600, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{fmtPrice(asset.price, asset.category)}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: up ? 'var(--success)' : 'var(--danger)', fontVariantNumeric: 'tabular-nums' }}>
                   {up ? '▲' : '▼'} {Math.abs(asset.change24h).toFixed(2)}%
                 </span>
               </div>
             </div>
-            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 99, background: 'rgba(255,255,255,0.07)', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 99, background: 'rgba(255,255,255,0.07)', border: 'none', color: '#848E9C', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>
 
           {/* Plan picker — horizontal scroll, one card per plan */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', marginBottom: 12 }}>SELECT PLAN</div>
+            <div style={{ fontSize: 10, fontWeight: 500, color: '#474D57', letterSpacing: '0.06em', marginBottom: 12 }}>SELECT PLAN</div>
             <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginRight: -20, paddingRight: 20 }}>
               {plans.map((p, i) => {
                 const sel = planIdx === i
                 return (
                   <button key={p.label} onClick={() => { setPlanIdx(i); setAmount(String(p.min)); setMsg(null) }}
-                    style={{ position: 'relative', minWidth: 100, flexShrink: 0, padding: '14px 10px', borderRadius: 14, border: sel ? '1.5px solid var(--brand-primary)' : '1px solid rgba(255,255,255,0.08)', background: sel ? 'rgba(242,186,14,0.07)' : 'rgba(255,255,255,0.02)', cursor: 'pointer', color: 'inherit', fontFamily: 'inherit', textAlign: 'center', transition: 'all 0.15s' }}>
+                    style={{ position: 'relative', minWidth: 100, flexShrink: 0, padding: '14px 10px', borderRadius: 8, border: sel ? '1.5px solid var(--brand-primary)' : '1px solid rgba(255,255,255,0.08)', background: sel ? 'rgba(242,186,14,0.07)' : 'rgba(255,255,255,0.02)', cursor: 'pointer', color: 'inherit', fontFamily: 'inherit', textAlign: 'center', transition: 'all 0.15s' }}>
                     {p.badge && (
-                      <div style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', background: p.badge === 'Best ROI' ? 'var(--brand-primary)' : p.badge === 'Flexible' ? 'rgba(14,203,129,0.9)' : 'var(--success)', color: '#000', fontSize: 8, fontWeight: 900, padding: '2px 8px', borderRadius: 99, letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{p.badge.toUpperCase()}</div>
+                      <div style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', background: p.badge === 'Best ROI' ? 'var(--brand-primary)' : p.badge === 'Flexible' ? 'rgba(14,203,129,0.9)' : 'var(--success)', color: '#000', fontSize: 8, fontWeight: 700, padding: '2px 8px', borderRadius: 99, letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{p.badge.toUpperCase()}</div>
                     )}
-                    <div style={{ fontSize: 11, fontWeight: 700, color: sel ? 'var(--brand-primary)' : 'rgba(255,255,255,0.5)', marginBottom: 5 }}>{p.label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: sel ? 'var(--brand-primary)' : '#fff', lineHeight: 1 }}>{p.daily}%</div>
-                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontWeight: 700, letterSpacing: '0.06em' }}>DAILY</div>
-                    <div style={{ fontSize: 10, color: sel ? 'rgba(242,186,14,0.65)' : 'rgba(255,255,255,0.3)', marginTop: 7, fontWeight: 600 }}>{p.days}d · {calcAPY(p.daily)} APY</div>
-                    <div style={{ fontSize: 9, color: sel ? 'rgba(242,186,14,0.5)' : 'rgba(255,255,255,0.2)', marginTop: 3 }}>min ${p.min >= 1000 ? (p.min / 1000) + 'k' : p.min}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: sel ? 'var(--brand-primary)' : '#848E9C', marginBottom: 5 }}>{p.label}</div>
+                    <div style={{ fontSize: 20, fontWeight: 600, color: sel ? 'var(--brand-primary)' : '#EAECEF', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{p.daily}%</div>
+                    <div style={{ fontSize: 9, color: '#474D57', marginTop: 2, fontWeight: 700, letterSpacing: '0.06em' }}>DAILY</div>
+                    <div style={{ fontSize: 10, color: sel ? 'rgba(242,186,14,0.65)' : '#474D57', marginTop: 7, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{p.days}d · {calcAPY(p.daily)} APY</div>
+                    <div style={{ fontSize: 9, color: sel ? 'rgba(242,186,14,0.5)' : '#474D57', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>min ${p.min >= 1000 ? (p.min / 1000) + 'k' : p.min}</div>
                   </button>
                 )
               })}
@@ -335,17 +335,17 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
 
           {/* Amount */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', marginBottom: 10 }}>INVESTMENT AMOUNT</div>
+            <div style={{ fontSize: 10, fontWeight: 500, color: '#474D57', letterSpacing: '0.06em', marginBottom: 10 }}>INVESTMENT AMOUNT</div>
             <div style={{ position: 'relative', marginBottom: 9 }}>
-              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 20, fontWeight: 700, color: 'rgba(255,255,255,0.25)' }}>$</span>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 20, fontWeight: 600, color: '#474D57' }}>$</span>
               <input type="number" value={amount} min={plan.min}
                 onChange={e => { setAmount(e.target.value); setMsg(null) }}
-                style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: '14px 14px 14px 34px', fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }} />
+                style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8, padding: '14px 14px 14px 34px', fontSize: 22, fontWeight: 600, color: '#EAECEF', fontVariantNumeric: 'tabular-nums', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }} />
             </div>
             <div style={{ display: 'flex', gap: 7 }}>
               {presets.map(v => (
                 <button key={v} onClick={() => { setAmount(String(v)); setMsg(null) }}
-                  style={{ flex: 1, padding: '7px 2px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.08)', background: amt === v ? 'rgba(242,186,14,0.09)' : 'rgba(255,255,255,0.02)', color: amt === v ? 'var(--brand-primary)' : 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.14s' }}>
+                  style={{ flex: 1, padding: '7px 2px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.08)', background: amt === v ? 'rgba(242,186,14,0.09)' : 'rgba(255,255,255,0.02)', color: amt === v ? 'var(--brand-primary)' : '#848E9C', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.14s' }}>
                   ${v >= 1000 ? (v / 1000) + 'k' : v}
                 </button>
               ))}
@@ -354,22 +354,22 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
 
           {/* Return estimate — shown as percentages */}
           {amt >= plan.min && (
-            <div style={{ background: 'rgba(14,203,129,0.05)', border: '1px solid rgba(14,203,129,0.15)', borderRadius: 14, padding: 16, marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(14,203,129,0.55)', letterSpacing: '0.1em', marginBottom: 12 }}>RETURN ESTIMATE</div>
+            <div style={{ background: 'rgba(14,203,129,0.05)', border: '1px solid rgba(14,203,129,0.15)', borderRadius: 8, padding: 16, marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 500, color: 'rgba(14,203,129,0.55)', letterSpacing: '0.06em', marginBottom: 12 }}>RETURN ESTIMATE</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, textAlign: 'center' }}>
-                <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Daily</div><div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+{plan.daily}%</div></div>
-                <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Total return</div><div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+${totalReturnUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
-                <div><div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>Matures</div><div style={{ fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>{maturity}</div></div>
+                <div><div style={{ fontSize: 10, color: '#848E9C', marginBottom: 4 }}>Daily</div><div style={{ fontWeight: 600, fontSize: 16, color: 'var(--success)', fontVariantNumeric: 'tabular-nums' }}>+{plan.daily}%</div></div>
+                <div><div style={{ fontSize: 10, color: '#848E9C', marginBottom: 4 }}>Total return</div><div style={{ fontWeight: 600, fontSize: 16, color: 'var(--success)', fontVariantNumeric: 'tabular-nums' }}>+${totalReturnUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
+                <div><div style={{ fontSize: 10, color: '#848E9C', marginBottom: 4 }}>Matures</div><div style={{ fontWeight: 600, fontSize: 11, color: '#EAECEF', marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>{maturity}</div></div>
               </div>
             </div>
           )}
           {amt > 0 && amt < plan.min && (
-            <div style={{ background: 'var(--danger-bg)', border: '1px solid rgba(246,70,93,0.2)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--danger)', fontWeight: 600 }}>
+            <div style={{ background: 'var(--danger-bg)', border: '1px solid rgba(246,70,93,0.2)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--danger)', fontWeight: 600 }}>
               Minimum for {plan.label}: ${plan.min.toLocaleString()}
             </div>
           )}
           {msg && (
-            <div style={{ padding: '12px 14px', borderRadius: 11, marginBottom: 12, fontSize: 13, fontWeight: 600, background: msg.ok ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.ok ? 'var(--success)' : 'var(--danger)', border: `1px solid ${msg.ok ? 'rgba(14,203,129,0.2)' : 'rgba(246,70,93,0.2)'}` }}>
+            <div style={{ padding: '12px 14px', borderRadius: 8, marginBottom: 12, fontSize: 13, fontWeight: 600, background: msg.ok ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.ok ? 'var(--success)' : 'var(--danger)', border: `1px solid ${msg.ok ? 'rgba(14,203,129,0.2)' : 'rgba(246,70,93,0.2)'}` }}>
               {msg.text}
             </div>
           )}
@@ -377,9 +377,9 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
         </div>
 
         {/* CTA */}
-        <div style={{ padding: '12px 20px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', background: '#0e1420', flexShrink: 0 }}>
+        <div style={{ padding: '12px 20px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', background: '#161A1F', flexShrink: 0 }}>
           <button onClick={submit} disabled={loading || amt < plan.min} className="btn-primary"
-            style={{ width: '100%', padding: 16, fontSize: 16, borderRadius: 14, opacity: (loading || amt < plan.min) ? 0.4 : 1 }}>
+            style={{ width: '100%', padding: 16, fontSize: 16, borderRadius: 8, opacity: (loading || amt < plan.min) ? 0.4 : 1 }}>
             {loading ? 'Processing…' : `Start ${plan.label} · $${(amt || plan.min).toLocaleString()}`}
           </button>
         </div>
@@ -410,11 +410,11 @@ function MyPlansTab({ onBrowse }: { onBrowse: () => void }) {
   )
 
   if (investments.length === 0) return (
-    <div style={{ textAlign: 'center', padding: '56px 24px', background: 'var(--bg-card)', borderRadius: 20, border: '1px dashed var(--border)' }}>
+    <div style={{ textAlign: 'center', padding: '56px 24px', background: 'var(--bg-card)', borderRadius: 12, border: '1px dashed var(--border)' }}>
       <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       </div>
-      <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>No Active Plans</div>
+      <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>No Active Plans</div>
       <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>Choose an asset and start compounding</div>
       <button onClick={onBrowse} className="btn-primary" style={{ padding: '12px 28px' }}>Browse Plans</button>
     </div>
@@ -423,12 +423,12 @@ function MyPlansTab({ onBrowse }: { onBrowse: () => void }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {summary && (
-        <div style={{ background: 'linear-gradient(160deg, rgba(242,186,14,0.12) 0%, rgba(14,20,32,0.98) 100%)', border: '1px solid rgba(242,186,14,0.16)', borderRadius: 22, padding: 18, marginBottom: 6 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(242,186,14,0.55)', letterSpacing: '0.12em', marginBottom: 8 }}>PORTFOLIO OVERVIEW</div>
-          <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 4 }}>
+        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 18, marginBottom: 6 }}>
+          <div style={{ fontSize: 10, fontWeight: 500, color: '#848E9C', letterSpacing: '0.06em', marginBottom: 8 }}>PORTFOLIO OVERVIEW</div>
+          <div style={{ fontSize: 30, fontWeight: 600, lineHeight: 1, marginBottom: 4, fontVariantNumeric: 'tabular-nums' }}>
             ${summary.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginBottom: 16 }}>Total value (capital + profit)</div>
+          <div style={{ color: '#848E9C', fontSize: 12, marginBottom: 16 }}>Total value (capital + profit)</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[
               { label: 'Invested',     val: `$${summary.totalInvested.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`, sub: null,  accent: false },
@@ -436,10 +436,10 @@ function MyPlansTab({ onBrowse }: { onBrowse: () => void }) {
               { label: 'Daily earn',   val: `+$${summary.dailyEarning.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`, sub: '/day', accent: true  },
               { label: 'Active plans', val: String(summary.activeCount),                                                                           sub: null,  accent: false },
             ].map(({ label, val, sub, accent }) => (
-              <div key={label} style={{ padding: 12, borderRadius: 14, background: accent ? 'rgba(14,203,129,0.07)' : 'rgba(255,255,255,0.04)', border: `1px solid ${accent ? 'rgba(14,203,129,0.14)' : 'rgba(255,255,255,0.06)'}` }}>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>{label}</div>
-                <div style={{ fontWeight: 900, fontSize: 17, color: accent ? 'var(--success)' : 'var(--text-primary)', display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                  {val}{sub && <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>{sub}</span>}
+              <div key={label} style={{ padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize: 10, color: '#848E9C', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontWeight: 600, fontSize: 17, color: accent ? 'var(--success)' : 'var(--text-primary)', display: 'flex', alignItems: 'baseline', gap: 3, fontVariantNumeric: 'tabular-nums' }}>
+                  {val}{sub && <span style={{ fontSize: 10, fontWeight: 600, color: '#848E9C' }}>{sub}</span>}
                 </div>
               </div>
             ))}
@@ -447,10 +447,10 @@ function MyPlansTab({ onBrowse }: { onBrowse: () => void }) {
         </div>
       )}
       {investments.map((inv: any) => (
-        <div key={inv.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
+        <div key={inv.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15 }}>{inv.planName}</div>
+              <div style={{ fontWeight: 600, fontSize: 15 }}>{inv.planName}</div>
               <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>
                 {(inv.dailyRoi * 100).toFixed(2)}% daily · {inv.totalDurationDays}d plan
               </div>
@@ -460,20 +460,20 @@ function MyPlansTab({ onBrowse }: { onBrowse: () => void }) {
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-            <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: '10px 12px' }}>
+            <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '10px 12px' }}>
               <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Invested</div>
-              <div style={{ fontWeight: 800, fontSize: 16 }}>${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div style={{ fontWeight: 600, fontSize: 16, fontVariantNumeric: 'tabular-nums' }}>${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             </div>
-            <div style={{ background: inv.hasStartedEarning ? 'rgba(14,203,129,0.07)' : 'rgba(242,186,14,0.07)', border: `1px solid ${inv.hasStartedEarning ? 'rgba(14,203,129,0.15)' : 'rgba(242,186,14,0.15)'}`, borderRadius: 10, padding: '10px 12px' }}>
+            <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '10px 12px' }}>
               <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Profit</div>
               {inv.hasStartedEarning
-                ? <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--success)' }}>+${inv.profitEarned?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                : <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--warning)' }}>Starts in {inv.hoursUntilProfit}h</div>
+                ? <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--success)', fontVariantNumeric: 'tabular-nums' }}>+${inv.profitEarned?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                : <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--warning)', fontVariantNumeric: 'tabular-nums' }}>Starts in {inv.hoursUntilProfit}h</div>
               }
             </div>
           </div>
           <div style={{ background: 'var(--bg-elevated)', borderRadius: 99, height: 5, overflow: 'hidden', marginBottom: 6 }}>
-            <div style={{ height: '100%', background: `linear-gradient(90deg, var(--brand-primary), ${inv.hasStartedEarning ? 'var(--success)' : 'var(--brand-primary)'})`, width: `${Math.min(100, inv.progressPct || 0)}%`, borderRadius: 99, transition: 'width 0.5s' }} />
+            <div style={{ height: '100%', background: inv.hasStartedEarning ? 'var(--success)' : 'var(--brand-primary)', width: `${Math.min(100, inv.progressPct || 0)}%`, borderRadius: 99, transition: 'width 0.5s' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>
             <span>{Math.round(inv.progressPct || 0)}% complete</span>
@@ -546,13 +546,13 @@ function InvestContent() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <AltarisLogoMark size={24} />
-            <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>Invest</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>Invest</h1>
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Build wealth with expert plans</div>
         </div>
-        <div style={{ display: 'flex', background: 'var(--bg-card)', padding: 3, borderRadius: 11, border: '1px solid var(--border)', gap: 1 }}>
+        <div style={{ display: 'flex', background: 'var(--bg-card)', padding: 3, borderRadius: 8, border: '1px solid var(--border)', gap: 1 }}>
           {(['market', 'my'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', background: tab === t ? 'var(--bg-elevated)' : 'transparent', color: tab === t ? 'var(--text-primary)' : 'var(--text-muted)', cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit' }}>
+            <button key={t} onClick={() => setTab(t)} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', background: tab === t ? 'var(--bg-elevated)' : 'transparent', color: tab === t ? 'var(--text-primary)' : 'var(--text-muted)', cursor: 'pointer', transition: 'all .15s', fontFamily: 'inherit' }}>
               {t === 'market' ? 'Market' : 'My Plans'}
             </button>
           ))}
@@ -570,7 +570,7 @@ function InvestContent() {
                 placeholder="Search assets across all categories…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 36px 10px 34px', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 36px 10px 34px', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
               />
               {search && (
                 <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 99, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
@@ -600,7 +600,7 @@ function InvestContent() {
           {/* Hot trending row — shown on All + not searching */}
           {!search && category === 'All' && hotAssets.length > 0 && (
             <div style={{ marginBottom: 22 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 10 }}>HOT TRENDING</div>
+              <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--text-muted)', letterSpacing: '0.06em', marginBottom: 10 }}>HOT TRENDING</div>
               <div className="no-scrollbar" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
                 {hotAssets.map(a => <HotCard key={a.id} asset={a} onTap={() => open(a)} />)}
               </div>
@@ -613,7 +613,7 @@ function InvestContent() {
               ? Array.from({ length: 5 }).map((_, i) => <CardSkel key={i} />)
               : filtered.length === 0
                 ? (
-                  <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 16, border: '1px solid var(--border)' }}>
+                  <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border)' }}>
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginBottom: 12, opacity: 0.4 }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                     <div style={{ fontWeight: 600, marginBottom: 4 }}>{search ? 'No assets match your search' : 'No assets in this category'}</div>
                     {search && <div style={{ fontSize: 12 }}>Try a different keyword or <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', fontWeight: 700, padding: 0, fontSize: 12 }}>clear search</button></div>}
