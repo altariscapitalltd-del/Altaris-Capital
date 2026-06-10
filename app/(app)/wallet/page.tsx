@@ -111,7 +111,6 @@ function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 96 }: {
 export default function WalletPage() {
   const [tab, setTab] = useState<WalletTab>('none')
   const [amount, setAmount] = useState('')
-  const [txHash, setTxHash] = useState('')
   const [withdrawAddress, setWithdrawAddress] = useState('')
   const [walletAddresses, setWalletAddresses] = useState<Record<string, string>>({})
   const [balances, setBalances] = useState<Record<string, number>>({})
@@ -285,36 +284,6 @@ export default function WalletPage() {
   }, [transactions])
 
   const activeAddress = walletAddresses['USDC'] || USDC_ADDRESS
-
-  async function submitDeposit() {
-    if (!amount || !txHash.trim()) {
-      setMsg({ type: 'error', text: 'Please enter amount and transaction hash' })
-      return
-    }
-
-    setLoading(true)
-    setMsg(null)
-    try {
-      const res = await fetch('/api/deposits', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currency: 'USDC', amount: Number(amount), txHash: txHash.trim() }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setMsg({ type: 'error', text: data.error || 'Failed to submit deposit' })
-        return
-      }
-      setMsg({ type: 'success', text: 'Deposit submitted. Awaiting admin confirmation.' })
-      setAmount('')
-      setTxHash('')
-      loadTransactions()
-    } catch {
-      setMsg({ type: 'error', text: 'Failed to submit deposit' })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   async function submitWithdraw() {
     if (!amount || !withdrawAddress.trim()) {
@@ -659,7 +628,7 @@ export default function WalletPage() {
       )}
       {/* ── USDC Receive — full-screen ── */}
       {tab === 'deposit' && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(73px + env(safe-area-inset-bottom))', zIndex: 45, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px 24px' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#07090c', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px calc(var(--app-bottom-nav-height, 84px) + env(safe-area-inset-bottom) + 24px)' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <button onClick={closeDashboard} type="button" aria-label="Close" style={{ border: 'none', background: 'rgba(255,255,255,0.07)', color: '#fff', width: 38, height: 38, borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -738,25 +707,6 @@ export default function WalletPage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2BA0E" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div style={{ fontSize: 12, color: 'rgba(242,186,14,0.85)', lineHeight: 1.55 }}>
               Send only <strong>USDC</strong> on the <strong>Ethereum (ERC-20)</strong> network. Deposits on other networks or in other assets will be lost. Minimum deposit: <strong>${USDC_MIN_DEPOSIT} USDC</strong>.
-            </div>
-          </div>
-
-          {/* Confirm transfer */}
-          <div style={{ maxWidth: 360, margin: '0 auto', padding: 18, borderRadius: 20, background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-            <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>Already sent your USDC?</div>
-            <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 14, lineHeight: 1.5 }}>Submit the details below and we'll credit your balance once the transfer is confirmed on-chain.</div>
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div>
-                <label htmlFor="dep-amount" style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Amount (USDC)</label>
-                <input id="dep-amount" className="input" type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(USDC_MIN_DEPOSIT)} />
-              </div>
-              <div>
-                <label htmlFor="dep-txhash" style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Transaction Hash</label>
-                <input id="dep-txhash" className="input" value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="0x…" />
-              </div>
-              <button onClick={submitDeposit} disabled={loading} className="btn-primary" style={{ width: '100%', padding: '15px', fontSize: 15, fontWeight: 900 }}>
-                {loading ? 'Submitting…' : 'Confirm Deposit'}
-              </button>
             </div>
           </div>
 
