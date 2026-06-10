@@ -421,28 +421,43 @@ export default function HomePage() {
       )}
 
       {/* ── Active Plans ── */}
-      {sectionsReady && activeInvestments.length > 0 && (
+      {sectionsReady && (
         <div style={{ margin: '22px 0 0' }}>
           <div style={{ padding: '0 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <span style={{ fontWeight: 700, fontSize: 15 }}>Active Plans</span>
             <Link href="/invest?tab=my" style={{ color: 'var(--brand-primary)', fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>View All →</Link>
           </div>
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '0 16px 4px' }} className="no-scrollbar">
-            {activeInvestments.slice(0, 5).map((inv: any) => {
-              const prog = Math.min(100, ((Date.now() - new Date(inv.startDate).getTime()) / (new Date(inv.endDate).getTime() - new Date(inv.startDate).getTime())) * 100)
-              return (
-                <div key={inv.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, flexShrink: 0, width: 148 }}>
-                  <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 4 }}>{inv.planName}</div>
-                  <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 1 }}>${inv.amount.toLocaleString()}</div>
-                  <div style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>+${(inv.amount * inv.dailyRoi).toFixed(2)}/day</div>
-                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 3, height: 3, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', background: '#F2BA0E', width: `${prog}%`, borderRadius: 3 }} />
-                  </div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: 10, marginTop: 4 }}>{Math.round(prog)}% complete</div>
+          {activeInvestments.length === 0 ? (
+            <Link href="/invest" style={{ display: 'block', margin: '0 16px', background: 'var(--bg-card)', border: '1px dashed var(--border)', borderRadius: 16, padding: '20px 16px', textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(242,186,14,0.08)', border: '1px solid rgba(242,186,14,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#F2BA0E" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 </div>
-              )
-            })}
-          </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3, color: 'var(--text-primary)' }}>No active plans</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Start investing to earn daily returns</div>
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-primary)', whiteSpace: 'nowrap' }}>Invest now →</span>
+              </div>
+            </Link>
+          ) : (
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '0 16px 4px' }} className="no-scrollbar">
+              {activeInvestments.slice(0, 5).map((inv: any) => {
+                const prog = Math.min(100, ((Date.now() - new Date(inv.startDate).getTime()) / (new Date(inv.endDate).getTime() - new Date(inv.startDate).getTime())) * 100)
+                return (
+                  <div key={inv.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, flexShrink: 0, width: 152 }}>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{inv.planName}</div>
+                    <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 1 }}>${inv.amount.toLocaleString()}</div>
+                    <div style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>+{(inv.dailyRoi * 100).toFixed(2)}% / day</div>
+                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 3, height: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', background: 'var(--brand-primary)', width: `${prog}%`, borderRadius: 3, transition: 'width 0.5s' }} />
+                    </div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 10, marginTop: 4 }}>{Math.round(prog)}% complete</div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 

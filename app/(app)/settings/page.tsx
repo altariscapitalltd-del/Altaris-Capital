@@ -88,6 +88,7 @@ export default function SettingsPage() {
   const [notifInvest, setNotifInvest] = useState(true)
   const [biometric, setBiometric] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const [language, setLanguage] = useState('en')
   const [country, setCountry] = useState('')
   const [detectingLanguage, setDetectingLanguage] = useState(false)
@@ -324,13 +325,32 @@ export default function SettingsPage() {
       </SectionCard>
 
       <div style={{ margin:'24px 16px 0' }}>
-        <button onClick={logout} disabled={loggingOut}
+        <button onClick={() => setConfirmLogout(true)} disabled={loggingOut}
           style={{ width:'100%', padding:'15px', borderRadius:14, background:'rgba(246,70,93,0.08)', border:'1px solid rgba(246,70,93,0.2)', color:'#F6465D', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'inherit', transition:'all .15s', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-          {loggingOut ? 'Logging out...' : <><LogOut size={18} strokeWidth={2} /> Log Out</>}
+          {loggingOut ? 'Logging out…' : <><LogOut size={18} strokeWidth={2} /> Log Out</>}
         </button>
       </div>
 
       <div style={{ height:16 }}/>
+
+      {/* ── Logout confirmation dialog ── */}
+      {confirmLogout && (
+        <div onClick={() => setConfirmLogout(false)} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'0 16px 40px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:480, background:'#10151f', borderRadius:24, border:'1px solid rgba(255,255,255,0.09)', padding:'24px 20px', boxShadow:'0 24px 64px rgba(0,0,0,0.6)' }}>
+            <div style={{ width:52, height:52, borderRadius:'50%', background:'rgba(246,70,93,0.1)', border:'1px solid rgba(246,70,93,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
+              <LogOut size={22} color="#F6465D" strokeWidth={2} />
+            </div>
+            <div style={{ textAlign:'center', marginBottom:20 }}>
+              <div style={{ fontWeight:800, fontSize:18, marginBottom:6 }}>Log out?</div>
+              <div style={{ color:'var(--text-muted)', fontSize:13, lineHeight:1.5 }}>You'll need to sign in again to access your account.</div>
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setConfirmLogout(false)} style={{ flex:1, padding:'13px', borderRadius:12, border:'1px solid var(--border)', background:'var(--bg-elevated)', color:'var(--text-secondary)', fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+              <button onClick={() => { setConfirmLogout(false); logout() }} style={{ flex:1, padding:'13px', borderRadius:12, border:'none', background:'#F6465D', color:'#fff', fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'inherit' }}>Log Out</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
