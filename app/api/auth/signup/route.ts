@@ -100,7 +100,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, userId: user.id })
   } catch (e: any) {
+    if (e instanceof z.ZodError) {
+      return NextResponse.json({ error: e.issues[0]?.message || 'Invalid signup request' }, { status: 400 })
+    }
     console.error('[Signup]', e?.message ?? e)
-    return NextResponse.json({ error: e.message || 'Signup failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Signup failed. Please try again.' }, { status: 500 })
   }
 }

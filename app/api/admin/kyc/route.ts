@@ -67,7 +67,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (e: any) {
     console.error('[Admin KYC PATCH]', e?.message)
-    return NextResponse.json({ error: e?.message || 'Failed to update KYC' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to update KYC' }, { status: 500 })
   }
 }
 

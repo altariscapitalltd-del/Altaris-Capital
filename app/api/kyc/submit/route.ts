@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Failed to submit KYC' }, { status: 500 })
+    console.error('[KYC submit]', e?.message)
+    return NextResponse.json({ error: 'Failed to submit KYC. Please try again.' }, { status: 500 })
   }
 }

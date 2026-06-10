@@ -78,6 +78,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Action failed' }, { status: 500 })
+    console.error('[Admin withdrawals]', error?.message)
+    return NextResponse.json({ error: 'Action failed. Please try again.' }, { status: 500 })
   }
 }
