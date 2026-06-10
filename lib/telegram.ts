@@ -21,6 +21,7 @@ async function callTelegram(method: string, body: FormData) {
   const res = await fetch(`${TELEGRAM_API}/bot${cfg.token}/${method}`, {
     method: 'POST',
     body,
+    signal: AbortSignal.timeout(15_000),
   })
 
   if (!res.ok) {

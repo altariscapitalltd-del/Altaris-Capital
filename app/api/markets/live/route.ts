@@ -32,7 +32,8 @@ async function getCryptoData() {
   return fetchWithCache('crypto', async () => {
     try {
       const res = await axios.get('https://api.coingecko.com/api/v3/coins/markets', {
-        params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 50, page: 1, sparkline: true }
+        params: { vs_currency: 'usd', order: 'market_cap_desc', per_page: 50, page: 1, sparkline: true },
+        timeout: 10_000,
       })
       return res.data.map((c: any) => ({
         id: c.id,
@@ -59,7 +60,7 @@ async function getCryptoData() {
 async function getDeFiData() {
   return fetchWithCache('defi', async () => {
     try {
-      const res = await axios.get('https://api.llama.fi/protocols')
+      const res = await axios.get('https://api.llama.fi/protocols', { timeout: 10_000 })
       return res.data.slice(0, 30).map((p: any) => ({
         id: p.slug,
         symbol: p.symbol,
@@ -84,7 +85,7 @@ async function getDeFiData() {
 async function getForexData() {
   return fetchWithCache('forex', async () => {
     try {
-      const res = await axios.get('https://api.frankfurter.dev/v1/latest?from=USD')
+      const res = await axios.get('https://api.frankfurter.dev/v1/latest?from=USD', { timeout: 10_000 })
       const rates = res.data.rates
       return Object.keys(rates).map(currency => ({
         id: `forex-${currency}`,
@@ -111,7 +112,7 @@ async function getBondsData() {
   if (!FRED_KEY) return []
   return fetchWithCache('bonds', async () => {
     try {
-      const res = await axios.get(`https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=1`)
+      const res = await axios.get(`https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=${FRED_KEY}&file_type=json&sort_order=desc&limit=1`, { timeout: 10_000 })
       if (!res.data.observations || res.data.observations.length === 0) return []
       const yieldValue = parseFloat(res.data.observations[0].value)
       return [{

@@ -57,7 +57,8 @@ app.prepare().then(() => {
     setInterval(async () => {
       try {
         const res = await fetch(
-          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,ripple&vs_currencies=usd&include_24hr_change=true'
+          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,ripple&vs_currencies=usd&include_24hr_change=true',
+          { signal: AbortSignal.timeout(5000) }
         ).catch(() => null)
         if (!res || !res.ok) return
 

@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     const res = await fetch(
       'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,ripple&vs_currencies=usd&include_24hr_change=true',
-      { next: { revalidate: 30 } }
+      { next: { revalidate: 30 }, signal: AbortSignal.timeout(10_000) }
     )
     if (!res.ok) throw new Error('CoinGecko error')
     const raw = await res.json()
