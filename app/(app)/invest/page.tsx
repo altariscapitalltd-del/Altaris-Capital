@@ -13,40 +13,82 @@ type Asset = {
   spark: number[]; dailyReturn: string; riskLevel: number; minInvestment: number
 }
 
-type Tier = { label: string; days: number; daily: number; min: number; badge?: string }
+type Plan = { label: string; days: number; daily: number; min: number; badge?: string }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIES = ['All', 'Crypto', 'Stocks', 'DeFi', 'Forex', 'Bonds', 'Commodities']
 
 const FALLBACK: Asset[] = [
-  { id: 'bitcoin',  symbol: 'BTC',  name: 'Bitcoin',       category: 'Crypto',      image: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png',   price: 67420,  change24h:  2.1,  spark: [63000,64200,65100,64800,66200,66800,67420], dailyReturn: '0.85', riskLevel: 4, minInvestment: 250 },
-  { id: 'ethereum', symbol: 'ETH',  name: 'Ethereum',      category: 'Crypto',      image: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png', price: 3421,   change24h:  1.8,  spark: [3200,3280,3310,3290,3350,3400,3421], dailyReturn: '0.70', riskLevel: 4, minInvestment: 100 },
-  { id: 'solana',   symbol: 'SOL',  name: 'Solana',        category: 'Crypto',      image: 'https://assets.coingecko.com/coins/images/4128/small/solana.png',  price: 148,    change24h:  3.2,  spark: [130,138,142,140,145,147,148], dailyReturn: '0.60', riskLevel: 4, minInvestment: 50 },
-  { id: 'aapl',     symbol: 'AAPL', name: 'Apple Inc.',    category: 'Stocks',      image: 'https://logo.clearbit.com/apple.com',                             price: 189.5,  change24h:  0.8,  spark: [185,186,187,188,188.5,189,189.5], dailyReturn: '0.14', riskLevel: 2, minInvestment: 100 },
-  { id: 'nvda',     symbol: 'NVDA', name: 'NVIDIA Corp.',  category: 'Stocks',      image: 'https://logo.clearbit.com/nvidia.com',                            price: 875,    change24h:  2.4,  spark: [840,850,860,855,865,870,875], dailyReturn: '0.18', riskLevel: 3, minInvestment: 100 },
-  { id: 'gold',     symbol: 'XAU',  name: 'Gold',          category: 'Commodities', image: 'https://assets.coingecko.com/coins/images/32234/small/xaut.png',  price: 3320,   change24h:  0.48, spark: [3200,3240,3260,3280,3300,3310,3320], dailyReturn: '0.22', riskLevel: 2, minInvestment: 100 },
-  { id: 'us-10y',   symbol: 'US10Y',name: 'US 10Y Treasury',category: 'Bonds',     image: '',                                                                price: 4.38,   change24h: -0.02, spark: [4.5,4.45,4.42,4.40,4.39,4.38,4.38], dailyReturn: '0.05', riskLevel: 1, minInvestment: 1000 },
-  { id: 'forex-eur',symbol: 'USD/EUR',name: 'US Dollar / EUR',category: 'Forex',   image: 'https://flagcdn.com/w40/eu.png',                                  price: 0.918,  change24h:  0.0,  spark: [0.91,0.912,0.915,0.916,0.917,0.918,0.918], dailyReturn: '0.09', riskLevel: 2, minInvestment: 50 },
+  { id: 'bitcoin',   symbol: 'BTC',    name: 'Bitcoin',         category: 'Crypto',      image: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png',   price: 67420,  change24h:  2.1,  spark: [63000,64200,65100,64800,66200,66800,67420], dailyReturn: '0.85', riskLevel: 4, minInvestment: 250 },
+  { id: 'ethereum',  symbol: 'ETH',    name: 'Ethereum',        category: 'Crypto',      image: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png', price: 3421,   change24h:  1.8,  spark: [3200,3280,3310,3290,3350,3400,3421],           dailyReturn: '0.70', riskLevel: 4, minInvestment: 100 },
+  { id: 'solana',    symbol: 'SOL',    name: 'Solana',          category: 'Crypto',      image: 'https://assets.coingecko.com/coins/images/4128/small/solana.png',  price: 148,    change24h:  3.2,  spark: [130,138,142,140,145,147,148],                  dailyReturn: '0.60', riskLevel: 4, minInvestment: 50  },
+  { id: 'aapl',      symbol: 'AAPL',   name: 'Apple Inc.',      category: 'Stocks',      image: 'https://logo.clearbit.com/apple.com',                             price: 189.5,  change24h:  0.8,  spark: [185,186,187,188,188.5,189,189.5],              dailyReturn: '0.14', riskLevel: 2, minInvestment: 100 },
+  { id: 'nvda',      symbol: 'NVDA',   name: 'NVIDIA Corp.',    category: 'Stocks',      image: 'https://logo.clearbit.com/nvidia.com',                            price: 875,    change24h:  2.4,  spark: [840,850,860,855,865,870,875],                  dailyReturn: '0.18', riskLevel: 3, minInvestment: 100 },
+  { id: 'msft',      symbol: 'MSFT',   name: 'Microsoft Corp.', category: 'Stocks',      image: 'https://logo.clearbit.com/microsoft.com',                         price: 415,    change24h:  0.6,  spark: [405,408,410,411,413,414,415],                  dailyReturn: '0.13', riskLevel: 2, minInvestment: 100 },
+  { id: 'gold',      symbol: 'XAU',    name: 'Gold',            category: 'Commodities', image: 'https://assets.coingecko.com/coins/images/32234/small/xaut.png',  price: 3320,   change24h:  0.48, spark: [3200,3240,3260,3280,3300,3310,3320],           dailyReturn: '0.22', riskLevel: 2, minInvestment: 100 },
+  { id: 'us-10y',    symbol: 'US10Y',  name: 'US 10Y Treasury', category: 'Bonds',       image: '',                                                                price: 4.38,   change24h: -0.02, spark: [4.5,4.45,4.42,4.40,4.39,4.38,4.38],           dailyReturn: '0.05', riskLevel: 1, minInvestment: 1000 },
+  { id: 'forex-eur', symbol: 'USD/EUR',name: 'US Dollar / EUR', category: 'Forex',       image: 'https://flagcdn.com/w40/eu.png',                                  price: 0.918,  change24h:  0.0,  spark: [0.91,0.912,0.915,0.916,0.917,0.918,0.918],    dailyReturn: '0.09', riskLevel: 2, minInvestment: 50  },
 ]
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Plans per category ────────────────────────────────────────────────────────
 
-function getTiers(asset: Asset): Tier[] {
+function getPlans(asset: Asset): Plan[] {
   const base = parseFloat(asset.dailyReturn) || 0.5
-  const min = asset.minInvestment || 100
-  return [
-    { label: 'Starter', days: 30,  daily: base,                         min },
-    { label: 'Growth',  days: 90,  daily: +(base + 0.05).toFixed(2),    min: Math.max(min * 3, 500),  badge: 'Popular' },
-    { label: 'Premium', days: 180, daily: +(base + 0.12).toFixed(2),    min: Math.max(min * 5, 1000), badge: 'Best' },
-  ]
+  const min  = asset.minInvestment || 100
+  const r    = (v: number) => +v.toFixed(2)
+
+  switch (asset.category) {
+    case 'Crypto': return [
+      { label: 'Flash',     days: 7,   daily: r(base * 0.80), min                               },
+      { label: 'Sprint',    days: 14,  daily: r(base * 0.88), min: min * 2                      },
+      { label: 'Standard',  days: 30,  daily: base,           min: min * 3                      },
+      { label: 'Pro',       days: 90,  daily: r(base * 1.12), min: min * 5,   badge: 'Popular'  },
+      { label: 'Apex',      days: 180, daily: r(base * 1.22), min: min * 10,  badge: 'Best ROI' },
+    ]
+    case 'Stocks': return [
+      { label: 'Starter',   days: 30,  daily: base,           min                               },
+      { label: 'Growth',    days: 60,  daily: r(base * 1.06), min: min * 2                      },
+      { label: 'Premium',   days: 90,  daily: r(base * 1.14), min: min * 3,   badge: 'Popular'  },
+      { label: 'Prime',     days: 180, daily: r(base * 1.24), min: min * 5                      },
+      { label: 'Elite',     days: 365, daily: r(base * 1.38), min: min * 10,  badge: 'Best ROI' },
+    ]
+    case 'DeFi': return [
+      { label: 'Yield',     days: 7,   daily: r(base * 0.88), min,            badge: 'Flexible' },
+      { label: 'Boost',     days: 14,  daily: base,           min: min * 2                      },
+      { label: 'Vault',     days: 30,  daily: r(base * 1.15), min: min * 3,   badge: 'Popular'  },
+    ]
+    case 'Forex': return [
+      { label: 'Trade',     days: 30,  daily: base,           min                               },
+      { label: 'Leverage',  days: 60,  daily: r(base * 1.10), min: min * 3                      },
+      { label: 'Compound',  days: 90,  daily: r(base * 1.22), min: min * 6,   badge: 'Popular'  },
+    ]
+    case 'Bonds': return [
+      { label: 'Secure',    days: 90,  daily: base,           min                               },
+      { label: 'Shield',    days: 180, daily: r(base * 1.14), min: min * 2,   badge: 'Popular'  },
+      { label: 'Sovereign', days: 365, daily: r(base * 1.28), min: min * 5,   badge: 'Best ROI' },
+    ]
+    case 'Commodities': return [
+      { label: 'Spot',      days: 30,  daily: base,           min                               },
+      { label: 'Futures',   days: 60,  daily: r(base * 1.08), min: min * 2                      },
+      { label: 'Hedge',     days: 90,  daily: r(base * 1.16), min: min * 3,   badge: 'Popular'  },
+      { label: 'Position',  days: 120, daily: r(base * 1.24), min: min * 5,   badge: 'Best ROI' },
+    ]
+    default: return [
+      { label: '30 Day',    days: 30,  daily: base,           min                               },
+      { label: '90 Day',    days: 90,  daily: r(base * 1.10), min: min * 3,   badge: 'Popular'  },
+      { label: '180 Day',   days: 180, daily: r(base * 1.20), min: min * 5,   badge: 'Best ROI' },
+    ]
+  }
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtPrice(price: number | null, category: string): string {
   if (price === null) return '—'
   if (category === 'DeFi') return '$' + (price / 1e9).toFixed(2) + 'B TVL'
   if (price >= 1_000) return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  if (price >= 1)    return '$' + price.toFixed(2)
+  if (price >= 1)     return '$' + price.toFixed(2)
   return '$' + price.toFixed(5)
 }
 
@@ -81,22 +123,38 @@ function Sparkline({ data, up, w = 72, h = 36 }: { data: number[]; up: boolean; 
   return <canvas ref={ref} style={{ width: w, height: h, display: 'block' }} />
 }
 
-// ─── Asset logo with fallback ─────────────────────────────────────────────────
+// ─── Asset logo with multi-source fallback ─────────────────────────────────────
 
 function Logo({ src, symbol, size = 32 }: { src: string; symbol: string; size?: number }) {
-  const [err, setErr] = useState(false)
-  const hue = (symbol?.charCodeAt(0) ?? 0) * 47 % 360
-  const r = Math.round(size * 0.28)
-  if (!err && src) {
+  const [idx, setIdx] = useState(0)
+  const hue  = Array.from(symbol ?? '').reduce((h, c) => h + c.charCodeAt(0), 0) % 360
+  const rr   = Math.round(size * 0.28)
+
+  // Build fallback source chain
+  const srcs = useMemo(() => {
+    if (!src) return [] as string[]
+    const list: string[] = [src]
+    if (src.includes('clearbit.com')) {
+      const domain = src.replace('https://logo.clearbit.com/', '')
+      if (domain) list.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=64`)
+    }
+    return list
+  }, [src])
+
+  const cur = srcs[idx]
+
+  if (cur) {
     return (
-      <img src={src} alt={symbol} onError={() => setErr(true)}
-        style={{ width: size, height: size, objectFit: 'contain', borderRadius: r, display: 'block' }} />
+      <img src={cur} alt={symbol} width={size} height={size}
+        referrerPolicy="no-referrer" loading="lazy"
+        onError={() => setIdx(i => i + 1)}
+        style={{ width: size, height: size, objectFit: 'contain', borderRadius: rr, display: 'block' }} />
     )
   }
-  const letter = (symbol?.[0] ?? '?').toUpperCase()
+
   return (
-    <div style={{ width: size, height: size, borderRadius: r, background: `hsl(${hue},55%,22%)`, border: `1px solid hsl(${hue},55%,35%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.38, fontWeight: 900, color: `hsl(${hue},80%,70%)`, flexShrink: 0 }}>
-      {letter}
+    <div style={{ width: size, height: size, borderRadius: rr, background: `hsl(${hue},48%,18%)`, border: `1.5px solid hsl(${hue},55%,32%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.4, fontWeight: 900, color: `hsl(${hue},75%,68%)`, flexShrink: 0, userSelect: 'none' }}>
+      {(symbol?.[0] ?? '?').toUpperCase()}
     </div>
   )
 }
@@ -129,9 +187,10 @@ function CardSkel() {
 // ─── Asset card ───────────────────────────────────────────────────────────────
 
 function AssetCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
-  const up = asset.change24h >= 0
+  const up    = asset.change24h >= 0
   const daily = parseFloat(asset.dailyReturn) || 0.5
-  const apy = calcAPY(daily)
+  const plans = getPlans(asset)
+  const best  = plans[plans.length - 1]
 
   return (
     <button onClick={onTap} className="pressable" style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '14px 16px', cursor: 'pointer', textAlign: 'left', color: 'inherit', fontFamily: 'inherit', WebkitTapHighlightColor: 'transparent' }}>
@@ -145,6 +204,7 @@ function AssetCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>{asset.symbol}</span>
             <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', color: 'var(--text-secondary)', letterSpacing: '0.04em' }}>{asset.category.toUpperCase()}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'rgba(242,186,14,0.08)', color: 'rgba(242,186,14,0.7)', letterSpacing: '0.03em' }}>{plans.length} PLANS</span>
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -155,15 +215,15 @@ function AssetCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
         </div>
       </div>
 
-      {/* Row 2: ROI + sparkline */}
+      {/* Row 2: ROI range + sparkline */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
             <span style={{ fontSize: 20, fontWeight: 900, color: 'var(--brand-primary)', lineHeight: 1 }}>{daily}%</span>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>/ day</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>–{best.daily}% / day</span>
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>
-            {apy} APY · from ${asset.minInvestment.toLocaleString()}
+            up to {calcAPY(best.daily)} APY · from ${asset.minInvestment.toLocaleString()}
           </div>
         </div>
         {asset.spark && asset.spark.length > 2
@@ -180,10 +240,10 @@ function AssetCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
   )
 }
 
-// ─── Hot trending card (horizontal scroll) ────────────────────────────────────
+// ─── Hot trending card ────────────────────────────────────────────────────────
 
 function HotCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
-  const up = asset.change24h >= 0
+  const up    = asset.change24h >= 0
   const daily = parseFloat(asset.dailyReturn) || 0.5
   return (
     <button onClick={onTap} className="pressable" style={{ minWidth: 148, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', color: 'inherit', fontFamily: 'inherit', flexShrink: 0, WebkitTapHighlightColor: 'transparent' }}>
@@ -212,46 +272,46 @@ function HotCard({ asset, onTap }: { asset: Asset; onTap: () => void }) {
 // ─── Invest sheet ─────────────────────────────────────────────────────────────
 
 function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: boolean; onClose: () => void }) {
-  const [tierIdx, setTierIdx] = useState(0)
-  const [amount, setAmount] = useState('')
+  const [planIdx, setPlanIdx] = useState(0)
+  const [amount, setAmount]   = useState('')
   const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [msg, setMsg]         = useState<{ ok: boolean; text: string } | null>(null)
 
   useBodyScrollLock(open)
 
   useEffect(() => {
     if (asset && open) {
-      const t = getTiers(asset)
-      setTierIdx(0); setAmount(String(t[0].min)); setMsg(null)
+      const ps = getPlans(asset)
+      setPlanIdx(0); setAmount(String(ps[0].min)); setMsg(null)
     }
   }, [asset, open])
 
   if (!asset) return null
-  const tiers = getTiers(asset)
-  const tier = tiers[tierIdx]
-  const amt = parseFloat(amount) || 0
-  const dailyProfit = amt * tier.daily / 100
-  const totalProfit = dailyProfit * tier.days
-  const maturity = new Date(Date.now() + tier.days * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  const up = asset.change24h >= 0
+  const plans = getPlans(asset)
+  const plan  = plans[planIdx]
+  const amt   = parseFloat(amount) || 0
+  const dailyProfit  = amt * plan.daily / 100
+  const totalProfit  = dailyProfit * plan.days
+  const maturity     = new Date(Date.now() + plan.days * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const up           = asset.change24h >= 0
 
   async function submit() {
-    if (!asset || !amount || amt < tier.min || loading) return
+    if (!asset || !amount || amt < plan.min || loading) return
     const { id: assetId, name: assetName } = asset
     setLoading(true); setMsg(null)
     try {
-      const res = await fetch('/api/investments', {
+      const res  = await fetch('/api/investments', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: `${assetId}-${tier.days}d`, planName: `${assetName} ${tier.label}`, amount: amt, dailyRoi: tier.daily / 100 }),
+        body: JSON.stringify({ planId: `${assetId}-${plan.days}d`, planName: `${assetName} ${plan.label}`, amount: amt, dailyRoi: plan.daily / 100 }),
       })
       const data = await res.json()
       if (!res.ok) setMsg({ ok: false, text: data.error || 'Investment failed' })
-      else { setMsg({ ok: true, text: `${tier.label} plan started! Profits begin after 24 hours.` }); setTimeout(onClose, 2200) }
+      else { setMsg({ ok: true, text: `${plan.label} plan started! Profits begin after 24 hours.` }); setTimeout(onClose, 2200) }
     } catch { setMsg({ ok: false, text: 'Network error. Please try again.' }) }
-    finally { setLoading(false) }
+    finally   { setLoading(false) }
   }
 
-  const presets = [tier.min, tier.min * 2, tier.min * 5, tier.min * 10]
+  const presets = [plan.min, plan.min * 2, plan.min * 5, plan.min * 10]
 
   return typeof document === 'undefined' ? null : createPortal(
     <div
@@ -267,7 +327,7 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
         maxHeight: '92svh', display: 'flex', flexDirection: 'column',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
-        {/* Handle */}
+        {/* Drag handle */}
         <div style={{ padding: '12px 20px 0', flexShrink: 0 }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.14)', margin: '0 auto 16px' }} />
         </div>
@@ -294,22 +354,23 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
             </button>
           </div>
 
-          {/* Tier picker */}
+          {/* Plan picker — horizontal scroll, one card per plan */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', marginBottom: 12 }}>CHOOSE PLAN</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-              {tiers.map((t, i) => {
-                const sel = tierIdx === i
+            <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', marginBottom: 12 }}>SELECT PLAN</div>
+            <div className="no-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, marginRight: -20, paddingRight: 20 }}>
+              {plans.map((p, i) => {
+                const sel = planIdx === i
                 return (
-                  <button key={t.label} onClick={() => { setTierIdx(i); setAmount(String(t.min)); setMsg(null) }}
-                    style={{ position: 'relative', padding: '14px 8px', borderRadius: 14, border: sel ? '1.5px solid var(--brand-primary)' : '1px solid rgba(255,255,255,0.08)', background: sel ? 'rgba(242,186,14,0.07)' : 'rgba(255,255,255,0.02)', cursor: 'pointer', color: 'inherit', fontFamily: 'inherit', textAlign: 'center', transition: 'all 0.15s' }}>
-                    {t.badge && (
-                      <div style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', background: t.badge === 'Best' ? 'var(--brand-primary)' : 'var(--success)', color: '#000', fontSize: 8, fontWeight: 900, padding: '2px 8px', borderRadius: 99, letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{t.badge.toUpperCase()}</div>
+                  <button key={p.label} onClick={() => { setPlanIdx(i); setAmount(String(p.min)); setMsg(null) }}
+                    style={{ position: 'relative', minWidth: 100, flexShrink: 0, padding: '14px 10px', borderRadius: 14, border: sel ? '1.5px solid var(--brand-primary)' : '1px solid rgba(255,255,255,0.08)', background: sel ? 'rgba(242,186,14,0.07)' : 'rgba(255,255,255,0.02)', cursor: 'pointer', color: 'inherit', fontFamily: 'inherit', textAlign: 'center', transition: 'all 0.15s' }}>
+                    {p.badge && (
+                      <div style={{ position: 'absolute', top: -9, left: '50%', transform: 'translateX(-50%)', background: p.badge === 'Best ROI' ? 'var(--brand-primary)' : p.badge === 'Flexible' ? 'rgba(14,203,129,0.9)' : 'var(--success)', color: '#000', fontSize: 8, fontWeight: 900, padding: '2px 8px', borderRadius: 99, letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{p.badge.toUpperCase()}</div>
                     )}
-                    <div style={{ fontSize: 11, fontWeight: 700, color: sel ? 'var(--brand-primary)' : 'rgba(255,255,255,0.5)', marginBottom: 5 }}>{t.label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: sel ? 'var(--brand-primary)' : '#fff', lineHeight: 1 }}>{t.daily}%</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: sel ? 'var(--brand-primary)' : 'rgba(255,255,255,0.5)', marginBottom: 5 }}>{p.label}</div>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: sel ? 'var(--brand-primary)' : '#fff', lineHeight: 1 }}>{p.daily}%</div>
                     <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 2, fontWeight: 700, letterSpacing: '0.06em' }}>DAILY</div>
-                    <div style={{ fontSize: 10, color: sel ? 'rgba(242,186,14,0.65)' : 'rgba(255,255,255,0.3)', marginTop: 7, fontWeight: 600 }}>{t.days}d · {calcAPY(t.daily)} APY</div>
+                    <div style={{ fontSize: 10, color: sel ? 'rgba(242,186,14,0.65)' : 'rgba(255,255,255,0.3)', marginTop: 7, fontWeight: 600 }}>{p.days}d · {calcAPY(p.daily)} APY</div>
+                    <div style={{ fontSize: 9, color: sel ? 'rgba(242,186,14,0.5)' : 'rgba(255,255,255,0.2)', marginTop: 3 }}>min ${p.min >= 1000 ? (p.min / 1000) + 'k' : p.min}</div>
                   </button>
                 )
               })}
@@ -321,7 +382,8 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
             <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.12em', marginBottom: 10 }}>INVESTMENT AMOUNT</div>
             <div style={{ position: 'relative', marginBottom: 9 }}>
               <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 20, fontWeight: 700, color: 'rgba(255,255,255,0.25)' }}>$</span>
-              <input type="number" value={amount} min={tier.min} onChange={e => { setAmount(e.target.value); setMsg(null) }}
+              <input type="number" value={amount} min={plan.min}
+                onChange={e => { setAmount(e.target.value); setMsg(null) }}
                 style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: '14px 14px 14px 34px', fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }} />
             </div>
             <div style={{ display: 'flex', gap: 7 }}>
@@ -335,7 +397,7 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
           </div>
 
           {/* Profit estimate */}
-          {amt >= tier.min && (
+          {amt >= plan.min && (
             <div style={{ background: 'rgba(14,203,129,0.05)', border: '1px solid rgba(14,203,129,0.15)', borderRadius: 14, padding: 16, marginBottom: 14 }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(14,203,129,0.55)', letterSpacing: '0.1em', marginBottom: 12 }}>PROFIT ESTIMATE</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, textAlign: 'center' }}>
@@ -345,9 +407,9 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
               </div>
             </div>
           )}
-          {amt > 0 && amt < tier.min && (
+          {amt > 0 && amt < plan.min && (
             <div style={{ background: 'var(--danger-bg)', border: '1px solid rgba(246,70,93,0.2)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: 'var(--danger)', fontWeight: 600 }}>
-              Minimum for {tier.label}: ${tier.min.toLocaleString()}
+              Minimum for {plan.label}: ${plan.min.toLocaleString()}
             </div>
           )}
           {msg && (
@@ -360,9 +422,9 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
 
         {/* CTA */}
         <div style={{ padding: '12px 20px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', background: '#0e1420', flexShrink: 0 }}>
-          <button onClick={submit} disabled={loading || amt < tier.min} className="btn-primary"
-            style={{ width: '100%', padding: 16, fontSize: 16, borderRadius: 14, opacity: (loading || amt < tier.min) ? 0.4 : 1 }}>
-            {loading ? 'Processing…' : `Start ${tier.label} · $${(amt || tier.min).toLocaleString()}`}
+          <button onClick={submit} disabled={loading || amt < plan.min} className="btn-primary"
+            style={{ width: '100%', padding: 16, fontSize: 16, borderRadius: 14, opacity: (loading || amt < plan.min) ? 0.4 : 1 }}>
+            {loading ? 'Processing…' : `Start ${plan.label} · $${(amt || plan.min).toLocaleString()}`}
           </button>
         </div>
       </div>
@@ -375,8 +437,8 @@ function InvestSheet({ asset, open, onClose }: { asset: Asset | null; open: bool
 
 function MyPlansTab({ onBrowse }: { onBrowse: () => void }) {
   const [investments, setInvestments] = useState<any[]>([])
-  const [summary, setSummary] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [summary, setSummary]         = useState<any>(null)
+  const [loading, setLoading]         = useState(true)
 
   useEffect(() => {
     fetch('/api/investments').then(r => r.json()).then(d => {
@@ -413,10 +475,10 @@ function MyPlansTab({ onBrowse }: { onBrowse: () => void }) {
           <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, marginBottom: 16 }}>Total value (capital + profit)</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[
-              { label: 'Invested',    val: `$${summary.totalInvested.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`, sub: null, accent: false },
-              { label: 'Profit',      val: `+$${summary.totalProfit.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`, sub: null, accent: true },
-              { label: 'Daily earn',  val: `+$${summary.dailyEarning.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`, sub: '/day', accent: true },
-              { label: 'Active plans',val: String(summary.activeCount), sub: null, accent: false },
+              { label: 'Invested',     val: `$${summary.totalInvested.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`, sub: null,  accent: false },
+              { label: 'Profit',       val: `+$${summary.totalProfit.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`,  sub: null,  accent: true  },
+              { label: 'Daily earn',   val: `+$${summary.dailyEarning.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`, sub: '/day', accent: true  },
+              { label: 'Active plans', val: String(summary.activeCount),                                                                           sub: null,  accent: false },
             ].map(({ label, val, sub, accent }) => (
               <div key={label} style={{ padding: 12, borderRadius: 14, background: accent ? 'rgba(14,203,129,0.07)' : 'rgba(255,255,255,0.04)', border: `1px solid ${accent ? 'rgba(14,203,129,0.14)' : 'rgba(255,255,255,0.06)'}` }}>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>{label}</div>
@@ -470,43 +532,56 @@ function MyPlansTab({ onBrowse }: { onBrowse: () => void }) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 function InvestContent() {
-  const searchParams = useSearchParams()
+  const searchParams  = useSearchParams()
   const [tab, setTab] = useState<'market' | 'my'>((searchParams.get('tab') as any) || 'market')
-  const [category, setCategory] = useState('All')
-  const [assets, setAssets] = useState<Asset[]>(FALLBACK)
-  const [loadingAssets, setLoadingAssets] = useState(true)
-  const [selected, setSelected] = useState<Asset | null>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [search, setSearch] = useState('')
 
-  // Load assets from API whenever category changes
+  const [category,      setCategory]      = useState('All')
+  const [assets,        setAssets]        = useState<Asset[]>(FALLBACK)
+  const [allAssets,     setAllAssets]     = useState<Asset[]>(FALLBACK)
+  const [loadingAssets, setLoadingAssets] = useState(true)
+  const [selected,      setSelected]      = useState<Asset | null>(null)
+  const [sheetOpen,     setSheetOpen]     = useState(false)
+  const [search,        setSearch]        = useState('')
+
+  // Fetch the full "All" list once — used for cross-category search
+  useEffect(() => {
+    fetch('/api/markets/live?category=All')
+      .then(r => r.json())
+      .then(d => { if (d.assets?.length > 0) setAllAssets(d.assets) })
+      .catch(() => {})
+  }, [])
+
+  // Fetch per-category list when category chip changes
   useEffect(() => {
     setLoadingAssets(true)
     fetch(`/api/markets/live?category=${encodeURIComponent(category)}`)
       .then(r => r.json())
       .then(d => {
         const list: Asset[] = d.assets ?? []
-        if (list.length > 0) setAssets(list)
+        setAssets(list.length > 0 ? list : [])
       })
       .catch(() => {})
       .finally(() => setLoadingAssets(false))
   }, [category])
 
-  // Hot = top movers (>2% change)
-  const hotAssets = useMemo(() => assets.filter(a => Math.abs(a.change24h) >= 2).slice(0, 8), [assets])
-
+  // When searching: search across ALL assets; when not searching: show category slice
   const filtered = useMemo(() => {
-    if (!search.trim()) return assets
-    const q = search.toLowerCase()
-    return assets.filter(a =>
+    const q = search.trim().toLowerCase()
+    if (!q) return assets
+    return allAssets.filter(a =>
       a.name.toLowerCase().includes(q) ||
       a.symbol.toLowerCase().includes(q) ||
       a.category.toLowerCase().includes(q)
     )
-  }, [assets, search])
+  }, [assets, allAssets, search])
 
-  function open(asset: Asset) { setSelected(asset); setSheetOpen(true) }
-  function close() { setSheetOpen(false); setTimeout(() => setSelected(null), 300) }
+  const hotAssets = useMemo(() =>
+    allAssets.filter(a => Math.abs(a.change24h) >= 2).slice(0, 8),
+    [allAssets]
+  )
+
+  function open(asset: Asset)  { setSelected(asset); setSheetOpen(true) }
+  function close()             { setSheetOpen(false); setTimeout(() => setSelected(null), 300) }
 
   return (
     <div style={{ padding: '6px 16px 24px' }}>
@@ -533,24 +608,41 @@ function InvestContent() {
           {/* Search */}
           <div style={{ marginBottom: 14 }}>
             <div style={{ position: 'relative' }}>
-              <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="search" placeholder="Search assets…" value={search} onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px 10px 34px', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+              <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', flexShrink: 0 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input
+                type="text"
+                placeholder="Search assets across all categories…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 36px 10px 34px', fontSize: 14, color: 'var(--text-primary)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+              />
+              {search && (
+                <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 99, width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              )}
             </div>
+            {search && (
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, paddingLeft: 2 }}>
+                {filtered.length} result{filtered.length !== 1 ? 's' : ''} across all categories
+              </div>
+            )}
           </div>
 
-          {/* Category chips */}
-          <div className="no-scrollbar" style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 14, marginBottom: 6 }}>
-            {CATEGORIES.map(c => (
-              <button key={c} onClick={() => { setCategory(c); setSearch('') }}
-                className={`chip${category === c ? ' active' : ''}`}>
-                {c}
-              </button>
-            ))}
-          </div>
+          {/* Category chips — shown even during search so user can clear search + filter */}
+          {!search && (
+            <div className="no-scrollbar" style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 14, marginBottom: 6 }}>
+              {CATEGORIES.map(c => (
+                <button key={c} onClick={() => setCategory(c)}
+                  className={`chip${category === c ? ' active' : ''}`}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {/* Trending row */}
-          {category === 'All' && hotAssets.length > 0 && (
+          {/* Hot trending row — shown on All + not searching */}
+          {!search && category === 'All' && hotAssets.length > 0 && (
             <div style={{ marginBottom: 22 }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 10 }}>HOT TRENDING</div>
               <div className="no-scrollbar" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
@@ -561,10 +653,16 @@ function InvestContent() {
 
           {/* Asset list */}
           <div style={{ display: 'grid', gap: 10 }}>
-            {loadingAssets && assets.length === 0
+            {loadingAssets && assets.length === 0 && !search
               ? Array.from({ length: 5 }).map((_, i) => <CardSkel key={i} />)
               : filtered.length === 0
-                ? <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 16, border: '1px solid var(--border)' }}>No assets found.</div>
+                ? (
+                  <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: 16, border: '1px solid var(--border)' }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginBottom: 12, opacity: 0.4 }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <div style={{ fontWeight: 600, marginBottom: 4 }}>{search ? 'No assets match your search' : 'No assets in this category'}</div>
+                    {search && <div style={{ fontSize: 12 }}>Try a different keyword or <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', fontWeight: 700, padding: 0, fontSize: 12 }}>clear search</button></div>}
+                  </div>
+                )
                 : filtered.map(a => <AssetCard key={a.id} asset={a} onTap={() => open(a)} />)
             }
           </div>
@@ -573,7 +671,6 @@ function InvestContent() {
         <MyPlansTab onBrowse={() => setTab('market')} />
       )}
 
-      {/* Invest sheet */}
       <InvestSheet asset={selected} open={sheetOpen} onClose={close} />
     </div>
   )

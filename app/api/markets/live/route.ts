@@ -75,9 +75,32 @@ const STOCK_META: Record<string, { name: string; domain: string; daily: number; 
   CRM:   { name: 'Salesforce Inc.',     domain: 'salesforce.com',    daily: 0.13, risk: 2 },
 }
 
+// Static fallback so Stocks category always has data even if Finnhub is down / rate-limited
+const STATIC_STOCKS = STOCK_TICKERS.map(sym => {
+  const meta = STOCK_META[sym]
+  const prices: Record<string, number> = {
+    AAPL:190, MSFT:415, NVDA:875, TSLA:248, AMZN:185,
+    GOOGL:175, META:495, JPM:198, V:268, WMT:68,
+    NFLX:618, AMD:158, PYPL:68, UBER:72, CRM:285,
+  }
+  return {
+    id: sym.toLowerCase(),
+    symbol: sym,
+    name: meta?.name ?? sym,
+    category: 'Stocks',
+    price: prices[sym] ?? 100,
+    change24h: 0,
+    image: `https://logo.clearbit.com/${meta?.domain ?? ''}`,
+    spark: [] as number[],
+    dailyReturn: String(meta?.daily ?? 0.12),
+    riskLevel: meta?.risk ?? 2,
+    minInvestment: 100,
+  }
+})
+
 async function getStocksData() {
   const finnhubKey = process.env.FINNHUB_API_KEY
-  if (!finnhubKey) return null
+  if (!finnhubKey) return STATIC_STOCKS
   return fetchWithCache('stocks', async () => {
     const results = await Promise.allSettled(
       STOCK_TICKERS.map(sym =>
@@ -87,7 +110,7 @@ async function getStocksData() {
         ).then(r => ({ symbol: sym, ...r.data }))
       )
     )
-    return results
+    const live = results
       .filter((r): r is PromiseFulfilledResult<{ symbol: string; c: number; dp: number }> =>
         r.status === 'fulfilled' && r.value?.c > 0
       )
@@ -108,6 +131,10 @@ async function getStocksData() {
           minInvestment: 100,
         }
       })
+    // Fall back to static prices for any ticker Finnhub didn't return
+    const liveIds = new Set(live.map(s => s.id))
+    const extras  = STATIC_STOCKS.filter(s => !liveIds.has(s.id))
+    return [...live, ...extras]
   })
 }
 
