@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { signToken } from '@/lib/auth'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -11,6 +12,9 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    if (!rateLimit(`login:${getClientIp(req)}`, 10, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Too many login attempts. Please try again later.' }, { status: 429 })
+    }
     const body = await req.json()
     const parsed = schema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid email or password' }, { status: 400 })
