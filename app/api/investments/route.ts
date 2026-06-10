@@ -70,7 +70,8 @@ export async function POST(req: Request) {
     'clean-energy': 90, 'health-etf': 120,
     'global-macro': 30, 'longshort': 30,
   }
-  const durationDays = (planId && DURATIONS[planId]) || 30
+  const extractedDays = planId ? parseInt(planId.match(/-(\d+)d$/)?.[1] ?? '0', 10) : 0
+  const durationDays = extractedDays > 0 ? extractedDays : ((planId && DURATIONS[planId]) || 30)
 
   const startDate = new Date()
   const endDate = new Date(startDate.getTime() + durationDays * 86400000)
