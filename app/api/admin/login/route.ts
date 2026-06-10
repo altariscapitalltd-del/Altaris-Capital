@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { signToken } from '@/lib/auth'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const loginSchema = z.object({
@@ -11,6 +12,9 @@ const loginSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    if (!rateLimit(`admin-login:${getClientIp(req)}`, 5, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Too many login attempts. Please try again later.' }, { status: 429 })
+    }
     const { email, password } = loginSchema.parse(await req.json())
     const user = await prisma.user.findFirst({
       where: { email, role: { in: ['ADMIN', 'SUPER_ADMIN'] } },

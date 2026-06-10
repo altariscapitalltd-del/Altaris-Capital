@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { createAndSendOTP } from '@/lib/otp'
 import { trigger, adminChannel } from '@/lib/pusher'
 import { notifyAdminTelegram } from '@/lib/push'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -22,6 +23,9 @@ function generateReferralCode(name: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!rateLimit(`signup:${getClientIp(req)}`, 5, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Too many signup attempts. Please try again later.' }, { status: 429 })
+    }
     const body = await req.json()
     const { name, email, phone, password, referralCode } = schema.parse(body)
 
@@ -96,7 +100,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, userId: user.id })
   } catch (e: any) {
+    if (e instanceof z.ZodError) {
+      return NextResponse.json({ error: e.issues[0]?.message || 'Invalid signup request' }, { status: 400 })
+    }
     console.error('[Signup]', e?.message ?? e)
-    return NextResponse.json({ error: e.message || 'Signup failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Signup failed. Please try again.' }, { status: 500 })
   }
 }

@@ -1,9 +1,10 @@
+import { randomInt } from 'crypto'
 import bcrypt from 'bcryptjs'
 import { prisma } from './db'
 import { sendOTPEmail } from './email'
 
 export function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString()
+  return randomInt(100000, 1000000).toString()
 }
 
 export async function createAndSendOTP(userId: string, email: string, name: string, purpose: string) {

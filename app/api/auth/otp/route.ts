@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { createAndSendOTP, verifyOTP } from '@/lib/otp'
 import { signToken } from '@/lib/auth'
+import { rateLimit, getClientIp } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const otpSchema = z.object({
@@ -22,6 +23,9 @@ const otpSchema = z.object({
 // POST /api/auth/otp — send or verify
 export async function POST(req: NextRequest) {
   try {
+    if (!rateLimit(`otp:${getClientIp(req)}`, 10, 10 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Too many OTP requests. Please try again later.' }, { status: 429 })
+    }
     const { action, userId, code, purpose } = otpSchema.parse(await req.json())
 
     const user = await prisma.user.findUnique({ where: { id: userId } })

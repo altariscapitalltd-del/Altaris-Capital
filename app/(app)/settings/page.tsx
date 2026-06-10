@@ -15,16 +15,16 @@ function SettingRow({ icon, label, value, href, onClick, danger, toggle, toggled
   const content = (
     <div className="row-item" style={{ background:'transparent', borderBottom:'1px solid var(--border)' }}
       onClick={toggle ? undefined : onClick}>
-      <div style={{ width:34, height:34, borderRadius:10, background: danger?'rgba(246,70,93,0.1)':'var(--bg-elevated)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color: danger ? 'var(--danger)' : 'var(--text-secondary)' }}>
+      <div style={{ width:34, height:34, borderRadius:8, background: danger?'rgba(246,70,93,0.12)':'var(--bg-elevated)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color: danger ? 'var(--danger)' : 'var(--text-secondary)' }}>
         {icon}
       </div>
       <div style={{ flex:1 }}>
         <div style={{ fontWeight:600, fontSize:14, color: danger?'var(--danger)':'var(--text-primary)' }}>{label}</div>
-        {value && <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:1 }}>{value}</div>}
+        {value && <div style={{ color:'var(--text-secondary)', fontSize:12, marginTop:1 }}>{value}</div>}
       </div>
       {toggle ? (
         <div onClick={(e) => { e.stopPropagation(); onToggle?.() }} style={{ width:44, height:26, borderRadius:99, background: toggled?'var(--brand-primary)':'var(--bg-elevated)', position:'relative', cursor:'pointer', transition:'background .2s', flexShrink:0 }}>
-          <div style={{ position:'absolute', top:3, left: toggled?22:3, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s', boxShadow:'0 1px 4px rgba(0,0,0,0.3)' }}/>
+          <div style={{ position:'absolute', top:3, left: toggled?22:3, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .2s' }}/>
         </div>
       ) : (
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--text-muted)" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -36,12 +36,12 @@ function SettingRow({ icon, label, value, href, onClick, danger, toggle, toggled
 }
 
 function SectionLabel({ label }: { label:string }) {
-  return <div style={{ padding:'18px 20px 8px', color:'var(--text-muted)', fontSize:10, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase' }}>{label}</div>
+  return <div style={{ padding:'18px 20px 8px', color:'var(--text-secondary)', fontSize:11, fontWeight:500, letterSpacing:'0.06em', textTransform:'uppercase' }}>{label}</div>
 }
 
 function SectionCard({ children }: { children:React.ReactNode }) {
   return (
-    <div style={{ margin:'0 16px', background:'var(--bg-card)', borderRadius:16, border:'1px solid var(--border)', overflow:'hidden' }}>
+    <div style={{ margin:'0 16px', background:'var(--bg-card)', borderRadius:12, border:'1px solid var(--border)', overflow:'hidden' }}>
       {children}
     </div>
   )
@@ -59,17 +59,17 @@ function LanguageRow({ language, country, onLanguageChange }:
   const selected = ALTARIS_LANGUAGES.find(item => item.code === language)?.label || 'English'
   return (
     <div className="row-item" style={{ background:'transparent', borderBottom:'1px solid var(--border)' }}>
-      <div style={{ width:34, height:34, borderRadius:10, background:'var(--bg-elevated)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'var(--text-secondary)' }}>
+      <div style={{ width:34, height:34, borderRadius:8, background:'var(--bg-elevated)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'var(--text-secondary)' }}>
         <Globe2 size={18} strokeWidth={2} />
       </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontWeight:600, fontSize:14, color:'var(--text-primary)' }}>Language</div>
-        <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:1 }}>{country ? `Detected: ${country}` : selected}</div>
+        <div style={{ color:'var(--text-secondary)', fontSize:12, marginTop:1 }}>{country ? `Detected: ${country}` : selected}</div>
       </div>
       <select
         value={language}
         onChange={(event) => onLanguageChange(event.target.value)}
-        style={{ maxWidth:118, background:'transparent', color:'var(--text-secondary)', border:'none', fontSize:12, fontWeight:700, fontFamily:'inherit', outline:'none', textAlign:'right' }}
+        style={{ maxWidth:118, background:'transparent', color:'var(--text-secondary)', border:'none', fontSize:12, fontWeight:600, fontFamily:'inherit', outline:'none', textAlign:'right' }}
         aria-label="Choose app language"
       >
         {ALTARIS_LANGUAGES.map(item => <option key={item.code} value={item.code}>{item.label}</option>)}
@@ -88,6 +88,7 @@ export default function SettingsPage() {
   const [notifInvest, setNotifInvest] = useState(true)
   const [biometric, setBiometric] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const [language, setLanguage] = useState('en')
   const [country, setCountry] = useState('')
   const [detectingLanguage, setDetectingLanguage] = useState(false)
@@ -238,8 +239,8 @@ export default function SettingsPage() {
     <div style={{ paddingBottom:24 }}>
       <div style={{ margin:'0 16px 4px' }}>
         <Link href="/profile" style={{ textDecoration:'none' }}>
-          <div style={{ background:'var(--bg-card)', borderRadius:16, border:'1px solid var(--border)', padding:16, display:'flex', alignItems:'center', gap:14 }} className="pressable">
-            <div style={{ width:54, height:54, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'2px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:22, color:'#000', flexShrink:0, overflow:'hidden', position:'relative' }}>
+          <div style={{ background:'var(--bg-card)', borderRadius:12, border:'1px solid var(--border)', padding:16, display:'flex', alignItems:'center', gap:14 }} className="pressable">
+            <div style={{ width:54, height:54, borderRadius:'50%', background:'#F2BA0E', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:600, fontSize:22, color:'#000', flexShrink:0, overflow:'hidden', position:'relative' }}>
               {user?.profilePicture ? (
                 <img
                   src={user.profilePicture}
@@ -251,20 +252,20 @@ export default function SettingsPage() {
               )}
             </div>
             <div style={{ flex:1 }}>
-              <div style={{ fontWeight:700, fontSize:16 }}>{user?.name || 'User'}</div>
-              <div style={{ color:'var(--text-muted)', fontSize:12, marginTop:2 }}>{user?.email}</div>
+              <div style={{ fontWeight:600, fontSize:16, color:'var(--text-primary)' }}>{user?.name || 'User'}</div>
+              <div style={{ color:'var(--text-secondary)', fontSize:12, marginTop:2 }}>{user?.email}</div>
               <div style={{ marginTop:6 }}>
                 {(() => {
                   const s = user?.kycStatus
                   const cfg: Record<string, {bg:string;color:string;label:string}> = {
-                    APPROVED:       { bg:'rgba(14,203,129,0.12)',  color:'#0ECB81', label:'✓ Verified' },
-                    PENDING_REVIEW: { bg:'rgba(242,186,14,0.12)',  color:'#F2BA0E', label:'⏳ Pending Review' },
-                    REJECTED:       { bg:'rgba(246,70,93,0.12)',   color:'#F6465D', label:'✕ Rejected' },
-                    NOT_SUBMITTED:  { bg:'rgba(148,163,184,0.10)', color:'#8A8A9A', label:'○ Not Verified' },
+                    APPROVED:       { bg:'rgba(14,203,129,0.12)',  color:'#0ECB81', label:'Verified' },
+                    PENDING_REVIEW: { bg:'rgba(242,186,14,0.12)',  color:'#F2BA0E', label:'Pending Review' },
+                    REJECTED:       { bg:'rgba(246,70,93,0.12)',   color:'#F6465D', label:'Rejected' },
+                    NOT_SUBMITTED:  { bg:'rgba(132,142,156,0.12)', color:'#848E9C', label:'Not Verified' },
                   }
                   const c = cfg[s] || cfg.NOT_SUBMITTED
                   return (
-                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:99, background:c.bg, color:c.color, border:`1px solid ${c.color}30` }}>
+                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:999, background:c.bg, color:c.color }}>
                       {c.label}
                     </span>
                   )
@@ -324,13 +325,32 @@ export default function SettingsPage() {
       </SectionCard>
 
       <div style={{ margin:'24px 16px 0' }}>
-        <button onClick={logout} disabled={loggingOut}
-          style={{ width:'100%', padding:'15px', borderRadius:14, background:'rgba(246,70,93,0.08)', border:'1px solid rgba(246,70,93,0.2)', color:'#F6465D', fontWeight:700, fontSize:15, cursor:'pointer', fontFamily:'inherit', transition:'all .15s', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-          {loggingOut ? 'Logging out...' : <><LogOut size={18} strokeWidth={2} /> Log Out</>}
+        <button onClick={() => setConfirmLogout(true)} disabled={loggingOut}
+          style={{ width:'100%', padding:'15px', borderRadius:8, background:'var(--bg-elevated)', border:'1px solid var(--border)', color:'#F6465D', fontWeight:600, fontSize:15, cursor:'pointer', fontFamily:'inherit', transition:'all .15s', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+          {loggingOut ? 'Logging out…' : <><LogOut size={18} strokeWidth={2} /> Log Out</>}
         </button>
       </div>
 
       <div style={{ height:16 }}/>
+
+      {/* ── Logout confirmation dialog ── */}
+      {confirmLogout && (
+        <div onClick={() => setConfirmLogout(false)} style={{ position:'fixed', inset:0, zIndex:200, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'0 16px 40px' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width:'100%', maxWidth:480, background:'var(--bg-card)', borderRadius:12, border:'1px solid var(--border)', padding:'24px 20px', boxShadow:'0 8px 32px rgba(0,0,0,0.6)' }}>
+            <div style={{ width:52, height:52, borderRadius:8, background:'rgba(246,70,93,0.12)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
+              <LogOut size={22} color="#F6465D" strokeWidth={2} />
+            </div>
+            <div style={{ textAlign:'center', marginBottom:20 }}>
+              <div style={{ fontWeight:600, fontSize:18, marginBottom:6, color:'var(--text-primary)' }}>Log out?</div>
+              <div style={{ color:'var(--text-secondary)', fontSize:13, lineHeight:1.5 }}>You'll need to sign in again to access your account.</div>
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setConfirmLogout(false)} style={{ flex:1, padding:'13px', borderRadius:8, border:'1px solid var(--border)', background:'var(--bg-elevated)', color:'var(--text-secondary)', fontWeight:600, fontSize:14, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+              <button onClick={() => { setConfirmLogout(false); logout() }} style={{ flex:1, padding:'13px', borderRadius:8, border:'1px solid var(--border)', background:'var(--bg-elevated)', color:'#F6465D', fontWeight:600, fontSize:14, cursor:'pointer', fontFamily:'inherit' }}>Log Out</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

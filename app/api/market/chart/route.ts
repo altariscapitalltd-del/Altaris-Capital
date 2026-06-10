@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(binanceSymbol)}&interval=${interval}&limit=${days}`
-    const res = await fetch(url, { next: { revalidate: 30 } })
+    const res = await fetch(url, { next: { revalidate: 30 }, signal: AbortSignal.timeout(10_000) })
     if (!res.ok) throw new Error('Binance unavailable')
     const data = await res.json()
     if (!Array.isArray(data) || data.length === 0) {
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
 
       const cgDays = mapDaysToCg(days)
       const cgUrl = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(cgId)}/ohlc?vs_currency=usd&days=${cgDays}`
-      const cgRes = await fetch(cgUrl, { next: { revalidate: 30 } })
+      const cgRes = await fetch(cgUrl, { next: { revalidate: 30 }, signal: AbortSignal.timeout(10_000) })
       if (!cgRes.ok) throw new Error('CoinGecko unavailable')
       const rows = await cgRes.json()
       if (!Array.isArray(rows) || rows.length === 0) {

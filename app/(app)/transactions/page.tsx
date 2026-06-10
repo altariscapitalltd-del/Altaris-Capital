@@ -131,7 +131,31 @@ export default function TransactionsPage() {
   const totalIn = useMemo(() => txs.filter((t) => TYPE_CONFIG[t.type]?.isCredit).reduce((s, t) => s + t.amount, 0), [txs])
   const totalOut = useMemo(() => txs.filter((t) => !TYPE_CONFIG[t.type]?.isCredit).reduce((s, t) => s + t.amount, 0), [txs])
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}><div style={{ width: 32, height: 32, border: '3px solid rgba(242,186,14,0.2)', borderTopColor: '#F2BA0E', borderRadius: '50%', animation: 'spin .8s linear infinite' }} /></div>
+  if (loading) return (
+    <div style={{ padding: '12px 16px 24px' }}>
+      <div style={{ height: 28, width: 180, background: 'var(--bg-elevated)', borderRadius: 8, marginBottom: 16 }} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+        <div style={{ height: 60, background: 'var(--bg-elevated)', borderRadius: 12 }} />
+        <div style={{ height: 60, background: 'var(--bg-elevated)', borderRadius: 12 }} />
+      </div>
+      <div style={{ display: 'flex', gap: 7, marginBottom: 20 }}>
+        {[80,60,90,70,80].map((w,i) => <div key={i} style={{ height: 32, width: w, borderRadius: 99, background: 'var(--bg-elevated)', flexShrink: 0 }} />)}
+      </div>
+      {[1,2,3,4,5,6].map(i => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--bg-elevated)', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ height: 13, width: '45%', background: 'var(--bg-elevated)', borderRadius: 5, marginBottom: 8 }} />
+            <div style={{ height: 10, width: '30%', background: 'var(--bg-elevated)', borderRadius: 4 }} />
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ height: 14, width: 70, background: 'var(--bg-elevated)', borderRadius: 5, marginBottom: 6 }} />
+            <div style={{ height: 9, width: 44, background: 'var(--bg-elevated)', borderRadius: 4 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 
   return (
     <div style={{ padding: '0 0 24px' }}>
@@ -147,16 +171,20 @@ export default function TransactionsPage() {
             <div style={{ fontSize: 18, fontWeight: 900, color: '#F6465D' }}>-${totalOut.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 7, overflowX: 'auto', marginBottom: 16 }} className="no-scrollbar">
-          {FILTERS.map((f) => <button key={f} onClick={() => setFilter(f)} className={`chip ${filter === f ? 'active' : ''}`} style={{ fontSize: 12 }}>{f === 'ALL' ? 'All' : TYPE_CONFIG[f]?.label || f}</button>)}
+        {/* Filter chips with scroll-fade edges */}
+        <div style={{ position: 'relative', marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 4 }} className="no-scrollbar">
+            {FILTERS.map((f) => <button key={f} onClick={() => setFilter(f)} className={`chip ${filter === f ? 'active' : ''}`} style={{ fontSize: 12, flexShrink: 0 }}>{f === 'ALL' ? 'All' : TYPE_CONFIG[f]?.label || f}</button>)}
+          </div>
+          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 4, width: 40, background: 'linear-gradient(to right, transparent, var(--bg-page))', pointerEvents: 'none' }} />
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ width: 54, height: 54, margin: '0 auto 14px', borderRadius: 18, background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WalletCards size={24} color="var(--text-muted)" /></div>
-          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>No transactions yet</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Your transaction history will appear here</div>
+        <div style={{ textAlign: 'center', padding: '60px 24px', margin: '0 16px', background: 'var(--bg-card)', borderRadius: 20, border: '1px dashed var(--border)' }}>
+          <div style={{ width: 56, height: 56, margin: '0 auto 14px', borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WalletCards size={24} color="var(--text-muted)" /></div>
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{filter === 'ALL' ? 'No transactions yet' : `No ${TYPE_CONFIG[filter]?.label || filter} transactions`}</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{filter === 'ALL' ? 'Deposits, withdrawals and investments will appear here.' : 'Try selecting a different filter above.'}</div>
         </div>
       ) : (
         <div style={{ padding: '0 16px' }}>
@@ -170,7 +198,13 @@ export default function TransactionsPage() {
 
             return (
               <div key={tx.id}>
-                {isNewDay && <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, padding: '12px 0 6px', letterSpacing: '0.04em' }}>{date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</div>}
+                {isNewDay && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0 8px' }}>
+                    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap', background: 'var(--bg-page)', padding: '0 8px' }}>{date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ width: 44, height: 44, borderRadius: 13, background: `${cfg.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, border: `1px solid ${cfg.color}25` }}><Icon size={19} strokeWidth={2.2} color={cfg.color} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
