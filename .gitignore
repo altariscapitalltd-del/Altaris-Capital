@@ -43,3 +43,23 @@ next-env.d.ts
 
 # local agent
 .local/
+
+# agent-harness / persona scaffolding (never part of the Next.js app)
+SOUL.md
+IDENTITY.md
+HEARTBEAT.md
+MEMORY.md
+USER.md
+TOOLS.md
+AGENTS.md
+memory/
+avatars/
+attached_assets/
+.openclaw/
+
+# Replit workspace
+.replit
+replit.md
+
+# duplicate nested project copy
+/Altaris-Capital/
