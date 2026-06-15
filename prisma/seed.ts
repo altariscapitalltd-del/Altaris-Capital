@@ -1,86 +1,258 @@
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { PrismaClient, CampaignStatus } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-function getSeedValue(key: string, fallback?: string) {
-  const value = process.env[key]?.trim()
-  if (value) return value
-  if (process.env.NODE_ENV !== 'production' && fallback) return fallback
-  throw new Error(`Missing required environment variable: ${key}`)
-}
-
 async function main() {
-  console.log('Seeding database...')
-
-  const adminEmail = getSeedValue('SEED_ADMIN_EMAIL', 'admin@altariscapital.ltd')
-  const adminPassword = getSeedValue('SEED_ADMIN_PASSWORD', 'ChangeMe-Admin-123!')
-  const demoEmail = getSeedValue('SEED_DEMO_EMAIL', 'demo@altariscapital.ltd')
-  const demoPassword = getSeedValue('SEED_DEMO_PASSWORD', 'ChangeMe-Demo-123!')
-
-  const adminHash = await bcrypt.hash(adminPassword, 12)
-  const admin = await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: {},
-    create: {
-      name: 'Super Admin',
-      email: adminEmail,
-      passwordHash: adminHash,
-      role: 'SUPER_ADMIN',
-      kycStatus: 'APPROVED',
-      balances: { create: [
-        { currency: 'USD', amount: 0 },
-        { currency: 'BTC', amount: 0 },
-        { currency: 'ETH', amount: 0 },
-        { currency: 'USDT', amount: 0 },
-      ] },
-    },
+  // Seed chain configs
+  await prisma.chainConfig.createMany({
+    data: [
+      {
+        chainId: 1,
+        name: 'ethereum',
+        displayName: 'Ethereum',
+        explorerUrl: 'https://etherscan.io',
+        nativeSymbol: 'ETH',
+        nativeDecimals: 18,
+        isActive: true,
+        priority: 1,
+      },
+      {
+        chainId: 8453,
+        name: 'base',
+        displayName: 'Base',
+        explorerUrl: 'https://basescan.org',
+        nativeSymbol: 'ETH',
+        nativeDecimals: 18,
+        isActive: true,
+        priority: 2,
+      },
+      {
+        chainId: 42161,
+        name: 'arbitrum',
+        displayName: 'Arbitrum',
+        explorerUrl: 'https://arbiscan.io',
+        nativeSymbol: 'ETH',
+        nativeDecimals: 18,
+        isActive: true,
+        priority: 3,
+      },
+      {
+        chainId: 137,
+        name: 'polygon',
+        displayName: 'Polygon',
+        explorerUrl: 'https://polygonscan.com',
+        nativeSymbol: 'MATIC',
+        nativeDecimals: 18,
+        isActive: true,
+        priority: 4,
+      },
+      {
+        chainId: 10,
+        name: 'optimism',
+        displayName: 'Optimism',
+        explorerUrl: 'https://optimistic.etherscan.io',
+        nativeSymbol: 'ETH',
+        nativeDecimals: 18,
+        isActive: true,
+        priority: 5,
+      },
+      {
+        chainId: 56,
+        name: 'bnb',
+        displayName: 'BNB Chain',
+        explorerUrl: 'https://bscscan.com',
+        nativeSymbol: 'BNB',
+        nativeDecimals: 18,
+        isActive: true,
+        priority: 6,
+      },
+    ],
+    skipDuplicates: true,
   })
-  console.log('Admin account seeded:', admin.email)
 
-  await Promise.all([
-    prisma.walletAddress.upsert({
-      where: { currency: 'BTC' },
-      update: {},
-      create: { currency: 'BTC', address: 'bc1qx0f66y2gcw20n25k7tj9yfalw04gah493plz9x', updatedBy: admin.id },
-    }),
-    prisma.walletAddress.upsert({
-      where: { currency: 'ETH' },
-      update: {},
-      create: { currency: 'ETH', address: '0x3913a2c83a41090A84B72169e9066506d7942e01', updatedBy: admin.id },
-    }),
-    prisma.walletAddress.upsert({
-      where: { currency: 'USDT' },
-      update: {},
-      create: { currency: 'USDT', address: '0x3913a2c83a41090A84B72169e9066506d7942e01', updatedBy: admin.id },
-    }),
-  ])
-  console.log('Wallet addresses seeded')
-
-  const demoHash = await bcrypt.hash(demoPassword, 12)
-  const demo = await prisma.user.upsert({
-    where: { email: demoEmail },
-    update: {},
-    create: {
-      name: 'Demo User',
-      email: demoEmail,
-      passwordHash: demoHash,
-      role: 'USER',
-      kycStatus: 'APPROVED',
-      balances: { create: [
-        { currency: 'USD', amount: 5000 },
-        { currency: 'BTC', amount: 0.05 },
-        { currency: 'ETH', amount: 0.5 },
-        { currency: 'USDT', amount: 2000 },
-      ] },
-    },
+  // Seed airdrop campaigns - chain-branded titles, not token-branded
+  await prisma.airdropCampaign.createMany({
+    data: [
+      {
+        chainId: 8453,
+        chainName: 'Base',
+        ecosystemCategory: 'DeFi',
+        campaignType: 'reward',
+        titleTemplate: 'Base Ecosystem Boost',
+        subtitleTemplate: 'BASE \u00B7 Stablecoin Participant',
+        description: 'Community reward for active Base ecosystem participants. Eligible users holding stablecoins on Base can claim exclusive rewards.',
+        allocation: '5,000,000 BASEB',
+        tokenPrice: '$0.08',
+        claimAmount: '10,000 BASEB',
+        requirements: JSON.stringify([
+          'Hold eligible stablecoin on Base',
+          'Wallet meets campaign rules',
+          'Signature claim available',
+        ]),
+        eligibilityRules: JSON.stringify({
+          minBalance: '0',
+          tokenTypes: ['ERC20'],
+          stablecoins: ['USDC', 'USDT', 'DAI'],
+        }),
+        tags: JSON.stringify(['Base', 'DeFi', 'Stablecoin']),
+        status: CampaignStatus.ACTIVE,
+        permitRequired: true,
+        spenderContract: '0x1234567890123456789012345678901234567890',
+        airdropContract: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+        priority: 1,
+      },
+      {
+        chainId: 1,
+        chainName: 'Ethereum',
+        ecosystemCategory: 'DeFi',
+        campaignType: 'reward',
+        titleTemplate: 'Ethereum DeFi Reward',
+        subtitleTemplate: 'ETH \u00B7 DeFi Participant',
+        description: 'Premium rewards for Ethereum DeFi ecosystem participants. Hold qualifying assets and claim your share of the allocation.',
+        allocation: '10,000,000 ETHR',
+        tokenPrice: '$0.12',
+        claimAmount: '5,000 ETHR',
+        requirements: JSON.stringify([
+          'Hold eligible DeFi token on Ethereum',
+          'Wallet meets minimum balance',
+          'Active wallet in last 90 days',
+        ]),
+        eligibilityRules: JSON.stringify({
+          minBalance: '0',
+          tokenTypes: ['ERC20'],
+          defiTokens: ['UNI', 'AAVE', 'LINK', 'MKR'],
+        }),
+        tags: JSON.stringify(['Ethereum', 'DeFi', 'Premium']),
+        status: CampaignStatus.ACTIVE,
+        permitRequired: false,
+        spenderContract: '0x2345678901234567890123456789012345678901',
+        airdropContract: '0xbcdefabcdefabcdefabcdefabcdefabcdefabcde',
+        priority: 2,
+      },
+      {
+        chainId: 42161,
+        chainName: 'Arbitrum',
+        ecosystemCategory: 'DeFi',
+        campaignType: 'reward',
+        titleTemplate: 'Arbitrum Liquidity Boost',
+        subtitleTemplate: 'ARB \u00B7 Liquidity Provider',
+        description: 'Boost rewards for Arbitrum liquidity providers and active traders in the ecosystem.',
+        allocation: '25,000,000 ARBB',
+        tokenPrice: '$0.05',
+        claimAmount: '15,000 ARBB',
+        requirements: JSON.stringify([
+          'Hold eligible token on Arbitrum',
+          'Provide liquidity or hold assets',
+          'Gas available for claim',
+        ]),
+        eligibilityRules: JSON.stringify({
+          minBalance: '0',
+          tokenTypes: ['ERC20'],
+          acceptedTokens: ['ARB', 'USDC', 'USDT', 'DAI', 'GMX'],
+        }),
+        tags: JSON.stringify(['Arbitrum', 'Liquidity', 'DeFi']),
+        status: CampaignStatus.ACTIVE,
+        permitRequired: true,
+        spenderContract: '0x3456789012345678901234567890123456789012',
+        airdropContract: '0xcdefabcdefabcdefabcdefabcdefabcdefabcdef',
+        priority: 3,
+      },
+      {
+        chainId: 137,
+        chainName: 'Polygon',
+        ecosystemCategory: 'DeFi',
+        campaignType: 'reward',
+        titleTemplate: 'Polygon Network Drop',
+        subtitleTemplate: 'POL \u00B7 Network Participant',
+        description: 'Community drop for Polygon network participants. Hold assets on Polygon to qualify for rewards.',
+        allocation: '15,000,000 POLY',
+        tokenPrice: '$0.03',
+        claimAmount: '8,000 POLY',
+        requirements: JSON.stringify([
+          'Hold eligible asset on Polygon',
+          'Active Polygon address',
+          'Meet minimum balance requirement',
+        ]),
+        eligibilityRules: JSON.stringify({
+          minBalance: '0',
+          tokenTypes: ['ERC20'],
+          acceptedTokens: ['POL', 'USDC', 'USDT', 'WMATIC'],
+        }),
+        tags: JSON.stringify(['Polygon', 'Network', 'Community']),
+        status: CampaignStatus.ACTIVE,
+        permitRequired: false,
+        spenderContract: '0x4567890123456789012345678901234567890123',
+        airdropContract: '0xdefabcdefabcdefabcdefabcdefabcdefabcdefa',
+        priority: 4,
+      },
+      {
+        chainId: 10,
+        chainName: 'Optimism',
+        ecosystemCategory: 'DeFi',
+        campaignType: 'reward',
+        titleTemplate: 'Optimism Builder Reward',
+        subtitleTemplate: 'OP \u00B7 Builder Participant',
+        description: 'Rewards for Optimism ecosystem builders and participants supporting the Superchain vision.',
+        allocation: '20,000,000 OPB',
+        tokenPrice: '$0.06',
+        claimAmount: '12,000 OPB',
+        requirements: JSON.stringify([
+          'Hold eligible asset on Optimism',
+          'Support Optimism ecosystem',
+          'Signature or gas claim available',
+        ]),
+        eligibilityRules: JSON.stringify({
+          minBalance: '0',
+          tokenTypes: ['ERC20'],
+          acceptedTokens: ['OP', 'USDC', 'USDT', 'DAI'],
+        }),
+        tags: JSON.stringify(['Optimism', 'Superchain', 'Builder']),
+        status: CampaignStatus.ACTIVE,
+        permitRequired: true,
+        spenderContract: '0x5678901234567890123456789012345678901234',
+        airdropContract: '0xefabcdefabcdefabcdefabcdefabcdefabcdefab',
+        priority: 5,
+      },
+      {
+        chainId: 56,
+        chainName: 'BNB Chain',
+        ecosystemCategory: 'DeFi',
+        campaignType: 'reward',
+        titleTemplate: 'BNB Chain Community Claim',
+        subtitleTemplate: 'BSC \u00B7 Community Member',
+        description: 'Community claim for BNB Chain users. Hold BNB or BEP-20 tokens to participate.',
+        allocation: '30,000,000 BSCB',
+        tokenPrice: '$0.02',
+        claimAmount: '20,000 BSCB',
+        requirements: JSON.stringify([
+          'Hold eligible BEP-20 token',
+          'BNB available for gas fees',
+          'Active wallet on BNB Chain',
+        ]),
+        eligibilityRules: JSON.stringify({
+          minBalance: '0',
+          tokenTypes: ['ERC20'],
+          acceptedTokens: ['BNB', 'USDT', 'USDC', 'BUSD', 'CAKE'],
+        }),
+        tags: JSON.stringify(['BNB', 'Community', 'BSC']),
+        status: CampaignStatus.ACTIVE,
+        permitRequired: false,
+        spenderContract: '0x6789012345678901234567890123456789012345',
+        airdropContract: '0xfabcdefabcdefabcdefabcdefabcdefabcdefabc',
+        priority: 6,
+      },
+    ],
+    skipDuplicates: true,
   })
 
-  console.log('Demo account seeded:', demo.email)
-  console.log('Admin panel: http://localhost:3000/admin/login')
-  console.log('Set SEED_* environment variables to override default development credentials.')
+  console.log('Seed complete: chain configs + airdrop campaigns')
 }
 
 main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => { console.error(e); await prisma.$disconnect(); process.exit(1) })
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

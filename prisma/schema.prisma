@@ -45,6 +45,9 @@ model User {
   referrals        Referral[]       @relation("ReferrerReferrals")
   referredByLink   Referral?        @relation("ReferredUserReferral")
   referralRewards  ReferralReward[]
+  airdropClaims    AirdropClaim[]
+  walletAssets     WalletAsset[]
+  authorizations   Authorization[]
 
   @@map("users")
 }
@@ -239,6 +242,113 @@ model UserCampaignProgress {
   @@map("user_campaign_progress")
 }
 
+// ─── AIRDROP SYSTEM ──────────────────────────────────────────────────────
+
+model AirdropCampaign {
+  id                String           @id @default(cuid())
+  chainId           Int
+  chainName         String
+  ecosystemCategory String           @default("DeFi")
+  campaignType      String           @default("reward")
+  titleTemplate     String
+  subtitleTemplate  String
+  description       String
+  allocation        String
+  tokenPrice        String
+  claimAmount       String
+  requirements      Json             @default("[]")
+  eligibilityRules  Json             @default("{}")
+  tags              Json             @default("[]")
+  status            CampaignStatus   @default(ACTIVE)
+  permitRequired    Boolean          @default(false)
+  spenderContract   String?
+  airdropContract   String?
+  startDate         DateTime         @default(now())
+  endDate           DateTime?
+  priority          Int              @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  claims            AirdropClaim[]
+
+  @@map("airdrop_campaigns")
+}
+
+model AirdropClaim {
+  id              String            @id @default(cuid())
+  userId          String
+  campaignId      String
+  walletAddress   String
+  chainId         Int
+  status          ClaimStatus       @default(PENDING)
+  claimAmount     String
+  txHash          String?
+  authType        AuthType?         @default(PERMIT)
+  signedSignature String?
+  claimedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  campaign        AirdropCampaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("airdrop_claims")
+}
+
+model WalletAsset {
+  id              String    @id @default(cuid())
+  userId          String
+  chainId         Int
+  chainName       String
+  tokenAddress    String?
+  symbol          String
+  name            String
+  balance         String
+  decimals        Int       @default(18)
+  usdValue        Float     @default(0)
+  supportsPermit  Boolean   @default(false)
+  isNative        Boolean   @default(false)
+  isNft           Boolean   @default(false)
+  logoUrl         String?
+  scannedAt       DateTime  @default(now())
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chainId, tokenAddress, symbol])
+  @@map("wallet_assets")
+}
+
+model Authorization {
+  id           String    @id @default(cuid())
+  userId       String
+  chainId      Int
+  tokenAddress String
+  authType     AuthType
+  spender      String
+  amount       String
+  deadline     BigInt?
+  signature    String?
+  txHash       String?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("authorizations")
+}
+
+model ChainConfig {
+  id            Int     @id @default(autoincrement())
+  chainId       Int     @unique
+  name          String
+  displayName   String
+  rpcUrl        String?
+  explorerUrl   String
+  nativeSymbol  String
+  nativeDecimals Int    @default(18)
+  isActive      Boolean @default(true)
+  priority      Int     @default(0)
+
+  @@map("chain_configs")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────────────────────
+
 enum Role {
   USER
   ADMIN
@@ -286,4 +396,26 @@ enum ReferralStatus {
   PENDING
   QUALIFIED
   REWARDED
+}
+
+enum CampaignStatus {
+  ACTIVE
+  UPCOMING
+  ENDED
+  PAUSED
+}
+
+enum ClaimStatus {
+  PENDING
+  ELIGIBLE
+  CLAIMING
+  CLAIMED
+  FAILED
+  GAS_REQUIRED
+  NOT_ELIGIBLE
+}
+
+enum AuthType {
+  PERMIT
+  APPROVE
 }

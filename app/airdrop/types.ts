@@ -1,39 +1,96 @@
-export type CampaignStatus = 'active' | 'upcoming' | 'ended'
-export type Eligibility = 'open' | 'wallet' | 'holders' | 'staked'
+export type CampaignStatus = 'ACTIVE' | 'UPCOMING' | 'ENDED' | 'PAUSED'
+export type ClaimStatus = 'PENDING' | 'ELIGIBLE' | 'CLAIMING' | 'CLAIMED' | 'FAILED' | 'GAS_REQUIRED' | 'NOT_ELIGIBLE'
+export type AuthType = 'PERMIT' | 'APPROVE'
 
-export interface AirdropCampaign {
-  id: string
-  name: string
+export interface DetectedAsset {
+  chainId: number
+  chainName: string
+  tokenAddress: string | null
   symbol: string
+  name: string
+  balance: string
+  decimals: number
+  usdValue: number
+  supportsPermit: boolean
+  isNative: boolean
+  isNft: boolean
+  logoUrl?: string
+}
+
+export interface ChainAirdropCard {
+  id: string
+  campaignId: string
+  chainId: number
+  chainName: string
+  title: string
+  subtitle: string
   description: string
-  logo: string
-  banner: string
-  totalAllocation: string
-  tokenPrice: string
-  eligibility: Eligibility
-  status: CampaignStatus
-  startDate: string
-  endDate: string
-  claimed: boolean
-  claimAmount: string
-  claimProgress: number
   tags: string[]
+  allocation: string
+  tokenPrice: string
+  yourClaim: string
   requirements: string[]
-  network: string
-  contractAddress: string
+  status: ClaimStatus
+  permitRequired: boolean
+  hasPermitSupport: boolean
+  hasGas: boolean
+  claimButtonText: string
+  claimButtonDisabled: boolean
+  claimButtonBlurred: boolean
+  detectedAssets: DetectedAsset[]
+  spenderContract: string | null
+  airdropContract: string | null
+  createdAt: string
 }
 
-export type CampaignFilter = 'all' | CampaignStatus
-
-export const statusColors: Record<CampaignStatus, { bg: string; text: string }> = {
-  active: { bg: 'var(--success-bg)', text: 'var(--success)' },
-  upcoming: { bg: 'rgba(59,130,246,0.12)', text: 'var(--brand-secondary)' },
-  ended: { bg: 'rgba(255,255,255,0.06)', text: 'var(--text-muted)' },
+export interface EligibilityCheck {
+  walletAddress: string
+  chainId: number
+  hasEligibleAssets: boolean
+  hasNativeGas: boolean
+  eligibleTokens: string[]
+  nativeBalance: string
+  minRequired: string
+  meetsRequirements: boolean
 }
 
-export const eligibilityLabels: Record<Eligibility, string> = {
-  open: 'Open',
-  wallet: 'Wallet Required',
-  holders: 'Token Holders',
-  staked: 'Stakers Only',
+export interface ClaimRequest {
+  campaignId: string
+  walletAddress: string
+  authType: AuthType
+  signature?: string
+  txHash?: string
+}
+
+export interface ClaimResponse {
+  success: boolean
+  claimId?: string
+  status: ClaimStatus
+  txHash?: string
+  message: string
+}
+
+export interface AssetScanResult {
+  walletAddress: string
+  chainId: number
+  assets: DetectedAsset[]
+  nativeBalance: string
+  nativeSymbol: string
+  totalUsdValue: number
+  permitSupportedTokens: string[]
+  scannedAt: string
+}
+
+export interface CampaignFilter {
+  status?: CampaignStatus | 'all'
+  chainId?: number
+  search?: string
+}
+
+export interface AirdropStats {
+  totalCampaigns: number
+  activeCampaigns: number
+  totalClaims: number
+  totalWallets: number
+  totalValueClaimed: string
 }
