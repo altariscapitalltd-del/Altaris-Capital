@@ -63,3 +63,4 @@ replit.md
 
 # duplicate nested project copy
 /Altaris-Capital/tmp/
+.env*
