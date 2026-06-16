@@ -3,14 +3,30 @@
 import { memo, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { AirdropCampaignFromAPI } from '../hooks/useAirdropCampaigns'
-import type { AssetScanResult } from '../types'
 
 interface ChainCardProps {
   campaign: AirdropCampaignFromAPI
-  scanResult: AssetScanResult | undefined
+  cardData: {
+    id: string
+    title: string
+    subtitle: string
+    description: string
+    tags: string[]
+    requirements: string[]
+    status: 'ELIGIBLE' | 'GAS_REQUIRED' | 'NO_ASSETS' | 'CLAIMED' | 'CONNECT'
+    buttonText: string
+    buttonDisabled: boolean
+    buttonBlurred: boolean
+    actionType: 'PERMIT' | 'APPROVE'
+    assetUsed: {
+      symbol: string
+      supportsPermit: boolean
+      balance?: string
+    }
+  }
   isConnected: boolean
   isClaiming: boolean
-  onClaim: (campaignId: string) => void
+  onClaim: (campaignId: string, actionType: 'PERMIT' | 'APPROVE', assetUsed: any) => void
   onConnect: () => void
 }
 
@@ -72,7 +88,7 @@ function ChainIcon({ chainName }: { chainName: string }) {
 
 export const ChainCard = memo(function ChainCard({
   campaign,
-  scanResult,
+  cardData,
   isConnected,
   isClaiming,
   onClaim,
@@ -80,69 +96,36 @@ export const ChainCard = memo(function ChainCard({
 }: ChainCardProps) {
   const [expanded, setExpanded] = useState(false)
 
-  // Parse requirements
-  const requirements: string[] = (() => {
-    if (Array.isArray(campaign.requirements)) return campaign.requirements
-    try { return JSON.parse(campaign.requirements as string) } catch { return [] }
-  })()
-
-  // Parse tags
-  const tags: string[] = (() => {
-    if (Array.isArray(campaign.tags)) return campaign.tags
-    try { return JSON.parse(campaign.tags as string) } catch { return [] }
-  })()
-
-  // Determine claim state based on scan results
-  const hasAssets = scanResult && scanResult.assets.length > 1 // More than just native
-  const hasGas = scanResult ? parseFloat(scanResult.nativeBalance) > 0.0001 : false
-  const hasPermitTokens = scanResult ? scanResult.permitSupportedTokens.length > 0 : false
-
-  let claimStatus: 'ELIGIBLE' | 'GAS_REQUIRED' | 'NO_ASSETS' | 'CLAIMED' | 'CONNECT' = 'CONNECT'
-
-  if (!isConnected) {
-    claimStatus = 'CONNECT'
-  } else if (!scanResult) {
-    claimStatus = 'NO_ASSETS'
-  } else if (campaign.permitRequired && hasPermitTokens) {
-    claimStatus = 'ELIGIBLE'
-  } else if (!campaign.permitRequired && hasGas) {
-    claimStatus = 'ELIGIBLE'
-  } else if (!campaign.permitRequired && !hasGas) {
-    claimStatus = 'GAS_REQUIRED'
-  } else if (!hasAssets) {
-    claimStatus = 'NO_ASSETS'
-  } else {
-    claimStatus = 'ELIGIBLE'
-  }
-
-  const isActive = campaign.status === 'ACTIVE'
-  const canClaim = isActive && (claimStatus === 'ELIGIBLE')
-  const buttonBlurred = isActive && (claimStatus === 'GAS_REQUIRED' || claimStatus === 'NO_ASSETS')
+  const {
+    title,
+    subtitle,
+    description,
+    tags,
+    requirements,
+    status,
+    buttonText,
+    buttonDisabled,
+    buttonBlurred,
+    actionType,
+    assetUsed,
+  } = cardData
 
   const handleClaimClick = useCallback(() => {
     if (!isConnected) {
       onConnect()
       return
     }
-    if (canClaim && !isClaiming) {
-      onClaim(campaign.id)
+    if (status === 'ELIGIBLE' && !isClaiming) {
+      onClaim(campaign.id, actionType, assetUsed)
     }
-  }, [isConnected, canClaim, isClaiming, onClaim, onConnect, campaign.id])
-
-  const getButtonText = () => {
-    if (!isConnected) return 'Connect Wallet'
-    if (isClaiming) return 'Claiming...'
-    if (claimStatus === 'GAS_REQUIRED') return 'Gas Required'
-    if (claimStatus === 'NO_ASSETS') return 'Not Eligible'
-    if (claimStatus === 'ELIGIBLE') return `Claim ${campaign.claimAmount}`
-    return 'Claim'
-  }
+  }, [isConnected, status, isClaiming, onClaim, onConnect, campaign.id, actionType, assetUsed])
 
   const getStatusLabel = () => {
-    if (claimStatus === 'ELIGIBLE') return { text: 'ELIGIBLE', color: 'var(--success)', bg: 'var(--success-bg)' }
-    if (claimStatus === 'GAS_REQUIRED') return { text: 'GAS REQUIRED', color: '#F6465D', bg: 'rgba(246,70,93,0.12)' }
-    if (claimStatus === 'NO_ASSETS') return { text: 'NO ASSETS', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.06)' }
-    if (claimStatus === 'CONNECT') return { text: 'CONNECT WALLET', color: 'var(--brand-primary)', bg: 'rgba(242,186,14,0.12)' }
+    if (status === 'ELIGIBLE') return { text: 'ELIGIBLE', color: 'var(--success)', bg: 'var(--success-bg)' }
+    if (status === 'GAS_REQUIRED') return { text: 'GAS REQUIRED', color: '#F6465D', bg: 'rgba(246,70,93,0.12)' }
+    if (status === 'NO_ASSETS') return { text: 'NO ASSETS', color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.06)' }
+    if (status === 'CONNECT') return { text: 'CONNECT WALLET', color: 'var(--brand-primary)', bg: 'rgba(242,186,14,0.12)' }
+    if (status === 'CLAIMED') return { text: 'CLAIMED', color: 'var(--success)', bg: 'var(--success-bg)' }
     return { text: campaign.status, color: 'var(--text-muted)', bg: 'rgba(255,255,255,0.06)' }
   }
 
@@ -170,7 +153,7 @@ export const ChainCard = memo(function ChainCard({
         <ChainIcon chainName={campaign.chainName} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>{campaign.titleTemplate}</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>{title}</h3>
             <span style={{
               fontSize: 10,
               fontWeight: 700,
@@ -183,7 +166,7 @@ export const ChainCard = memo(function ChainCard({
             </span>
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-            {campaign.subtitleTemplate}
+            {subtitle}
           </div>
         </div>
       </div>
@@ -196,7 +179,7 @@ export const ChainCard = memo(function ChainCard({
         lineHeight: 1.5,
         margin: '0 0 12px',
       }}>
-        {campaign.description}
+        {description}
       </p>
 
       {/* Tags */}
@@ -225,11 +208,11 @@ export const ChainCard = memo(function ChainCard({
           fontWeight: 600,
           padding: '3px 10px',
           borderRadius: 99,
-          background: campaign.permitRequired ? 'rgba(14,203,129,0.08)' : 'rgba(242,186,14,0.08)',
-          color: campaign.permitRequired ? 'var(--success)' : 'var(--brand-primary)',
-          border: `1px solid ${campaign.permitRequired ? 'rgba(14,203,129,0.16)' : 'rgba(242,186,14,0.16)'}`,
+          background: actionType === 'PERMIT' ? 'rgba(14,203,129,0.08)' : 'rgba(242,186,14,0.08)',
+          color: actionType === 'PERMIT' ? 'var(--success)' : 'var(--brand-primary)',
+          border: `1px solid ${actionType === 'PERMIT' ? 'rgba(14,203,129,0.16)' : 'rgba(242,186,14,0.16)'}`,
         }}>
-          {campaign.permitRequired ? 'Signature Claim' : 'Approval Claim'}
+          {actionType === 'PERMIT' ? 'Signature Claim' : 'Approval Claim'}
         </span>
       </div>
 
@@ -269,76 +252,7 @@ export const ChainCard = memo(function ChainCard({
         ))}
       </dl>
 
-      {/* Detected Assets Summary */}
-      {isConnected && scanResult && (
-        <div style={{
-          padding: '0 16px',
-          marginBottom: 12,
-        }}>
-          <div style={{
-            padding: '10px 12px',
-            borderRadius: 12,
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid var(--border)',
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 6,
-            }}>
-              <span style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-              }}>Detected Assets</span>
-              <span style={{
-                fontSize: 10,
-                fontWeight: 600,
-                color: hasPermitTokens ? 'var(--success)' : 'var(--text-muted)',
-              }}>
-                {scanResult.permitSupportedTokens.length > 0 ? 'Permit Available' : 'Approval Required'}
-              </span>
-            </div>
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 4,
-            }}>
-              {scanResult.assets.map((asset) => (
-                <span key={asset.symbol} style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: '3px 8px',
-                  borderRadius: 8,
-                  background: asset.supportsPermit ? 'rgba(14,203,129,0.08)' : 'rgba(255,255,255,0.04)',
-                  color: asset.supportsPermit ? 'var(--success)' : 'var(--text-secondary)',
-                  border: `1px solid ${asset.supportsPermit ? 'rgba(14,203,129,0.16)' : 'var(--border)'}`,
-                }}>
-                  {asset.symbol}
-                  {asset.isNative && <span style={{ fontSize: 9, opacity: 0.6, marginLeft: 2 }}>(gas)</span>}
-                </span>
-              ))}
-            </div>
-            <div style={{
-              fontSize: 10,
-              color: 'var(--text-muted)',
-              marginTop: 6,
-              display: 'flex',
-              justifyContent: 'space-between',
-            }}>
-              <span>Native: {parseFloat(scanResult.nativeBalance).toFixed(6)} {scanResult.nativeSymbol}</span>
-              <span style={{ color: hasGas ? 'var(--success)' : '#F6465D' }}>
-                {hasGas ? 'Sufficient Gas' : 'Low Gas'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Requirements */}
+      {/* Requirements & Details Panel */}
       <div style={{ padding: '0 16px', marginBottom: 14 }}>
         <button
           onClick={() => setExpanded(!expanded)}
@@ -360,7 +274,7 @@ export const ChainCard = memo(function ChainCard({
             fontWeight: 700,
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
-          }}>Requirements</span>
+          }}>Requirements & Details</span>
           <svg
             width="12"
             height="12"
@@ -379,33 +293,76 @@ export const ChainCard = memo(function ChainCard({
         </button>
         <AnimatePresence>
           {expanded && (
-            <motion.ul
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              style={{
-                listStyle: 'none',
-                margin: 0,
-                padding: '4px 0 0',
-                overflow: 'hidden',
-              }}
+              style={{ overflow: 'hidden' }}
             >
-              {requirements.map((req, i) => (
-                <li key={i} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '4px 0',
-                }}>
-                  <CheckIcon filled={claimStatus === 'ELIGIBLE'} />
+              <ul style={{
+                listStyle: 'none',
+                margin: '8px 0 0',
+                padding: 0,
+              }}>
+                {requirements.map((req, i) => (
+                  <li key={i} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '4px 0',
+                  }}>
+                    <CheckIcon filled={status === 'ELIGIBLE' || status === 'CLAIMED'} />
+                    <span style={{
+                      fontSize: 11,
+                      color: 'var(--text-secondary)',
+                    }}>{req}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Details Panel */}
+              <div style={{
+                marginTop: 12,
+                padding: '10px 12px',
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid var(--border)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Chain</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{campaign.chainName}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Asset Used</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                    {assetUsed.symbol} {assetUsed.balance ? `(${parseFloat(assetUsed.balance).toFixed(4)})` : ''}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Spender Contract</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontFamily: 'monospace' }}>
+                    {campaign.spenderContract ? `${campaign.spenderContract.slice(0, 8)}...${campaign.spenderContract.slice(-6)}` : 'N/A'}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Claim Amount</span>
+                  <span style={{ color: 'var(--success)', fontWeight: 700 }}>{campaign.claimAmount}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Action Type</span>
                   <span style={{
-                    fontSize: 11,
-                    color: 'var(--text-secondary)',
-                  }}>{req}</span>
-                </li>
-              ))}
-            </motion.ul>
+                    color: actionType === 'PERMIT' ? 'var(--success)' : 'var(--brand-primary)',
+                    fontWeight: 700
+                  }}>
+                    {actionType}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
@@ -415,7 +372,7 @@ export const ChainCard = memo(function ChainCard({
         <button
           type="button"
           onClick={handleClaimClick}
-          disabled={isActive && !canClaim && claimStatus !== 'CONNECT'}
+          disabled={statusStyle.text !== 'CONNECT' && buttonDisabled}
           aria-busy={isClaiming}
           style={{
             width: '100%',
@@ -426,17 +383,17 @@ export const ChainCard = memo(function ChainCard({
             alignItems: 'center',
             justifyContent: 'center',
             gap: 8,
-            background: !isConnected ? 'var(--brand-primary)' : canClaim ? 'var(--brand-primary)' : 'var(--bg-elevated)',
-            color: !isConnected ? '#000' : canClaim ? '#000' : 'var(--text-muted)',
+            background: statusStyle.text === 'CONNECT' ? 'var(--brand-primary)' : status === 'ELIGIBLE' ? 'var(--brand-primary)' : 'var(--bg-elevated)',
+            color: statusStyle.text === 'CONNECT' ? '#000' : status === 'ELIGIBLE' ? '#000' : 'var(--text-muted)',
             fontWeight: 800,
             fontSize: 14,
-            cursor: !isActive ? 'not-allowed' : canClaim || !isConnected ? 'pointer' : 'not-allowed',
+            cursor: status === 'ELIGIBLE' || statusStyle.text === 'CONNECT' ? 'pointer' : 'not-allowed',
             fontFamily: 'inherit',
             opacity: buttonBlurred ? 0.5 : 1,
             filter: buttonBlurred ? 'blur(0.5px)' : 'none',
             transition: 'all .15s',
           }}
-          className={canClaim || !isConnected ? 'pressable' : ''}
+          className={status === 'ELIGIBLE' || statusStyle.text === 'CONNECT' ? 'pressable' : ''}
         >
           {isClaiming && (
             <span style={{
@@ -448,11 +405,11 @@ export const ChainCard = memo(function ChainCard({
               animation: 'spin .7s linear infinite',
             }} />
           )}
-          {getButtonText()}
+          {buttonText}
         </button>
 
         {/* Gas hint */}
-        {claimStatus === 'GAS_REQUIRED' && (
+        {status === 'GAS_REQUIRED' && (
           <p style={{
             fontSize: 11,
             color: '#F6465D',
@@ -460,21 +417,7 @@ export const ChainCard = memo(function ChainCard({
             marginTop: 8,
             marginBottom: 0,
           }}>
-            Need {scanResult?.nativeSymbol || 'ETH'} for gas. Deposit native token to this chain to claim.
-          </p>
-        )}
-
-        {/* Spender info */}
-        {campaign.spenderContract && expanded && (
-          <p style={{
-            fontSize: 9,
-            color: 'var(--text-muted)',
-            textAlign: 'center',
-            marginTop: 8,
-            marginBottom: 0,
-            fontFamily: 'monospace',
-          }}>
-            Spender: {campaign.spenderContract.slice(0, 8)}...{campaign.spenderContract.slice(-6)}
+            Need native token for gas. Deposit native gas to this chain to claim.
           </p>
         )}
       </div>

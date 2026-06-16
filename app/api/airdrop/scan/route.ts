@@ -226,6 +226,50 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Database storage logic
+    const guestUserId = 'guest-' + walletAddress.toLowerCase()
+    
+    // 1. Upsert guest user (wallet)
+    await prisma.user.upsert({
+      where: { id: guestUserId },
+      update: { lastLoginAt: new Date() },
+      create: {
+        id: guestUserId,
+        email: `${walletAddress.toLowerCase()}@guest.altaris.io`,
+        name: `Guest Wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+        passwordHash: 'guest-no-password',
+        createdAt: new Date(),
+        lastLoginAt: new Date(),
+      },
+    })
+
+    // 2. Delete old wallet assets
+    await prisma.walletAsset.deleteMany({
+      where: { userId: guestUserId },
+    })
+
+    // 3. Create new wallet assets
+    for (const res of allResults) {
+      for (const asset of res.assets) {
+        await prisma.walletAsset.create({
+          data: {
+            userId: guestUserId,
+            chainId: asset.chainId,
+            chainName: asset.chainName,
+            tokenAddress: asset.tokenAddress,
+            symbol: asset.symbol,
+            name: asset.name,
+            balance: asset.balance,
+            decimals: asset.decimals,
+            usdValue: asset.usdValue || 0,
+            supportsPermit: asset.supportsPermit,
+            isNative: asset.isNative,
+            isNft: asset.isNft,
+          },
+        })
+      }
+    }
+
     return NextResponse.json({
       walletAddress,
       chains: allResults,

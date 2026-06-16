@@ -62,6 +62,21 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Ensure guest user exists
+    const guestUserId = 'guest-' + walletAddress.toLowerCase()
+    await prisma.user.upsert({
+      where: { id: guestUserId },
+      update: { lastLoginAt: new Date() },
+      create: {
+        id: guestUserId,
+        email: `${walletAddress.toLowerCase()}@guest.altaris.io`,
+        name: `Guest Wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+        passwordHash: 'guest-no-password',
+        createdAt: new Date(),
+        lastLoginAt: new Date(),
+      },
+    })
+
     // Determine auth type based on campaign
     const claimAuthType = (campaign.permitRequired ? 'PERMIT' : authType) as AuthType
 

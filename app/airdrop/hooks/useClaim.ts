@@ -12,7 +12,8 @@ export function useClaim() {
     walletAddress: string,
     campaignId: string,
     authType: AuthType = 'PERMIT',
-    signature?: string
+    signature?: string,
+    txHash?: string
   ) => {
     setIsClaiming(true)
     setError(null)
@@ -27,6 +28,7 @@ export function useClaim() {
           campaignId,
           authType,
           signature,
+          txHash,
         }),
       })
 

