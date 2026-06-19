@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node server/index.js",
-    "build": "prisma db push && tsx prisma/seed.ts && next build && node -e \"require('fs').copyFileSync('.next/BUILD_ID','public/build-id.txt')\"",
+    "build": "prisma generate && next build && node -e \"require('fs').copyFileSync('.next/BUILD_ID','public/build-id.txt')\"",
     "start": "cross-env NODE_ENV=production node server/index.js",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
