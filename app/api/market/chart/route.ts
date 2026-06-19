@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 
 const CACHE: Record<string, { ts: number; data: { times: number[]; values: number[]; open?: number[]; high?: number[]; low?: number[] } }> = {}

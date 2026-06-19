@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser, getAdminUser } from '@/lib/auth'
 import { pusher } from '@/lib/pusher'
