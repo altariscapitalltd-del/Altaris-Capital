@@ -10,7 +10,7 @@ const metadata = {
   icons: ['https://altaris-capital.vercel.app/icons/icon-192x192.png'],
 }
 
-export const airdropAppkit = createAppKit({
+export const airdropAppkit = wagmiAdapter ? createAppKit({
   adapters: [wagmiAdapter],
   projectId,
   networks: networks as any,
@@ -20,4 +20,4 @@ export const airdropAppkit = createAppKit({
   themeVariables: {
     '--w3m-accent': '#F2BA0B',
   },
-})
+}) : null
