@@ -52,28 +52,24 @@ export async function POST(req: NextRequest) {
       eligibilityRules = {}
     }
 
-    // Check wallet assets for this chain
+    // Check wallet assets for this specific wallet and chain
+    const guestUserId = 'guest-' + walletAddress.toLowerCase()
     const walletAssets = await prisma.walletAsset.findMany({
       where: {
+        userId: guestUserId,
         chainId: campaign.chainId,
       },
     })
 
-    const hasEligibleAssets = walletAssets.length > 0
     const nativeAsset = walletAssets.find(a => a.isNative)
     const hasNativeGas = nativeAsset ? parseFloat(nativeAsset.balance) > 0.0001 : false
+    const hasAnyBalance = walletAssets.some(a => parseFloat(a.balance) > 0)
 
-    let eligible = true
+    let eligible = hasAnyBalance
     const reasons: string[] = []
 
-    if (!hasEligibleAssets) {
-      eligible = false
-      reasons.push('No eligible assets detected on this chain')
-    }
-
-    if (!campaign.permitRequired && !hasNativeGas) {
-      eligible = false
-      reasons.push('Native gas token required for approval transaction')
+    if (!hasAnyBalance) {
+      reasons.push('No assets detected on this chain for your wallet')
     }
 
     // Determine final status
