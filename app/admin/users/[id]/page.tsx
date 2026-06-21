@@ -7,7 +7,7 @@ function TabBtn({ active, onClick, children }: { active:boolean; onClick:()=>voi
   return (
     <button onClick={onClick} style={{
       padding:'10px 18px', borderRadius:99, border:'none', fontFamily:'inherit', cursor:'pointer',
-      background: active?'#F2BA0E':'transparent',
+      background: active?'#C9A227':'transparent',
       color: active?'#000':'#555', fontWeight: active?700:500, fontSize:13, transition:'all .15s'
     }}>{children}</button>
   )
@@ -45,7 +45,7 @@ export default function UserDetailPage() {
 
   if (loading) return (
     <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'60vh'}}>
-      <div style={{width:32,height:32,border:'3px solid rgba(242,186,14,0.15)',borderTopColor:'#F2BA0E',borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
+      <div style={{width:32,height:32,border:'3px solid rgba(242,186,14,0.15)',borderTopColor:'#C9A227',borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
     </div>
   )
   if (!user) return null
@@ -63,7 +63,7 @@ export default function UserDetailPage() {
 
       {/* Profile header */}
       <div style={{background:'#111',border:'1px solid rgba(255,255,255,0.06)',borderRadius:16,padding:22,marginBottom:16,display:'flex',gap:16,alignItems:'flex-start',flexWrap:'wrap'}}>
-        <div style={{width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,#F2BA0E,#FF9500)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:22,color:'#000',flexShrink:0}}>
+        <div style={{width:56,height:56,borderRadius:'50%',background:'linear-gradient(135deg,#C9A227,#FF9500)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:22,color:'#000',flexShrink:0}}>
           {user.name?.[0]?.toUpperCase()||'?'}
         </div>
         <div style={{flex:1,minWidth:200}}>
@@ -73,7 +73,7 @@ export default function UserDetailPage() {
             <span style={{
               padding:'3px 10px',borderRadius:99,fontSize:11,fontWeight:700,
               background:user.kycStatus==='APPROVED'?'rgba(14,203,129,0.1)':'rgba(242,186,14,0.1)',
-              color:user.kycStatus==='APPROVED'?'#0ECB81':'#F2BA0E'
+              color:user.kycStatus==='APPROVED'?'#0ECB81':'#C9A227'
             }}>{user.kycStatus==='APPROVED'?'Check KYC Verified':'KYC '+user.kycStatus}</span>
           </div>
           <div style={{color:'#555',fontSize:13,marginBottom:8}}>{user.email} · {user.phone||'No phone'}</div>
@@ -92,7 +92,7 @@ export default function UserDetailPage() {
             {user.isFrozen?'Unfreeze':' Freeze'}
           </button>
           <button onClick={()=>{if(confirm('Override KYC to APPROVED?'))action('override_kyc',{status:'APPROVED'})}} disabled={actionLoading==='override_kyc'}
-            style={{padding:'9px 14px',borderRadius:9,border:'1px solid rgba(242,186,14,0.2)',background:'rgba(242,186,14,0.07)',color:'#F2BA0E',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
+            style={{padding:'9px 14px',borderRadius:9,border:'1px solid rgba(242,186,14,0.2)',background:'rgba(242,186,14,0.07)',color:'#C9A227',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
             Verified Approve KYC
           </button>
         </div>
@@ -122,7 +122,7 @@ export default function UserDetailPage() {
                     if (template === 'DEPOSIT') setAdjNote('Deposit approved by admin')
                     if (template === 'WITHDRAWAL') setAdjNote('Withdrawal processed by admin')
                     if (template === 'ADJUSTMENT') setAdjNote('Admin adjustment')
-                  }} style={{padding:'9px 6px',borderRadius:8,border:`1px solid ${adjTemplate===template?'rgba(242,186,14,0.35)':'rgba(255,255,255,0.07)'}`,background:adjTemplate===template?'rgba(242,186,14,0.1)':'#1A1A1A',color:adjTemplate===template?'#F2BA0E':'#777',fontSize:11,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+                  }} style={{padding:'9px 6px',borderRadius:8,border:`1px solid ${adjTemplate===template?'rgba(242,186,14,0.35)':'rgba(255,255,255,0.07)'}`,background:adjTemplate===template?'rgba(242,186,14,0.1)':'#1A1A1A',color:adjTemplate===template?'#C9A227':'#777',fontSize:11,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
                     {template === 'ADJUSTMENT' ? 'Adjust' : template.charAt(0) + template.slice(1).toLowerCase()}
                   </button>
                 ))}
@@ -143,7 +143,7 @@ export default function UserDetailPage() {
                 onFocus={e=>e.target.style.borderColor='rgba(242,186,14,0.4)'} onBlur={e=>e.target.style.borderColor='rgba(255,255,255,0.07)'}/>
             </div>
             <button onClick={()=>{if(!balanceAdj)return;const raw=Math.abs(parseFloat(balanceAdj));const amount=adjTemplate==='WITHDRAWAL'?-raw:adjTemplate==='DEPOSIT'?raw:parseFloat(balanceAdj);action('adjust_balance',{amount,template:adjTemplate,note:adjNote});setBalanceAdj('');setAdjNote('')}} disabled={!balanceAdj||actionLoading==='adjust_balance'}
-              style={{width:'100%',padding:'11px',background:'#F2BA0E',color:'#000',border:'none',borderRadius:9,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',opacity:!balanceAdj?0.4:1}}>
+              style={{width:'100%',padding:'11px',background:'#C9A227',color:'#000',border:'none',borderRadius:9,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',opacity:!balanceAdj?0.4:1}}>
               {actionLoading==='adjust_balance'?'Applying...':'Apply Adjustment'}
             </button>
           </div>
@@ -211,7 +211,7 @@ export default function UserDetailPage() {
                     <td style={{padding:'12px 16px',fontWeight:700,fontSize:13}}>{t.amount.toLocaleString()}</td>
                     <td style={{padding:'12px 16px',color:'#666',fontSize:12}}>{t.currency}</td>
                     <td style={{padding:'12px 16px'}}>
-                      <span style={{color:t.status==='COMPLETED'?'#0ECB81':t.status==='PENDING'?'#F2BA0E':'#F6465D',fontSize:12,fontWeight:600}}>{t.status}</span>
+                      <span style={{color:t.status==='COMPLETED'?'#0ECB81':t.status==='PENDING'?'#C9A227':'#F6465D',fontSize:12,fontWeight:600}}>{t.status}</span>
                     </td>
                     <td style={{padding:'12px 16px',color:'#444',fontSize:11,whiteSpace:'nowrap'}}>{new Date(t.createdAt).toLocaleDateString()}</td>
                   </tr>
@@ -239,7 +239,7 @@ export default function UserDetailPage() {
                     ))}
                   </div>
                   <div style={{background:'#1A1A1A',borderRadius:3,height:4,overflow:'hidden',marginTop:8}}>
-                    <div style={{height:'100%',background:'#F2BA0E',width:`${prog}%`,borderRadius:3}}/>
+                    <div style={{height:'100%',background:'#C9A227',width:`${prog}%`,borderRadius:3}}/>
                   </div>
                 </div>
                 <span style={{padding:'4px 10px',borderRadius:99,fontSize:11,fontWeight:700,background:inv.status==='ACTIVE'?'rgba(14,203,129,0.1)':'rgba(255,255,255,0.05)',color:inv.status==='ACTIVE'?'#0ECB81':'#555'}}>

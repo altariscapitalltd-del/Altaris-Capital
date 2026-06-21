@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db'
 const TIERS = [
   { count: 1,  bonus: 100,  label: 'Starter',      color: '#888' },
   { count: 5,  bonus: 700,  label: 'Rising',        color: '#A78BFA' },
-  { count: 20, bonus: 3000, label: 'Elite',         color: '#F2BA0E' },
+  { count: 20, bonus: 3000, label: 'Elite',         color: '#C9A227' },
   { count: 50, bonus: 0,    label: 'VIP Investor',  color: '#0ECB81' },
 ]
 

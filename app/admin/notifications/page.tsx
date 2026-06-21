@@ -83,7 +83,7 @@ export default function AdminNotificationsPage() {
             <div style={{display:'flex',gap:6}}>
               {[{id:'all',l:'All Users'},{id:'kyc',l:'KYC Verified'},{id:'single',l:'Single User'}].map(t=>(
                 <button key={t.id} onClick={()=>setTarget(t.id as any)}
-                  style={{flex:1,padding:'9px 6px',borderRadius:9,border:`1px solid ${target===t.id?'#F2BA0E':'rgba(255,255,255,0.07)'}`,background:target===t.id?'rgba(242,186,14,0.08)':'#1A1A1A',color:target===t.id?'#F2BA0E':'#555',fontWeight:target===t.id?700:500,fontSize:11,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',whiteSpace:'nowrap'}}>
+                  style={{flex:1,padding:'9px 6px',borderRadius:9,border:`1px solid ${target===t.id?'#C9A227':'rgba(255,255,255,0.07)'}`,background:target===t.id?'rgba(242,186,14,0.08)':'#1A1A1A',color:target===t.id?'#C9A227':'#555',fontWeight:target===t.id?700:500,fontSize:11,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',whiteSpace:'nowrap'}}>
                   {t.l}
                 </button>
               ))}
@@ -116,7 +116,7 @@ export default function AdminNotificationsPage() {
               onFocus={e=>e.target.style.borderColor='rgba(242,186,14,0.4)'} onBlur={e=>e.target.style.borderColor='rgba(255,255,255,0.07)'}/>
           </div>
           <button onClick={send} disabled={loading||!title||!message}
-            style={{width:'100%',padding:'13px',background:'#F2BA0E',color:'#000',border:'none',borderRadius:10,fontWeight:800,fontSize:14,cursor:'pointer',fontFamily:'inherit',opacity:loading||!title||!message?0.4:1,transition:'opacity .2s'}}>
+            style={{width:'100%',padding:'13px',background:'#C9A227',color:'#000',border:'none',borderRadius:10,fontWeight:800,fontSize:14,cursor:'pointer',fontFamily:'inherit',opacity:loading||!title||!message?0.4:1,transition:'opacity .2s'}}>
             {loading?'Sending…':' Send Notification'}
           </button>
         </div>
@@ -138,7 +138,7 @@ export default function AdminNotificationsPage() {
               <button key={t.group + t.t} onClick={()=>{setTitle(t.t);setMessage(t.m)}}
                 style={{background:'#1A1A1A',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,padding:14,textAlign:'left',cursor:'pointer',fontFamily:'inherit',transition:'border-color .15s'}}
                 onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(242,186,14,0.2)'} onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(255,255,255,0.06)'}>
-                <div style={{fontSize:10,fontWeight:800,letterSpacing:'0.08em',color:'#F2BA0E',marginBottom:4}}>{t.group}</div>
+                <div style={{fontSize:10,fontWeight:800,letterSpacing:'0.08em',color:'#C9A227',marginBottom:4}}>{t.group}</div>
                 <div style={{fontWeight:700,fontSize:13,marginBottom:4,color:'#ddd'}}>{t.t}</div>
                 <div style={{color:'#555',fontSize:11,lineHeight:1.5,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{t.m}</div>
               </button>
@@ -148,7 +148,7 @@ export default function AdminNotificationsPage() {
           {/* Preview */}
           {title && (
             <div style={{marginTop:16,background:'#0E0E0E',border:'1px solid rgba(242,186,14,0.15)',borderRadius:12,padding:14}}>
-              <div style={{color:'#F2BA0E',fontSize:10,fontWeight:700,letterSpacing:'0.08em',marginBottom:8}}>PREVIEW</div>
+              <div style={{color:'#C9A227',fontSize:10,fontWeight:700,letterSpacing:'0.08em',marginBottom:8}}>PREVIEW</div>
               <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
                 <div style={{width:36,height:36,borderRadius:9,background:'rgba(242,186,14,0.1)',border:'1px solid rgba(242,186,14,0.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}></div>
                 <div>

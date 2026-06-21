@@ -48,7 +48,7 @@ export default function CoinIcon({
     ),
     BNB: (
       <g>
-        <circle cx="20" cy="20" r="20" fill="#F0B90B" />
+        <circle cx="20" cy="20" r="20" fill="#C9A227" />
         <path d="M20 12l-4 4 4 4 4-4-4-4z" fill="#000" />
         <path d="M12 20l4 4 4-4-4-4-4 4z" fill="#fff" />
       </g>

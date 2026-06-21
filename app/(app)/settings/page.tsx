@@ -239,7 +239,7 @@ export default function SettingsPage() {
       <div style={{ margin:'0 16px 4px' }}>
         <Link href="/profile" style={{ textDecoration:'none' }}>
           <div style={{ background:'var(--bg-card)', borderRadius:16, border:'1px solid var(--border)', padding:16, display:'flex', alignItems:'center', gap:14 }} className="pressable">
-            <div style={{ width:54, height:54, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'2px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:22, color:'#000', flexShrink:0, overflow:'hidden', position:'relative' }}>
+            <div style={{ width:54, height:54, borderRadius:'50%', background:'linear-gradient(135deg,#C9A227,#FF9500)', border:'2px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:22, color:'#000', flexShrink:0, overflow:'hidden', position:'relative' }}>
               {user?.profilePicture ? (
                 <img
                   src={user.profilePicture}
@@ -258,7 +258,7 @@ export default function SettingsPage() {
                   const s = user?.kycStatus
                   const cfg: Record<string, {bg:string;color:string;label:string}> = {
                     APPROVED:       { bg:'rgba(14,203,129,0.12)',  color:'#0ECB81', label:'✓ Verified' },
-                    PENDING_REVIEW: { bg:'rgba(242,186,14,0.12)',  color:'#F2BA0E', label:'⏳ Pending Review' },
+                    PENDING_REVIEW: { bg:'rgba(242,186,14,0.12)',  color:'#C9A227', label:'⏳ Pending Review' },
                     REJECTED:       { bg:'rgba(246,70,93,0.12)',   color:'#F6465D', label:'✕ Rejected' },
                     NOT_SUBMITTED:  { bg:'rgba(148,163,184,0.10)', color:'#8A8A9A', label:'○ Not Verified' },
                   }

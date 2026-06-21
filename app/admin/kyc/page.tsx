@@ -38,7 +38,7 @@ export default function AdminKYCPage() {
   const pending = submissions.filter(s => s.status === 'PENDING_REVIEW').length
 
   const statusColor = (st: string) =>
-    st === 'APPROVED' ? '#0ECB81' : st === 'PENDING_REVIEW' ? '#F2BA0E' : '#F6465D'
+    st === 'APPROVED' ? '#0ECB81' : st === 'PENDING_REVIEW' ? '#C9A227' : '#F6465D'
   const statusBg = (st: string) =>
     st === 'APPROVED' ? 'rgba(14,203,129,0.1)' : st === 'PENDING_REVIEW' ? 'rgba(242,186,14,0.1)' : 'rgba(246,70,93,0.1)'
 
@@ -60,7 +60,7 @@ export default function AdminKYCPage() {
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: '#111', borderRadius: 99, padding: 4, border: '1px solid rgba(255,255,255,0.06)', width: 'fit-content' }}>
         {['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'ALL'].map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            style={{ padding: '8px 16px', borderRadius: 99, border: 'none', background: filter === f ? '#F2BA0E' : 'transparent', color: filter === f ? '#000' : '#555', fontWeight: filter === f ? 700 : 500, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s', whiteSpace: 'nowrap' }}>
+            style={{ padding: '8px 16px', borderRadius: 99, border: 'none', background: filter === f ? '#C9A227' : 'transparent', color: filter === f ? '#000' : '#555', fontWeight: filter === f ? 700 : 500, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s', whiteSpace: 'nowrap' }}>
             {f.replace('_', ' ')}
           </button>
         ))}
@@ -97,7 +97,7 @@ export default function AdminKYCPage() {
               </span>
               {s.status === 'PENDING_REVIEW' && (
                 <button onClick={() => { setSelected(s); setNote('') }}
-                  style={{ padding: '7px 16px', borderRadius: 9, border: '1px solid rgba(242,186,14,0.2)', background: 'rgba(242,186,14,0.08)', color: '#F2BA0E', fontWeight: 600, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                  style={{ padding: '7px 16px', borderRadius: 9, border: '1px solid rgba(242,186,14,0.2)', background: 'rgba(242,186,14,0.08)', color: '#C9A227', fontWeight: 600, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                   Review →
                 </button>
               )}
@@ -139,7 +139,7 @@ export default function AdminKYCPage() {
                 <div style={{ color: '#444', fontSize: 11, fontWeight: 600, marginBottom: 8, letterSpacing: '0.06em' }}>UPLOADED DOCUMENT</div>
                 <a href={selected.documentPath.startsWith('http') ? `/api/admin/kyc/blob?src=${encodeURIComponent(selected.documentPath)}` : `/api/admin/kyc/file/${encodeURIComponent(selected.documentPath)}`} target="_blank" rel="noreferrer" style={{ background: '#1A1A1A', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  {selected.documentPath} <span style={{ marginLeft: 'auto', color: '#F2BA0E', fontSize: 12 }}>Open →</span>
+                  {selected.documentPath} <span style={{ marginLeft: 'auto', color: '#C9A227', fontSize: 12 }}>Open →</span>
                 </a>
               </div>
             )}
@@ -149,7 +149,7 @@ export default function AdminKYCPage() {
                 <div style={{ color: '#444', fontSize: 11, fontWeight: 600, marginBottom: 8, letterSpacing: '0.06em' }}>UPLOADED BACK PHOTO</div>
                 <a href={selected.selfieFile.startsWith('http') ? `/api/admin/kyc/blob?src=${encodeURIComponent(selected.selfieFile)}` : `/api/admin/kyc/file/${encodeURIComponent(selected.selfieFile)}`} target="_blank" rel="noreferrer" style={{ background: '#1A1A1A', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#888', display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M20 21a8 8 0 10-16 0"/><circle cx="12" cy="7" r="4"/></svg>
-                  {selected.selfieFile} <span style={{ marginLeft: 'auto', color: '#F2BA0E', fontSize: 12 }}>Open →</span>
+                  {selected.selfieFile} <span style={{ marginLeft: 'auto', color: '#C9A227', fontSize: 12 }}>Open →</span>
                 </a>
               </div>
             )}
@@ -166,7 +166,7 @@ export default function AdminKYCPage() {
                 {loading ? '…' : 'Reject'}
               </button>
               <button onClick={() => decide(selected.userId, 'approve')} disabled={loading}
-                style={{ padding: 11, borderRadius: 9, border: 'none', background: '#F2BA0E', color: '#000', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', opacity: loading ? 0.6 : 1 }}>
+                style={{ padding: 11, borderRadius: 9, border: 'none', background: '#C9A227', color: '#000', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', opacity: loading ? 0.6 : 1 }}>
                 {loading ? '…' : 'Approve ✓'}
               </button>
             </div>

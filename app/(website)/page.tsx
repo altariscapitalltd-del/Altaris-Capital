@@ -38,7 +38,7 @@ function MiniSpark({ data, color, w=80, h=32 }: { data:number[]; color:string; w
   return <canvas ref={ref} style={{ width:w, height:h, display:'block' }}/>
 }
 
-function UiGlyph({ kind, color = '#F2BA0E', size = 22 }: { kind: string; color?: string; size?: number }) {
+function UiGlyph({ kind, color = '#C9A227', size = 22 }: { kind: string; color?: string; size?: number }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: '2', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   if (kind === 'security') return <svg {...common}><path d='M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6l7-3z'/><path d='M9 12l2 2 4-4'/></svg>
   if (kind === 'speed') return <svg {...common}><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>
@@ -80,7 +80,7 @@ const COINS = [
   { sym:'BTC', name:'Bitcoin',  color:'#F7931A', spark:[42,44,43,46,45,48,50,49,53,55,58,60,62,61,65,63,68,66,70,72] },
   { sym:'ETH', name:'Ethereum', color:'#627EEA', spark:[30,32,31,33,35,38,37,39,40,42,41,43,42,44,43,45,44,46,48,47] },
   { sym:'SOL', name:'Solana',   color:'#9945FF', spark:[20,24,23,28,27,30,34,35,38,40,42,41,45,47,48,50,52,51,54,56] },
-  { sym:'BNB', name:'BNB',      color:'#F0B90B', spark:[50,52,51,53,52,54,55,54,56,55,57,56,55,54,56,55,58,57,59,58] },
+  { sym:'BNB', name:'BNB',      color:'#C9A227', spark:[50,52,51,53,52,54,55,54,56,55,57,56,55,54,56,55,58,57,59,58] },
 ]
 
 const PLANS = [
@@ -89,7 +89,7 @@ const PLANS = [
   { name:'Blue Chip Equities',  roi:'1.2% daily', dur:'90 days', min:'$1,000', risk:2, cat:'STOCKS',   color:'#A78BFA' },
   { name:'Prime Real Estate',   roi:'1.8% daily', dur:'180 days',min:'$2,500', risk:2, cat:'REAL EST', color:'#F97316' },
   { name:'DeFi Accelerator',    roi:'3.5% daily', dur:'7 days',  min:'$2,000', risk:3, cat:'DEFI',     color:'#F6465D' },
-  { name:'Commodity Hedge',     roi:'1.0% daily', dur:'120 days',min:'$1,500', risk:2, cat:'COMMOD',   color:'#F2BA0E' },
+  { name:'Commodity Hedge',     roi:'1.0% daily', dur:'120 days',min:'$1,500', risk:2, cat:'COMMOD',   color:'#C9A227' },
 ]
 
 const FEATURES = [
@@ -102,7 +102,7 @@ const FEATURES = [
 ]
 
 const TESTIMONIALS = [
-  { name:'David M.', loc:'London, UK',      role:'Retired Engineer',    text:"I started with $500 on the Smart Save plan. Six months later I'm reinvesting my earnings. The dashboard is clean, payouts are on time, every single month.",     init:'D', color:'#F2BA0E' },
+  { name:'David M.', loc:'London, UK',      role:'Retired Engineer',    text:"I started with $500 on the Smart Save plan. Six months later I'm reinvesting my earnings. The dashboard is clean, payouts are on time, every single month.",     init:'D', color:'#C9A227' },
   { name:'Sarah K.', loc:'Toronto, Canada', role:'Marketing Manager',   text:"Withdrew twice without any issues. Verification took 10 minutes. Compared to my old broker, Altaris feels like the future.",                                     init:'S', color:'#0ECB81' },
   { name:'James T.', loc:'Lagos, Nigeria',  role:'Tech Entrepreneur',   text:"The DeFi plan doubled my initial in 3 weeks. High risk, yes — but the transparency and real-time earnings tracker made me comfortable taking the leap.",         init:'J', color:'#A78BFA' },
   { name:'Priya R.', loc:'Dubai, UAE',      role:'Financial Analyst',   text:"As someone who works in finance, I was sceptical. The KYC process, segregated funds policy, and audit trail won me over. I've since referred 4 colleagues.",    init:'P', color:'#3B82F6' },
@@ -157,7 +157,7 @@ export default function LandingPage() {
           ))}
           <div style={{ width:1, height:20, background:'rgba(255,255,255,0.08)', margin:'0 6px' }}/>
           <Link href="/login" style={{ padding:'9px 18px', borderRadius:9, border:'1px solid rgba(255,255,255,0.1)', color:'#ccc', textDecoration:'none', fontSize:13, fontWeight:600 }}>Sign In</Link>
-          <Link href="/signup" style={{ padding:'9px 20px', borderRadius:9, background:'#F2BA0E', color:'#000', textDecoration:'none', fontSize:13, fontWeight:800 }}>Get Started →</Link>
+          <Link href="/signup" style={{ padding:'9px 20px', borderRadius:9, background:'#C9A227', color:'#000', textDecoration:'none', fontSize:13, fontWeight:800 }}>Get Started →</Link>
         </div>
 
         {/* Mobile hamburger */}
@@ -174,7 +174,7 @@ export default function LandingPage() {
             <a key={h} href={h} onClick={() => setMobileMenuOpen(false)} style={{ color:'#fff', textDecoration:'none' }}>{l}</a>
           ))}
           <Link href="/login"  onClick={() => setMobileMenuOpen(false)} style={{ padding:'12px 40px', border:'1px solid rgba(255,255,255,0.15)', borderRadius:12, color:'#ccc', textDecoration:'none', fontSize:15 }}>Sign In</Link>
-          <Link href="/signup" onClick={() => setMobileMenuOpen(false)} style={{ padding:'14px 48px', background:'#F2BA0E', borderRadius:12, color:'#000', textDecoration:'none', fontSize:15, fontWeight:800 }}>Get Started →</Link>
+          <Link href="/signup" onClick={() => setMobileMenuOpen(false)} style={{ padding:'14px 48px', background:'#C9A227', borderRadius:12, color:'#000', textDecoration:'none', fontSize:15, fontWeight:800 }}>Get Started →</Link>
         </div>
       )}
 
@@ -203,24 +203,24 @@ export default function LandingPage() {
         <div style={{ position:'absolute', top:'40%', right:'15%', width:250, height:250, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.04),transparent 70%)', pointerEvents:'none' }}/>
 
         {/* Badge */}
-        <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'7px 16px', borderRadius:99, background:'rgba(242,186,14,0.08)', border:'1px solid rgba(242,186,14,0.2)', marginBottom:28, fontSize:12, fontWeight:600, color:'#F2BA0E' }}>
-          <div style={{ width:6, height:6, borderRadius:'50%', background:'#F2BA0E', animation:'pulseLive 2s infinite' }}/>
+        <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'7px 16px', borderRadius:99, background:'rgba(242,186,14,0.08)', border:'1px solid rgba(242,186,14,0.2)', marginBottom:28, fontSize:12, fontWeight:600, color:'#C9A227' }}>
+          <div style={{ width:6, height:6, borderRadius:'50%', background:'#C9A227', animation:'pulseLive 2s infinite' }}/>
           500,000+ Investors • $2.4B+ AUM
         </div>
 
-        <h1 style={{ fontSize:'clamp(38px, 7vw, 76px)', fontWeight:900, lineHeight:1.08, marginBottom:24, maxWidth:800, letterSpacing:'-1.5px' }}>
+        <h1 className="font-display" style={{ fontSize:'clamp(40px, 7.2vw, 78px)', fontWeight:500, lineHeight:1.06, marginBottom:24, maxWidth:840, letterSpacing:'-0.02em' }}>
           Invest smarter.<br/>
-          <span style={{ background:'linear-gradient(90deg, #F2BA0E 0%, #FFD23A 40%, #F2BA0E 80%)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text', backgroundSize:'200%', animation:'shimmer 3s linear infinite' }}>
-            Grow faster.
+          <span style={{ fontStyle:'italic', color:'#E4C25C' }}>
+            Grow with intention.
           </span>
         </h1>
 
-        <p style={{ fontSize:'clamp(15px, 2.2vw, 19px)', color:'#555', maxWidth:560, lineHeight:1.7, marginBottom:40 }}>
-          Institutional-grade investment strategies for everyone. Start with $40 and watch AI-powered compounding work 24/7.
+        <p style={{ fontSize:'clamp(15px, 2.2vw, 19px)', color:'var(--text-secondary)', maxWidth:580, lineHeight:1.7, marginBottom:40 }}>
+          Institutional-grade strategies, held to a private-bank standard. Start from $40 and let disciplined, AI-assisted compounding work around the clock.
         </p>
 
         <div style={{ display:'flex', gap:12, flexWrap:'wrap', justifyContent:'center', marginBottom:60 }}>
-          <Link href="/signup" style={{ padding:'16px 36px', background:'#F2BA0E', color:'#000', textDecoration:'none', borderRadius:12, fontWeight:800, fontSize:16, letterSpacing:'0.01em', transition:'all .15s' }}>
+          <Link href="/signup" style={{ padding:'16px 36px', background:'#C9A227', color:'#000', textDecoration:'none', borderRadius:12, fontWeight:800, fontSize:16, letterSpacing:'0.01em', transition:'all .15s' }}>
             Start Investing Free →
           </Link>
           <Link href="#plans" style={{ padding:'16px 32px', background:'rgba(255,255,255,0.04)', color:'#ccc', textDecoration:'none', borderRadius:12, fontWeight:600, fontSize:15, border:'1px solid rgba(255,255,255,0.09)' }}>
@@ -237,7 +237,7 @@ export default function LandingPage() {
             { v:150, suffix:'+', label:'Countries Supported' },
           ].map(({ v, prefix='', suffix='', label }, i) => (
             <div key={label} style={{ flex:'1 1 140px', padding:'24px 20px', textAlign:'center', borderRight: i < 3 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-              <div style={{ fontSize:'clamp(20px, 3vw, 28px)', fontWeight:900, color:'#F2BA0E', marginBottom:4 }}>
+              <div style={{ fontSize:'clamp(20px, 3vw, 28px)', fontWeight:900, color:'#C9A227', marginBottom:4 }}>
                 <Counter to={v} prefix={prefix} suffix={suffix} />
               </div>
               <div style={{ color:'#444', fontSize:12 }}>{label}</div>
@@ -249,7 +249,7 @@ export default function LandingPage() {
       {/* ── Live Markets ──────────────────────────────────────────────── */}
       <section id="markets" style={{ padding:'80px 24px', maxWidth:1100, margin:'0 auto' }}>
         <div style={{ textAlign:'center', marginBottom:48 }}>
-          <h2 style={{ fontSize:'clamp(26px, 4vw, 40px)', fontWeight:900, marginBottom:12 }}>Live Market Prices</h2>
+          <h2 className="font-display" style={{ fontSize:'clamp(26px, 4vw, 40px)', fontWeight:600, marginBottom:12 }}>Live Market Prices</h2>
           <p style={{ color:'#555', fontSize:15 }}>Real-time data powering every investment decision</p>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:12 }}>
@@ -286,8 +286,8 @@ export default function LandingPage() {
       <section id="features" style={{ padding:'80px 24px', background:'#060606' }}>
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
           <div style={{ textAlign:'center', marginBottom:56 }}>
-            <div style={{ display:'inline-block', padding:'5px 16px', borderRadius:99, background:'rgba(242,186,14,0.08)', border:'1px solid rgba(242,186,14,0.2)', color:'#F2BA0E', fontSize:12, fontWeight:700, marginBottom:14, letterSpacing:'0.05em' }}>WHY ALTARIS</div>
-            <h2 style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:900, marginBottom:12 }}>Built for serious investors</h2>
+            <div style={{ display:'inline-block', padding:'5px 16px', borderRadius:99, background:'rgba(242,186,14,0.08)', border:'1px solid rgba(242,186,14,0.2)', color:'#C9A227', fontSize:12, fontWeight:700, marginBottom:14, letterSpacing:'0.05em' }}>WHY ALTARIS</div>
+            <h2 className="font-display" style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:600, marginBottom:12 }}>Built for serious investors</h2>
             <p style={{ color:'#555', fontSize:15, maxWidth:500, margin:'0 auto' }}>Every feature engineered to maximise performance and minimise risk.</p>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:14 }}>
@@ -310,7 +310,7 @@ export default function LandingPage() {
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
           <div style={{ textAlign:'center', marginBottom:56 }}>
             <div style={{ display:'inline-block', padding:'5px 16px', borderRadius:99, background:'rgba(59,130,246,0.08)', border:'1px solid rgba(59,130,246,0.2)', color:'#3B82F6', fontSize:12, fontWeight:700, marginBottom:14, letterSpacing:'0.05em' }}>INVESTMENT PLANS</div>
-            <h2 style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:900, marginBottom:12 }}>30 plans across 10 asset classes</h2>
+            <h2 className="font-display" style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:600, marginBottom:12 }}>30 plans across 10 asset classes</h2>
             <p style={{ color:'#555', fontSize:15 }}>Conservative to aggressive — we have a strategy for every goal.</p>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:12, marginBottom:36 }}>
@@ -337,7 +337,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div style={{ textAlign:'center' }}>
-            <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'14px 32px', background:'#F2BA0E', color:'#000', textDecoration:'none', borderRadius:12, fontWeight:800, fontSize:15 }}>
+            <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'14px 32px', background:'#C9A227', color:'#000', textDecoration:'none', borderRadius:12, fontWeight:800, fontSize:15 }}>
               View All 30 Plans →
             </Link>
           </div>
@@ -348,11 +348,11 @@ export default function LandingPage() {
       <section style={{ padding:'80px 24px', background:'#060606' }}>
         <div style={{ maxWidth:900, margin:'0 auto', textAlign:'center' }}>
           <div style={{ display:'inline-block', padding:'5px 16px', borderRadius:99, background:'rgba(14,203,129,0.08)', border:'1px solid rgba(14,203,129,0.2)', color:'#0ECB81', fontSize:12, fontWeight:700, marginBottom:20, letterSpacing:'0.05em' }}>HOW IT WORKS</div>
-          <h2 style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:900, marginBottom:14 }}>Start earning in 3 steps</h2>
+          <h2 className="font-display" style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:600, marginBottom:14 }}>Start earning in 3 steps</h2>
           <p style={{ color:'#555', fontSize:15, marginBottom:60 }}>From signup to your first ROI — typically under 15 minutes.</p>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(240px, 1fr))', gap:0, position:'relative' }}>
             {[
-              { step:'01', title:'Create Account',   desc:'Sign up free. Verify your email in 60 seconds.', icon:'account', color:'#F2BA0E' },
+              { step:'01', title:'Create Account',   desc:'Sign up free. Verify your email in 60 seconds.', icon:'account', color:'#C9A227' },
               { step:'02', title:'Complete KYC',      desc:'Quick 5-step identity check. Usually approved in minutes.', icon:'kyc', color:'#A78BFA' },
               { step:'03', title:'Fund & Invest',     desc:'Deposit crypto or USD. Pick a plan. Earn daily.', icon:'invest', color:'#0ECB81' },
             ].map((s, i) => (
@@ -365,7 +365,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div style={{ marginTop:36 }}>
-            <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'14px 36px', background:'#F2BA0E', color:'#000', textDecoration:'none', borderRadius:12, fontWeight:800, fontSize:15 }}>
+            <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'14px 36px', background:'#C9A227', color:'#000', textDecoration:'none', borderRadius:12, fontWeight:800, fontSize:15 }}>
               Get Started Free →
             </Link>
           </div>
@@ -378,7 +378,7 @@ export default function LandingPage() {
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
           <div style={{ textAlign:'center', marginBottom:52 }}>
             <div style={{ display:'inline-block', padding:'5px 16px', borderRadius:99, background:'rgba(14,203,129,0.08)', border:'1px solid rgba(14,203,129,0.2)', color:'#0ECB81', fontSize:12, fontWeight:700, marginBottom:14, letterSpacing:'0.05em' }}>LIVE PLATFORM</div>
-            <h2 style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:900, marginBottom:12 }}>Your money. Always in motion.</h2>
+            <h2 className="font-display" style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:600, marginBottom:12 }}>Your money. Always in motion.</h2>
             <p style={{ color:'#555', fontSize:15, maxWidth:500, margin:'0 auto' }}>A real-time investment dashboard designed for clarity, speed, and confidence.</p>
           </div>
 
@@ -432,7 +432,7 @@ export default function LandingPage() {
                         <div style={{ fontWeight:900, fontSize:22, color:'#fff', letterSpacing:'-0.5px' }}>$24,810.50</div>
                         <div style={{ fontSize:9, color:'#0ECB81', fontWeight:700 }}>▲ +$187.34 today (+0.76%)</div>
                       </div>
-                      <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF8C00)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:900, color:'#000', boxShadow:'0 2px 10px rgba(242,186,14,0.4)' }}>A</div>
+                      <div style={{ width:32, height:32, borderRadius:'50%', background:'linear-gradient(135deg,#C9A227,#FF8C00)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:900, color:'#000', boxShadow:'0 2px 10px rgba(242,186,14,0.4)' }}>A</div>
                     </div>
                     {/* Portfolio chart */}
                     <div style={{ background:'linear-gradient(135deg,#0F1118,#0A0D13)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:14, padding:'10px 10px 6px', position:'relative', overflow:'hidden' }}>
@@ -456,7 +456,7 @@ export default function LandingPage() {
                     <div style={{ background:'linear-gradient(135deg,#1A1200,#0F0900)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:10, padding:'8px 10px', display:'flex', alignItems:'center', gap:8 }}>
                       <div style={{ fontSize:16 }}>🎁</div>
                       <div>
-                        <div style={{ fontSize:9, fontWeight:800, color:'#F2BA0E' }}>WELCOME OFFER</div>
+                        <div style={{ fontSize:9, fontWeight:800, color:'#C9A227' }}>WELCOME OFFER</div>
                         <div style={{ fontSize:8, color:'#555' }}>Claim Your $40 Bonus → Complete KYC</div>
                       </div>
                     </div>
@@ -465,8 +465,8 @@ export default function LandingPage() {
                       {[{ic:'⊞',l:'Home',a:true},{ic:'◉',l:'Markets'},{ic:'⊕',l:'Invest'},{ic:'◈',l:'Wallet'},{ic:'◎',l:'Profile'}].map((n,i)=>(
                         <div key={n.l} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
                           <div style={{ fontSize:13, opacity:n.a?1:0.3 }}>{n.ic}</div>
-                          <div style={{ fontSize:7, fontWeight:n.a?800:500, color:n.a?'#F2BA0E':'#333' }}>{n.l}</div>
-                          {n.a && <div style={{ width:3, height:3, borderRadius:'50%', background:'#F2BA0E' }}/>}
+                          <div style={{ fontSize:7, fontWeight:n.a?800:500, color:n.a?'#C9A227':'#333' }}>{n.l}</div>
+                          {n.a && <div style={{ width:3, height:3, borderRadius:'50%', background:'#C9A227' }}/>}
                         </div>
                       ))}
                     </div>
@@ -477,7 +477,7 @@ export default function LandingPage() {
                     <div style={{ fontWeight:900, fontSize:15, color:'#fff' }}>Markets</div>
                     <div style={{ display:'flex', gap:5 }}>
                       {['All','⬡ ETH','◆ BNB','◎ SOL'].map((t,i)=>(
-                        <div key={t} style={{ padding:'4px 9px', borderRadius:99, background:i===0?'#F2BA0E':'rgba(255,255,255,0.05)', color:i===0?'#000':'#555', fontSize:8, fontWeight:700, flexShrink:0 }}>{t}</div>
+                        <div key={t} style={{ padding:'4px 9px', borderRadius:99, background:i===0?'#C9A227':'rgba(255,255,255,0.05)', color:i===0?'#000':'#555', fontSize:8, fontWeight:700, flexShrink:0 }}>{t}</div>
                       ))}
                     </div>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr auto auto', gap:6, borderBottom:'1px solid rgba(255,255,255,0.04)', paddingBottom:4 }}>
@@ -487,7 +487,7 @@ export default function LandingPage() {
                       {sym:'BTC',name:'Bitcoin',   price:'$71,164',chg:'+2.4%', up:true, color:'#F7931A',bars:[50,55,48,60,58,65,62,70,68,75]},
                       {sym:'ETH',name:'Ethereum',  price:'$2,198', chg:'-1.2%', up:false,color:'#627EEA',bars:[70,65,68,62,60,58,55,52,54,50]},
                       {sym:'SOL',name:'Solana',    price:'$90.02', chg:'+5.8%', up:true, color:'#9945FF',bars:[30,38,35,45,42,52,48,58,55,65]},
-                      {sym:'BNB',name:'BNB',       price:'$651',   chg:'+0.9%', up:true, color:'#F0B90B',bars:[55,58,52,56,54,60,58,62,60,64]},
+                      {sym:'BNB',name:'BNB',       price:'$651',   chg:'+0.9%', up:true, color:'#C9A227',bars:[55,58,52,56,54,60,58,62,60,64]},
                       {sym:'AVAX',name:'Avalanche',price:'$28.4',  chg:'-2.1%', up:false,color:'#E84142',bars:[60,55,58,50,48,45,42,44,40,38]},
                     ].map(c=>(
                       <div key={c.sym} style={{ display:'grid', gridTemplateColumns:'1fr auto auto', gap:6, alignItems:'center', padding:'6px 0', borderBottom:'1px solid rgba(255,255,255,0.03)' }}>
@@ -506,8 +506,8 @@ export default function LandingPage() {
                       {[{ic:'⊞',l:'Home'},{ic:'◉',l:'Markets',a:true},{ic:'⊕',l:'Invest'},{ic:'◈',l:'Wallet'},{ic:'◎',l:'Profile'}].map((n)=>(
                         <div key={n.l} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
                           <div style={{ fontSize:13, opacity:n.a?1:0.3 }}>{n.ic}</div>
-                          <div style={{ fontSize:7, fontWeight:n.a?800:500, color:n.a?'#F2BA0E':'#333' }}>{n.l}</div>
-                          {n.a && <div style={{ width:3, height:3, borderRadius:'50%', background:'#F2BA0E' }}/>}
+                          <div style={{ fontSize:7, fontWeight:n.a?800:500, color:n.a?'#C9A227':'#333' }}>{n.l}</div>
+                          {n.a && <div style={{ width:3, height:3, borderRadius:'50%', background:'#C9A227' }}/>}
                         </div>
                       ))}
                     </div>
@@ -518,7 +518,7 @@ export default function LandingPage() {
                     <div style={{ fontWeight:900, fontSize:15, color:'#fff' }}>Investment Plans</div>
                     <div style={{ display:'flex', gap:5 }}>
                       {['All','Crypto','Bonds','Stocks'].map((t,i)=>(
-                        <div key={t} style={{ padding:'4px 9px', borderRadius:99, background:i===0?'#F2BA0E':'rgba(255,255,255,0.05)', color:i===0?'#000':'#555', fontSize:8, fontWeight:700 }}>{t}</div>
+                        <div key={t} style={{ padding:'4px 9px', borderRadius:99, background:i===0?'#C9A227':'rgba(255,255,255,0.05)', color:i===0?'#000':'#555', fontSize:8, fontWeight:700 }}>{t}</div>
                       ))}
                     </div>
                     {[
@@ -550,8 +550,8 @@ export default function LandingPage() {
                       {[{ic:'⊞',l:'Home'},{ic:'◉',l:'Markets'},{ic:'⊕',l:'Invest',a:true},{ic:'◈',l:'Wallet'},{ic:'◎',l:'Profile'}].map((n)=>(
                         <div key={n.l} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
                           <div style={{ fontSize:13, opacity:n.a?1:0.3 }}>{n.ic}</div>
-                          <div style={{ fontSize:7, fontWeight:n.a?800:500, color:n.a?'#F2BA0E':'#333' }}>{n.l}</div>
-                          {n.a && <div style={{ width:3, height:3, borderRadius:'50%', background:'#F2BA0E' }}/>}
+                          <div style={{ fontSize:7, fontWeight:n.a?800:500, color:n.a?'#C9A227':'#333' }}>{n.l}</div>
+                          {n.a && <div style={{ width:3, height:3, borderRadius:'50%', background:'#C9A227' }}/>}
                         </div>
                       ))}
                     </div>
@@ -562,7 +562,7 @@ export default function LandingPage() {
                     <div style={{ fontWeight:900, fontSize:15, color:'#fff' }}>Wallet</div>
                     <div style={{ background:'linear-gradient(135deg,#141900,#0F1200)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:16, padding:'14px 14px 10px', position:'relative', overflow:'hidden' }}>
                       <div style={{ position:'absolute', top:-30, right:-30, width:100, height:100, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.08),transparent)' }} />
-                      <div style={{ color:'#F2BA0E', fontSize:8, fontWeight:700, letterSpacing:'0.06em', marginBottom:4 }}>ACCOUNT BALANCE</div>
+                      <div style={{ color:'#C9A227', fontSize:8, fontWeight:700, letterSpacing:'0.06em', marginBottom:4 }}>ACCOUNT BALANCE</div>
                       <div style={{ fontWeight:900, fontSize:24, color:'#fff', letterSpacing:'-0.5px', marginBottom:2 }}>$24,810.50</div>
                       <div style={{ fontSize:8, color:'#0ECB81', fontWeight:700 }}>▲ +$187.34 today</div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginTop:10 }}>
@@ -577,7 +577,7 @@ export default function LandingPage() {
                       </div>
                     </div>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:5 }}>
-                      {[{ic:'↓',l:'Deposit',c:'#0ECB81'},{ic:'↑',l:'Withdraw',c:'#F6465D'},{ic:'↔',l:'Rewards',c:'#F2BA0E'},{ic:'📋',l:'History',c:'#A78BFA'}].map(b=>(
+                      {[{ic:'↓',l:'Deposit',c:'#0ECB81'},{ic:'↑',l:'Withdraw',c:'#F6465D'},{ic:'↔',l:'Rewards',c:'#C9A227'},{ic:'📋',l:'History',c:'#A78BFA'}].map(b=>(
                         <div key={b.l} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'8px 4px', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:10 }}>
                           <div style={{ fontSize:14 }}>{b.ic}</div>
                           <div style={{ fontSize:7, color:'#555', fontWeight:600 }}>{b.l}</div>
@@ -587,7 +587,7 @@ export default function LandingPage() {
                     <div style={{ fontWeight:700, fontSize:9, color:'#444', letterSpacing:'0.06em' }}>RECENT ACTIVITY</div>
                     {[
                       {type:'Deposit',  amt:'+$5,000', date:'Mar 19', color:'#0ECB81'},
-                      {type:'Investment',amt:'-$2,000', date:'Mar 18', color:'#F2BA0E'},
+                      {type:'Investment',amt:'-$2,000', date:'Mar 18', color:'#C9A227'},
                       {type:'ROI Credit',amt:'+$187',   date:'Mar 17', color:'#3B82F6'},
                     ].map(t=>(
                       <div key={t.type} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
@@ -602,8 +602,8 @@ export default function LandingPage() {
                       {[{ic:'⊞',l:'Home'},{ic:'◉',l:'Markets'},{ic:'⊕',l:'Invest'},{ic:'◈',l:'Wallet',a:true},{ic:'◎',l:'Profile'}].map((n)=>(
                         <div key={n.l} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:2 }}>
                           <div style={{ fontSize:13, opacity:n.a?1:0.3 }}>{n.ic}</div>
-                          <div style={{ fontSize:7, fontWeight:n.a?800:500, color:n.a?'#F2BA0E':'#333' }}>{n.l}</div>
-                          {n.a && <div style={{ width:3, height:3, borderRadius:'50%', background:'#F2BA0E' }}/>}
+                          <div style={{ fontSize:7, fontWeight:n.a?800:500, color:n.a?'#C9A227':'#333' }}>{n.l}</div>
+                          {n.a && <div style={{ width:3, height:3, borderRadius:'50%', background:'#C9A227' }}/>}
                         </div>
                       ))}
                     </div>
@@ -647,19 +647,19 @@ export default function LandingPage() {
 
             {/* Left: headline */}
             <div>
-              <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 16px', borderRadius:99, background:'rgba(242,186,14,0.08)', border:'1px solid rgba(242,186,14,0.2)', color:'#F2BA0E', fontSize:12, fontWeight:700, marginBottom:20 }}>
+              <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 16px', borderRadius:99, background:'rgba(242,186,14,0.08)', border:'1px solid rgba(242,186,14,0.2)', color:'#C9A227', fontSize:12, fontWeight:700, marginBottom:20 }}>
                 🎁 REFERRAL PROGRAM
               </div>
               <h2 style={{ fontSize:'clamp(28px, 4vw, 46px)', fontWeight:900, lineHeight:1.1, marginBottom:16, letterSpacing:'-0.5px' }}>
                 Invite friends.<br/>
-                <span style={{ color:'#F2BA0E' }}>Earn together.</span>
+                <span style={{ color:'#C9A227' }}>Earn together.</span>
               </h2>
               <p style={{ color:'#555', fontSize:15, lineHeight:1.8, marginBottom:28, maxWidth:420 }}>
                 Refer a friend who signs up, passes KYC, and makes a deposit — and you both get rewarded. No cap, no expiry. Stack bonuses as you grow your network.
               </p>
               <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:36 }}>
                 {[
-                  { who:'You earn', amount:'$200', per:'per qualified referral', color:'#F2BA0E' },
+                  { who:'You earn', amount:'$200', per:'per qualified referral', color:'#C9A227' },
                   { who:'Your friend earns', amount:'$40', per:'welcome bonus on first deposit', color:'#0ECB81' },
                   { who:'Tier bonuses', amount:'Up to 30%', per:'commission on multi-level referrals', color:'#A78BFA' },
                 ].map(r => (
@@ -672,7 +672,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'14px 32px', background:'#F2BA0E', color:'#000', textDecoration:'none', borderRadius:12, fontWeight:800, fontSize:15 }}>
+              <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'14px 32px', background:'#C9A227', color:'#000', textDecoration:'none', borderRadius:12, fontWeight:800, fontSize:15 }}>
                 Start Referring →
               </Link>
             </div>
@@ -685,7 +685,7 @@ export default function LandingPage() {
                 <div style={{ position:'absolute', left:17, top:24, bottom:24, width:1, background:'linear-gradient(180deg,rgba(242,186,14,0.3),rgba(242,186,14,0.05))' }} />
                 <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
                   {[
-                    { n:'1', t:'Sign up & get your link', d:'After registration you instantly receive a unique referral link and code to share anywhere.', c:'#F2BA0E' },
+                    { n:'1', t:'Sign up & get your link', d:'After registration you instantly receive a unique referral link and code to share anywhere.', c:'#C9A227' },
                     { n:'2', t:'Share with friends', d:'Send via WhatsApp, email, social media, or embed on your blog. No limit on invites.', c:'#3B82F6' },
                     { n:'3', t:'Friend registers & verifies', d:'They sign up using your link, complete KYC identity check (10 minutes), and make a deposit.', c:'#0ECB81' },
                     { n:'4', t:'Both receive bonuses', d:'You instantly receive $200, they receive $40 — credited directly to your investment wallet.', c:'#A78BFA' },
@@ -711,7 +711,7 @@ export default function LandingPage() {
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
           <div style={{ textAlign:'center', marginBottom:56 }}>
             <div style={{ display:'inline-block', padding:'5px 16px', borderRadius:99, background:'rgba(167,139,250,0.08)', border:'1px solid rgba(167,139,250,0.2)', color:'#A78BFA', fontSize:12, fontWeight:700, marginBottom:14, letterSpacing:'0.05em' }}>TESTIMONIALS</div>
-            <h2 style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:900, marginBottom:12 }}>What our investors say</h2>
+            <h2 className="font-display" style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:600, marginBottom:12 }}>What our investors say</h2>
             <p style={{ color:'#555', fontSize:15 }}>Real stories from real users — not cherry-picked.</p>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:14 }}>
@@ -720,7 +720,7 @@ export default function LandingPage() {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform='translateY(-2px)'; (e.currentTarget as HTMLElement).style.borderColor=`${t.color}30` }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform='translateY(0)'; (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.06)' }}>
                 {/* Stars */}
-                <div style={{ display:'flex', gap:2 }}>{[...Array(5)].map((_,i)=><span key={i} style={{ color:'#F2BA0E', fontSize:13 }}>*</span>)}</div>
+                <div style={{ display:'flex', gap:2 }}>{[...Array(5)].map((_,i)=><span key={i} style={{ color:'#C9A227', fontSize:13 }}>*</span>)}</div>
                 <p style={{ color:'#999', fontSize:13, lineHeight:1.7, flex:1 }}>"{t.text}"</p>
                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                   <div style={{ width:38, height:38, borderRadius:'50%', background:`${t.color}20`, border:`1.5px solid ${t.color}40`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:15, color:t.color, flexShrink:0 }}>{t.init}</div>
@@ -739,16 +739,16 @@ export default function LandingPage() {
       <section style={{ padding:'0 24px 80px' }}>
         <div style={{ maxWidth:900, margin:'0 auto', background:'linear-gradient(135deg, #1A1200 0%, #0F0A00 50%, #000 100%)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:24, padding:'60px 40px', textAlign:'center', position:'relative', overflow:'hidden' }}>
           <div style={{ position:'absolute', top:-60, right:-60, width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle, rgba(242,186,14,0.08), transparent 70%)', pointerEvents:'none' }}/>
-          <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 16px', borderRadius:99, background:'rgba(242,186,14,0.1)', border:'1px solid rgba(242,186,14,0.25)', color:'#F2BA0E', fontSize:12, fontWeight:700, marginBottom:20 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 16px', borderRadius:99, background:'rgba(242,186,14,0.1)', border:'1px solid rgba(242,186,14,0.25)', color:'#C9A227', fontSize:12, fontWeight:700, marginBottom:20 }}>
              LIMITED TIME OFFER
           </div>
-          <h2 style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:900, marginBottom:14 }}>
-            Claim your <span style={{ color:'#F2BA0E' }}>$40 welcome bonus</span>
+          <h2 className="font-display" style={{ fontSize:'clamp(26px, 4vw, 42px)', fontWeight:600, marginBottom:14 }}>
+            Claim your <span style={{ color:'#C9A227' }}>$40 welcome bonus</span>
           </h2>
           <p style={{ color:'#666', fontSize:15, maxWidth:480, margin:'0 auto 32px', lineHeight:1.7 }}>
             Sign up, complete KYC, and make your first deposit to unlock $40 added directly to your investment balance.
           </p>
-          <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'16px 44px', background:'#F2BA0E', color:'#000', textDecoration:'none', borderRadius:14, fontWeight:900, fontSize:16 }}>
+          <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'16px 44px', background:'#C9A227', color:'#000', textDecoration:'none', borderRadius:14, fontWeight:900, fontSize:16 }}>
             Claim $40 Bonus →
           </Link>
         </div>
@@ -759,11 +759,11 @@ export default function LandingPage() {
         <Link href="/airdrop" style={{ textDecoration: 'none', display: 'block' }}>
           <div className="pressable" style={{ borderRadius: 22, border: '1px solid rgba(242,186,14,0.35)', background: 'linear-gradient(130deg, rgba(242,186,14,0.2), rgba(17,24,39,0.95) 45%, rgba(8,10,14,1))', padding: '22px 20px', display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
             <div>
-              <div style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#F2BA0E', fontWeight: 800, marginBottom: 8 }}>Web3 Rewards</div>
+              <div style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C9A227', fontWeight: 800, marginBottom: 8 }}>Web3 Rewards</div>
               <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.1, marginBottom: 6 }}>Claim Live Airdrops</div>
               <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Connect your wallet and unlock active campaign rewards across top chains.</div>
             </div>
-            <div style={{ padding: '11px 18px', borderRadius: 12, background: '#F2BA0E', color: '#000', fontWeight: 800, whiteSpace: 'nowrap' }}>Claim Now →</div>
+            <div style={{ padding: '11px 18px', borderRadius: 12, background: '#C9A227', color: '#000', fontWeight: 800, whiteSpace: 'nowrap' }}>Claim Now →</div>
           </div>
         </Link>
       </section>
@@ -772,7 +772,7 @@ export default function LandingPage() {
       <section id="faq" style={{ padding:'80px 24px', background:'#060606' }}>
         <div style={{ maxWidth:740, margin:'0 auto' }}>
           <div style={{ textAlign:'center', marginBottom:52 }}>
-            <h2 style={{ fontSize:'clamp(26px, 4vw, 40px)', fontWeight:900, marginBottom:10 }}>Common questions</h2>
+            <h2 className="font-display" style={{ fontSize:'clamp(26px, 4vw, 40px)', fontWeight:600, marginBottom:10 }}>Common questions</h2>
             <p style={{ color:'#555', fontSize:15 }}>Everything you need to know before investing.</p>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -781,7 +781,7 @@ export default function LandingPage() {
                 <button onClick={() => setOpenFaq(openFaq===i ? null : i)}
                   style={{ width:'100%', padding:'18px 20px', background:'none', border:'none', color:'#fff', cursor:'pointer', display:'flex', justifyContent:'space-between', alignItems:'center', fontFamily:'inherit', fontSize:15, fontWeight:600, textAlign:'left', gap:12 }}>
                   <span>{f.q}</span>
-                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={openFaq===i?'#F2BA0E':'#555'} strokeWidth="2.5" style={{ flexShrink:0, transition:'transform .25s', transform: openFaq===i ? 'rotate(180deg)' : 'rotate(0)' }}><polyline points="6 9 12 15 18 9"/></svg>
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={openFaq===i?'#C9A227':'#555'} strokeWidth="2.5" style={{ flexShrink:0, transition:'transform .25s', transform: openFaq===i ? 'rotate(180deg)' : 'rotate(0)' }}><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
                 {openFaq===i && (
                   <div style={{ padding:'0 20px 18px', color:'#666', fontSize:14, lineHeight:1.8, animation:'fadeIn .2s' }}>
@@ -805,7 +805,7 @@ export default function LandingPage() {
             Join 500,000+ investors already compounding with Altaris Capital. Free to start. No hidden fees.
           </p>
           <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
-            <Link href="/signup" style={{ padding:'16px 44px', background:'#F2BA0E', color:'#000', textDecoration:'none', borderRadius:14, fontWeight:900, fontSize:16 }}>
+            <Link href="/signup" style={{ padding:'16px 44px', background:'#C9A227', color:'#000', textDecoration:'none', borderRadius:14, fontWeight:900, fontSize:16 }}>
               Create Free Account →
             </Link>
             <Link href="/login" style={{ padding:'16px 32px', background:'rgba(255,255,255,0.04)', color:'#ccc', textDecoration:'none', borderRadius:14, fontWeight:600, fontSize:15, border:'1px solid rgba(255,255,255,0.09)' }}>

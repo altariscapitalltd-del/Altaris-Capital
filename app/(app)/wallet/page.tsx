@@ -33,7 +33,7 @@ function ShadowCard({ h = 96 }: { h?: number }) {
   )
 }
 
-function MiniTrend({ values, color = '#F2BA0E' }: { values: number[]; color?: string }) {
+function MiniTrend({ values, color = '#C9A227' }: { values: number[]; color?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -498,11 +498,11 @@ export default function WalletPage() {
           </div>
         </div>
       )}
-      <div style={{ marginBottom: 14, padding: '18px 16px', borderRadius: 22, background: '#000', border: '1px solid rgba(255,255,255,0.06)', boxShadow: 'none' }}>
-        <div style={{ color: 'rgba(255,255,255,0.68)', fontSize: 12, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Wallet balance</div>
+      <div style={{ marginBottom: 14, padding: '20px 18px', borderRadius: 18, background: 'radial-gradient(140% 120% at 100% 0,rgba(201,162,39,0.10),transparent 55%),linear-gradient(180deg,#101116,#0A0B0E)', border: '1px solid var(--border-strong)', boxShadow: 'var(--shadow-md)' }}>
+        <div className="eyebrow gold" style={{ marginBottom: 12 }}>Wallet balance</div>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
-            <div className="notranslate" translate="no" style={{ fontSize: 44, fontWeight: 900, letterSpacing: '-0.05em', lineHeight: 1, marginBottom: 8 }}>${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="notranslate font-display" translate="no" style={{ fontSize: 44, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 10, fontVariantNumeric: 'tabular-nums' }}>${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999, background: 'rgba(14,203,129,0.12)', color: 'var(--success)', fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
               {cryptoPL >= 0 ? '+' : '-'}${Math.abs(cryptoPL).toFixed(2)} P/L today
             </div>
@@ -527,7 +527,7 @@ export default function WalletPage() {
           <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>INVESTMENT PLANS</div>
           <div style={{ color: '#fff', fontSize: 15, fontWeight: 900, marginTop: 4 }}>Top plans from Invest</div>
         </div>
-        <Link href="/invest" style={{ fontSize: 12, fontWeight: 800, color: '#F2BA0E', textDecoration: 'none', padding: '8px 10px', borderRadius: 999, border: '1px solid rgba(242,186,14,0.16)', background: 'rgba(242,186,14,0.08)' }}>More →</Link>
+        <Link href="/invest" style={{ fontSize: 12, fontWeight: 800, color: '#C9A227', textDecoration: 'none', padding: '8px 10px', borderRadius: 999, border: '1px solid rgba(242,186,14,0.16)', background: 'rgba(242,186,14,0.08)' }}>More →</Link>
       </div>
       {tab === 'deposit' && depositMode === 'select' && (
         <div style={{ marginBottom: 12, padding: 12, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -538,7 +538,7 @@ export default function WalletPage() {
               Crypto
             </button>
             <button type="button" onClick={() => setDepositMode('fiat')} style={{ padding: '15px 12px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#F2BA0E' }} />
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#C9A227' }} />
               Fiat
             </button>
           </div>
@@ -578,7 +578,7 @@ export default function WalletPage() {
           <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>CRYPTO LIST</div>
           <div style={{ color: '#fff', fontSize: 15, fontWeight: 900, marginTop: 4 }}>Your held assets</div>
         </div>
-        <Link href="/markets" style={{ fontSize: 12, fontWeight: 800, color: '#F2BA0E', textDecoration: 'none' }}>All markets</Link>
+        <Link href="/markets" style={{ fontSize: 12, fontWeight: 800, color: '#C9A227', textDecoration: 'none' }}>All markets</Link>
       </div>
 
       <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
@@ -670,7 +670,7 @@ export default function WalletPage() {
                 <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, background: '#111', border: '1px solid rgba(255,255,255,0.06)', marginBottom: 12 }}>
-                <span style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg,#F2BA0E,#FFDD7A)', color: '#000', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>P</span>
+                <span style={{ width: 42, height: 42, borderRadius: 14, background: 'linear-gradient(135deg,#C9A227,#FFDD7A)', color: '#000', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>P</span>
                 <span>
                   <strong style={{ display: 'block', fontSize: 14 }}>Paybis</strong>
                   <span style={{ color: 'rgba(255,255,255,0.58)', fontSize: 12 }}>Simple fiat on-ramp with card checkout</span>
@@ -691,7 +691,7 @@ export default function WalletPage() {
                   <div key={step} style={{ padding: '10px 12px', borderRadius: 12, background: '#111', border: '1px solid rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.78)', fontSize: 12 }}>{step}</div>
                 ))}
               </div>
-              <a href={paybisUrl} target="_blank" rel="noopener noreferrer" className="paybis-button pressable" style={{ background: '#F2BA0E', color: '#000', fontWeight: 900, borderRadius: 14 }}>
+              <a href={paybisUrl} target="_blank" rel="noopener noreferrer" className="paybis-button pressable" style={{ background: '#C9A227', color: '#000', fontWeight: 900, borderRadius: 14 }}>
                 Continue to Paybis
               </a>
             </div>
@@ -747,10 +747,10 @@ export default function WalletPage() {
           {/* Hero card */}
           <div style={{ marginBottom: 16, background: 'linear-gradient(135deg,#1A1500,#0D0D0D)', border: '1px solid rgba(242,186,14,0.25)', borderRadius: 20, padding: 20, position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle,rgba(242,186,14,0.15),transparent 70%)' }} />
-            <div style={{ fontSize: 11, color: '#F2BA0E', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 10 }}>REFERRAL PROGRAM</div>
+            <div style={{ fontSize: 11, color: '#C9A227', fontWeight: 700, letterSpacing: '0.1em', marginBottom: 10 }}>REFERRAL PROGRAM</div>
             <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8, lineHeight: 1.2 }}>Earn $200 per<br/>qualified referral</div>
             <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>Invite friends to Altaris Capital. When they verify and deposit, you both earn cash bonuses. Share your unique link and track earnings in real time.</div>
-            <Link href="/rewards" style={{ display: 'block', background: '#F2BA0E', color: '#000', fontWeight: 800, fontSize: 14, padding: '14px', borderRadius: 12, textAlign: 'center', textDecoration: 'none' }}>
+            <Link href="/rewards" style={{ display: 'block', background: '#C9A227', color: '#000', fontWeight: 800, fontSize: 14, padding: '14px', borderRadius: 12, textAlign: 'center', textDecoration: 'none' }}>
               Open Rewards Dashboard →
             </Link>
           </div>
@@ -760,9 +760,9 @@ export default function WalletPage() {
             <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 14 }}>How It Works</div>
             {[
               { n: '1', t: 'Share your link', d: 'Send your unique referral link to anyone', c: '#A78BFA' },
-              { n: '2', t: 'They sign up', d: 'Friend creates an account via your link', c: '#F2BA0E' },
+              { n: '2', t: 'They sign up', d: 'Friend creates an account via your link', c: '#C9A227' },
               { n: '3', t: 'They verify + deposit', d: 'Complete KYC and make first deposit', c: '#0ECB81' },
-              { n: '4', t: 'Both earn bonuses', d: 'You get $200 · They get $40 — instantly', c: '#F2BA0E' },
+              { n: '4', t: 'Both earn bonuses', d: 'You get $200 · They get $40 — instantly', c: '#C9A227' },
             ].map(s => (
               <div key={s.n} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${s.c}15`, border: `1.5px solid ${s.c}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: s.c, flexShrink: 0 }}>{s.n}</div>
@@ -780,7 +780,7 @@ export default function WalletPage() {
                   <div style={{ fontSize: 18, marginBottom: 4 }}>{t.icon}</div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#888' }}>{t.label}</div>
                   <div style={{ fontSize: 9, color: '#555', marginTop: 2 }}>{t.n}</div>
-                  <div style={{ fontSize: 10, color: '#F2BA0E', fontWeight: 800, marginTop: 3 }}>{t.bonus}</div>
+                  <div style={{ fontSize: 10, color: '#C9A227', fontWeight: 800, marginTop: 3 }}>{t.bonus}</div>
                 </div>
               ))}
             </div>
@@ -799,7 +799,7 @@ export default function WalletPage() {
             <div style={{ width: 44 }} />
           </div>
 
-          <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, background: 'rgba(242,186,14,0.16)', border: '1px solid rgba(242,186,14,0.24)', color: '#F2BA0E', fontSize: 12, fontWeight: 600 }}>
+          <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, background: 'rgba(242,186,14,0.16)', border: '1px solid rgba(242,186,14,0.24)', color: '#C9A227', fontSize: 12, fontWeight: 600 }}>
             Only send {coin} to this address. Other assets may be lost permanently.
           </div>
 

@@ -319,7 +319,7 @@ export default function HomePage() {
 
   if (loading && !user) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '70vh' }}>
-      <div style={{ width: 34, height: 34, border: '3px solid rgba(242,186,14,0.18)', borderTopColor: '#F2BA0E', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
+      <div style={{ width: 34, height: 34, border: '3px solid rgba(242,186,14,0.18)', borderTopColor: '#C9A227', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
     </div>
   )
 
@@ -439,7 +439,7 @@ export default function HomePage() {
                   <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 1 }}>${inv.amount.toLocaleString()}</div>
                   <div style={{ color: 'var(--success)', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>+${(inv.amount * inv.dailyRoi).toFixed(2)}/day</div>
                   <div style={{ background: 'var(--bg-elevated)', borderRadius: 3, height: 3, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', background: '#F2BA0E', width: `${prog}%`, borderRadius: 3 }} />
+                    <div style={{ height: '100%', background: '#C9A227', width: `${prog}%`, borderRadius: 3 }} />
                   </div>
                   <div style={{ color: 'var(--text-muted)', fontSize: 10, marginTop: 4 }}>{Math.round(prog)}% complete</div>
                 </div>

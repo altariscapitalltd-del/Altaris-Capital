@@ -15,10 +15,10 @@ type Tx = {
 const TYPE_CONFIG: Record<string, { Icon: any; color: string; label: string; isCredit: boolean }> = {
   DEPOSIT: { Icon: ArrowDownLeft, color: '#0ECB81', label: 'Deposit', isCredit: true },
   WITHDRAWAL: { Icon: ArrowUpRight, color: '#F6465D', label: 'Withdrawal', isCredit: false },
-  INVESTMENT: { Icon: LineChart, color: '#F2BA0E', label: 'Investment', isCredit: false },
+  INVESTMENT: { Icon: LineChart, color: '#C9A227', label: 'Investment', isCredit: false },
   PROFIT: { Icon: WalletCards, color: '#0ECB81', label: 'Profit Credit', isCredit: true },
   ROI: { Icon: WalletCards, color: '#0ECB81', label: 'ROI Credit', isCredit: true },
-  BONUS: { Icon: Gift, color: '#F2BA0E', label: 'Bonus', isCredit: true },
+  BONUS: { Icon: Gift, color: '#C9A227', label: 'Bonus', isCredit: true },
   REFERRAL_BONUS: { Icon: Users, color: '#A78BFA', label: 'Referral Bonus', isCredit: true },
   REFERRAL: { Icon: Users, color: '#A78BFA', label: 'Referral Bonus', isCredit: true },
   ADJUSTMENT: { Icon: RefreshCw, color: '#94A3B8', label: 'Balance Update', isCredit: true },
@@ -27,7 +27,7 @@ const TYPE_CONFIG: Record<string, { Icon: any; color: string; label: string; isC
 const STATUS_COLOR: Record<string, string> = {
   SUCCESS: '#0ECB81',
   COMPLETED: '#0ECB81',
-  PENDING: '#F2BA0E',
+  PENDING: '#C9A227',
   FAILED: '#F6465D',
   CANCELLED: '#F6465D',
 }
@@ -131,7 +131,7 @@ export default function TransactionsPage() {
   const totalIn = useMemo(() => txs.filter((t) => TYPE_CONFIG[t.type]?.isCredit).reduce((s, t) => s + t.amount, 0), [txs])
   const totalOut = useMemo(() => txs.filter((t) => !TYPE_CONFIG[t.type]?.isCredit).reduce((s, t) => s + t.amount, 0), [txs])
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}><div style={{ width: 32, height: 32, border: '3px solid rgba(242,186,14,0.2)', borderTopColor: '#F2BA0E', borderRadius: '50%', animation: 'spin .8s linear infinite' }} /></div>
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}><div style={{ width: 32, height: 32, border: '3px solid rgba(242,186,14,0.2)', borderTopColor: '#C9A227', borderRadius: '50%', animation: 'spin .8s linear infinite' }} /></div>
 
   return (
     <div style={{ padding: '0 0 24px' }}>

@@ -89,7 +89,7 @@ export default function SupportPage() {
           return (
           <div key={m.id} style={{display:'flex',justifyContent:isAdmin?'flex-start':'flex-end'}}>
             {isAdmin&&(
-              <div style={{width:28,height:28,borderRadius:'50%',background:'linear-gradient(135deg,#F2BA0E,#FF9500)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'#000',flexShrink:0,marginRight:8,alignSelf:'flex-end'}}>A</div>
+              <div style={{width:28,height:28,borderRadius:'50%',background:'linear-gradient(135deg,#C9A227,#FF9500)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'#000',flexShrink:0,marginRight:8,alignSelf:'flex-end'}}>A</div>
             )}
             <div style={{maxWidth:'72%',padding:'10px 14px',borderRadius:isAdmin?'4px 14px 14px 14px':'14px 4px 14px 14px',background:isAdmin?'var(--bg-card)':'var(--brand-primary)',color:isAdmin?'var(--text-primary)':'#000',fontSize:14,lineHeight:1.5,border:isAdmin?'1px solid var(--border)':'none'}}>
               {m.content}

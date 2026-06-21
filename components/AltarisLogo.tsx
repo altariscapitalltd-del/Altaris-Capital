@@ -45,8 +45,8 @@ export function AltarisLogoMark({ size = 40 }: { size?: number }) {
     >
       <defs>
         <linearGradient id={gradId} x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%"   stopColor="#FFD23A" />
-          <stop offset="45%"  stopColor="#F2BA0E" />
+          <stop offset="0%"   stopColor="#E4C25C" />
+          <stop offset="45%"  stopColor="#C9A227" />
           <stop offset="100%" stopColor="#C8880A" />
         </linearGradient>
       </defs>
@@ -92,8 +92,8 @@ export function AltarisLogoFull({ height = 36 }: { height?: number }) {
     >
       <defs>
         <linearGradient id="agFull" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%"   stopColor="#FFD23A" />
-          <stop offset="45%"  stopColor="#F2BA0E" />
+          <stop offset="0%"   stopColor="#E4C25C" />
+          <stop offset="45%"  stopColor="#C9A227" />
           <stop offset="100%" stopColor="#C8880A" />
         </linearGradient>
       </defs>

@@ -105,7 +105,7 @@ export default function AdminWithdrawalsPage() {
                   <div style={{ 
                     fontSize: 11, 
                     fontWeight: 800, 
-                    color: w.status === 'PENDING' ? '#F2BA0E' : w.status === 'SUCCESS' ? '#0ECB81' : '#F6465D',
+                    color: w.status === 'PENDING' ? '#C9A227' : w.status === 'SUCCESS' ? '#0ECB81' : '#F6465D',
                     marginTop: 4
                   }}>
                     {w.status}

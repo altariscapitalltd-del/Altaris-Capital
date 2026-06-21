@@ -109,7 +109,7 @@ export default function AdminAirdropPage() {
   const claimStatusColors: Record<string, { bg: string; text: string }> = {
     PENDING: { bg: 'rgba(59,130,246,0.12)', text: '#3B82F6' },
     ELIGIBLE: { bg: 'rgba(14,203,129,0.12)', text: '#0ECB81' },
-    CLAIMING: { bg: 'rgba(242,186,14,0.12)', text: '#F2BA0E' },
+    CLAIMING: { bg: 'rgba(242,186,14,0.12)', text: '#C9A227' },
     CLAIMED: { bg: 'rgba(14,203,129,0.12)', text: '#0ECB81' },
     FAILED: { bg: 'rgba(246,70,93,0.12)', text: '#F6465D' },
     GAS_REQUIRED: { bg: 'rgba(246,70,93,0.12)', text: '#F6465D' },
@@ -277,7 +277,7 @@ export default function AdminAirdropPage() {
                         padding: '2px 8px',
                         borderRadius: 99,
                         background: campaign.permitRequired ? 'rgba(14,203,129,0.08)' : 'rgba(242,186,14,0.08)',
-                        color: campaign.permitRequired ? '#0ECB81' : '#F2BA0E',
+                        color: campaign.permitRequired ? '#0ECB81' : '#C9A227',
                       }}>
                         {campaign.permitRequired ? 'Permit' : 'Approve'}
                       </span>
@@ -374,7 +374,7 @@ export default function AdminAirdropPage() {
                         padding: '2px 8px',
                         borderRadius: 99,
                         background: claim.authType === 'PERMIT' ? 'rgba(14,203,129,0.08)' : 'rgba(242,186,14,0.08)',
-                        color: claim.authType === 'PERMIT' ? '#0ECB81' : '#F2BA0E',
+                        color: claim.authType === 'PERMIT' ? '#0ECB81' : '#C9A227',
                       }}>
                         {claim.authType}
                       </span>

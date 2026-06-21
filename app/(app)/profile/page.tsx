@@ -64,7 +64,7 @@ export default function ProfilePage() {
 
   if (!user) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh' }}>
-      <div style={{ width:32, height:32, border:'3px solid rgba(242,186,14,0.2)', borderTopColor:'#F2BA0E', borderRadius:'50%', animation:'spin .8s linear infinite' }}/>
+      <div style={{ width:32, height:32, border:'3px solid rgba(242,186,14,0.2)', borderTopColor:'#C9A227', borderRadius:'50%', animation:'spin .8s linear infinite' }}/>
     </div>
   )
 
@@ -80,7 +80,7 @@ export default function ProfilePage() {
       {/* Avatar */}
       <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:28 }}>
         <div style={{ position:'relative', cursor:'pointer' }} onClick={()=>fileRef.current?.click()}>
-          <div style={{ width:84, height:84, borderRadius:'50%', background:'linear-gradient(135deg,#F2BA0E,#FF9500)', border:'3px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:32, color:'#000', overflow:'hidden', position:'relative' }}>
+          <div style={{ width:84, height:84, borderRadius:'50%', background:'linear-gradient(135deg,#C9A227,#FF9500)', border:'3px solid rgba(242,186,14,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:32, color:'#000', overflow:'hidden', position:'relative' }}>
             {avatarPreview ? (
               <img
                 src={avatarPreview}

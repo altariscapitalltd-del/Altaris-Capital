@@ -4,11 +4,11 @@ import { useEffect, useState, useCallback } from 'react'
 const TIERS = [
   { count: 1,  bonus: 100,  label: 'Starter',     color: '#888888', icon: '🌱' },
   { count: 5,  bonus: 700,  label: 'Rising',       color: '#A78BFA', icon: '⭐' },
-  { count: 20, bonus: 3000, label: 'Elite',        color: '#F2BA0E', icon: '👑' },
+  { count: 20, bonus: 3000, label: 'Elite',        color: '#C9A227', icon: '👑' },
   { count: 50, bonus: 0,    label: 'VIP Investor', color: '#0ECB81', icon: '💎' },
 ]
 
-function GiftIcon({ size = 24, color = '#F2BA0E' }) {
+function GiftIcon({ size = 24, color = '#C9A227' }) {
   return (
     <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5" rx="1"/>
@@ -19,7 +19,7 @@ function GiftIcon({ size = 24, color = '#F2BA0E' }) {
   )
 }
 
-function TrophyIcon({ size = 20, color = '#F2BA0E' }) {
+function TrophyIcon({ size = 20, color = '#C9A227' }) {
   return (
     <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6 9H4a2 2 0 01-2-2V5h4"/><path d="M18 9h2a2 2 0 002-2V5h-4"/>
@@ -122,7 +122,7 @@ export default function RewardsPage() {
 
   if (loading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh' }}>
-      <div style={{ width:32, height:32, border:'3px solid rgba(242,186,14,0.2)', borderTopColor:'#F2BA0E', borderRadius:'50%', animation:'spin .8s linear infinite' }}/>
+      <div style={{ width:32, height:32, border:'3px solid rgba(242,186,14,0.2)', borderTopColor:'#C9A227', borderRadius:'50%', animation:'spin .8s linear infinite' }}/>
     </div>
   )
 
@@ -133,7 +133,7 @@ export default function RewardsPage() {
 
   const tab = (id: typeof activeTab, label: string) => (
     <button key={id} onClick={() => setActiveTab(id)}
-      style={{ padding:'8px 16px', borderRadius:99, border:'none', background:activeTab===id?'#F2BA0E':'transparent', color:activeTab===id?'#000':'#555', fontWeight:activeTab===id?700:500, fontSize:12, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap', transition:'all .15s' }}>
+      style={{ padding:'8px 16px', borderRadius:99, border:'none', background:activeTab===id?'#C9A227':'transparent', color:activeTab===id?'#000':'#555', fontWeight:activeTab===id?700:500, fontSize:12, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap', transition:'all .15s' }}>
       {label}
     </button>
   )
@@ -145,7 +145,7 @@ export default function RewardsPage() {
           onClick={() => setCelebration(null)}>
           <div style={{ textAlign:'center', padding:40 }}>
             <div style={{ fontSize:72, marginBottom:16 }}>🎉</div>
-            <h2 style={{ fontSize:28, fontWeight:900, color:'#F2BA0E', marginBottom:12 }}>Milestone Reached!</h2>
+            <h2 style={{ fontSize:28, fontWeight:900, color:'#C9A227', marginBottom:12 }}>Milestone Reached!</h2>
             <p style={{ color:'#aaa', fontSize:16, maxWidth:280 }}>{celebration}</p>
             <button onClick={() => setCelebration(null)} className="btn-primary" style={{ marginTop:24 }}>Awesome!</button>
           </div>
@@ -164,7 +164,7 @@ export default function RewardsPage() {
           </div>
           <div style={{ marginLeft:'auto', textAlign:'right' }}>
             <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>REWARD BALANCE</div>
-            <div style={{ fontSize:22, fontWeight:900, color:'#F2BA0E' }}>${(data?.rewardBalance || 0).toFixed(2)}</div>
+            <div style={{ fontSize:22, fontWeight:900, color:'#C9A227' }}>${(data?.rewardBalance || 0).toFixed(2)}</div>
           </div>
         </div>
       </div>
@@ -172,11 +172,11 @@ export default function RewardsPage() {
       {/* Referral Code Card */}
       <div style={{ margin:'0 20px 20px', background:'linear-gradient(135deg,#1A1500,#0D0D0D)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:18, padding:20, position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', top:-30, right:-30, width:120, height:120, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.12),transparent 70%)' }}/>
-        <div style={{ fontSize:11, color:'#F2BA0E', fontWeight:700, letterSpacing:'0.1em', marginBottom:8 }}>YOUR REFERRAL CODE</div>
+        <div style={{ fontSize:11, color:'#C9A227', fontWeight:700, letterSpacing:'0.1em', marginBottom:8 }}>YOUR REFERRAL CODE</div>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
           <div style={{ fontSize:28, fontWeight:900, letterSpacing:'0.15em', color:'#fff' }}>{data?.referralCode || '—'}</div>
-          <button onClick={copyCode} style={{ background:'rgba(242,186,14,0.12)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:8, padding:'6px 10px', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:'#F2BA0E', fontSize:12, fontWeight:600, fontFamily:'inherit' }}>
-            <CopyIcon color="#F2BA0E"/>
+          <button onClick={copyCode} style={{ background:'rgba(242,186,14,0.12)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:8, padding:'6px 10px', cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:'#C9A227', fontSize:12, fontWeight:600, fontFamily:'inherit' }}>
+            <CopyIcon color="#C9A227"/>
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
@@ -184,7 +184,7 @@ export default function RewardsPage() {
           <button onClick={copyLink} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'10px 14px', cursor:'pointer', color:'#aaa', fontSize:12, fontWeight:600, fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
             <CopyIcon/> Copy Link
           </button>
-          <button onClick={shareLink} style={{ flex:1, background:'#F2BA0E', border:'none', borderRadius:10, padding:'10px 14px', cursor:'pointer', color:'#000', fontSize:13, fontWeight:800, fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+          <button onClick={shareLink} style={{ flex:1, background:'#C9A227', border:'none', borderRadius:10, padding:'10px 14px', cursor:'pointer', color:'#000', fontSize:13, fontWeight:800, fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
             <ShareIcon/> Share
           </button>
         </div>
@@ -198,8 +198,8 @@ export default function RewardsPage() {
         {[
           { label:'Invited', value: data?.stats?.totalInvited || 0, color:'#A78BFA' },
           { label:'Qualified', value: data?.stats?.qualified || 0, color:'#0ECB81' },
-          { label:'Pending', value: data?.stats?.pending || 0, color:'#F2BA0E' },
-          { label:'Earned', value: `$${(data?.stats?.totalEarned || 0).toFixed(0)}`, color:'#F2BA0E' },
+          { label:'Pending', value: data?.stats?.pending || 0, color:'#C9A227' },
+          { label:'Earned', value: `$${(data?.stats?.totalEarned || 0).toFixed(0)}`, color:'#C9A227' },
         ].map(s => (
           <div key={s.label} style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:12, padding:'12px 8px', textAlign:'center' }}>
             <div style={{ fontSize:18, fontWeight:900, color:s.color, marginBottom:3 }}>{s.value}</div>
@@ -240,7 +240,7 @@ export default function RewardsPage() {
                   <span>{nextTier.count - qualified} more to {nextTier.label}</span>
                 </div>
                 <div style={{ height:8, background:'rgba(255,255,255,0.06)', borderRadius:99, overflow:'hidden', marginBottom:10 }}>
-                  <div style={{ height:'100%', width:`${progressPct}%`, background:'linear-gradient(90deg,#F2BA0E,#FFD23A)', borderRadius:99, transition:'width 0.6s ease' }}/>
+                  <div style={{ height:'100%', width:`${progressPct}%`, background:'linear-gradient(90deg,#C9A227,#E4C25C)', borderRadius:99, transition:'width 0.6s ease' }}/>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, color:'#aaa' }}>
                   <span>Next: </span>
@@ -274,7 +274,7 @@ export default function RewardsPage() {
             <div style={{ fontWeight:800, fontSize:15, marginBottom:14 }}>Network Commissions</div>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {[
-                { level:'Level 1', count:data?.multiLevel?.l1 || 0, pct:'10%', color:'#F2BA0E', desc:'Direct referrals' },
+                { level:'Level 1', count:data?.multiLevel?.l1 || 0, pct:'10%', color:'#C9A227', desc:'Direct referrals' },
                 { level:'Level 2', count:data?.multiLevel?.l2 || 0, pct:'5%', color:'#A78BFA', desc:'Their referrals' },
                 { level:'Level 3', count:data?.multiLevel?.l3 || 0, pct:'2%', color:'#0ECB81', desc:'Their referrals' },
               ].map(l => (
@@ -319,15 +319,15 @@ export default function RewardsPage() {
                 <div key={c.id} style={{ background:'rgba(242,186,14,0.05)', border:'1px solid rgba(242,186,14,0.15)', borderRadius:12, padding:14, marginBottom:10 }}>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
                     <div style={{ fontWeight:700, fontSize:14 }}>{c.title}</div>
-                    <div style={{ fontSize:10, color:'#F2BA0E', fontWeight:700 }}>{c.daysLeft}d left</div>
+                    <div style={{ fontSize:10, color:'#C9A227', fontWeight:700 }}>{c.daysLeft}d left</div>
                   </div>
                   <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:10 }}>{c.description}</div>
                   <div style={{ height:6, background:'rgba(255,255,255,0.06)', borderRadius:99, marginBottom:6, overflow:'hidden' }}>
-                    <div style={{ height:'100%', width:`${Math.min(100, (c.userCount / c.target) * 100)}%`, background:'#F2BA0E', borderRadius:99 }}/>
+                    <div style={{ height:'100%', width:`${Math.min(100, (c.userCount / c.target) * 100)}%`, background:'#C9A227', borderRadius:99 }}/>
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--text-muted)' }}>
                     <span>{c.userCount}/{c.target} referrals</span>
-                    <span style={{ color:'#F2BA0E', fontWeight:700 }}>Reward: ${c.reward.toLocaleString()}</span>
+                    <span style={{ color:'#C9A227', fontWeight:700 }}>Reward: ${c.reward.toLocaleString()}</span>
                   </div>
                   {c.rewarded && <div style={{ marginTop:8, padding:'4px 10px', background:'rgba(14,203,129,0.1)', borderRadius:6, fontSize:11, color:'#0ECB81', fontWeight:700 }}>Bonus Claimed!</div>}
                 </div>
@@ -345,7 +345,7 @@ export default function RewardsPage() {
               <div style={{ marginBottom:16 }}><UsersIcon size={40} color="#333"/></div>
               <div style={{ fontWeight:700, fontSize:15, marginBottom:8 }}>No referrals yet</div>
               <div style={{ color:'var(--text-muted)', fontSize:13, marginBottom:20 }}>Share your referral code to start earning</div>
-              <button onClick={shareLink} style={{ background:'#F2BA0E', border:'none', borderRadius:10, padding:'11px 24px', cursor:'pointer', color:'#000', fontSize:13, fontWeight:800, fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:8 }}>
+              <button onClick={shareLink} style={{ background:'#C9A227', border:'none', borderRadius:10, padding:'11px 24px', cursor:'pointer', color:'#000', fontSize:13, fontWeight:800, fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:8 }}>
                 <ShareIcon/> Share Your Link
               </button>
             </div>
@@ -359,7 +359,7 @@ export default function RewardsPage() {
                 </div>
                 <div style={{ padding:'4px 10px', borderRadius:99, fontSize:11, fontWeight:700,
                   background:r.status==='QUALIFIED'||r.status==='REWARDED' ? 'rgba(14,203,129,0.1)' : 'rgba(242,186,14,0.1)',
-                  color:r.status==='QUALIFIED'||r.status==='REWARDED' ? '#0ECB81' : '#F2BA0E' }}>
+                  color:r.status==='QUALIFIED'||r.status==='REWARDED' ? '#0ECB81' : '#C9A227' }}>
                   {r.status === 'QUALIFIED' || r.status === 'REWARDED' ? 'Qualified' : 'Pending'}
                 </div>
               </div>
@@ -399,7 +399,7 @@ export default function RewardsPage() {
               <div style={{ background:'linear-gradient(135deg,#1A1500,#0D0D0D)', border:'1px solid rgba(242,186,14,0.2)', borderRadius:14, padding:16, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <div>
                   <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600, marginBottom:4 }}>TOTAL REWARD BALANCE</div>
-                  <div style={{ fontSize:28, fontWeight:900, color:'#F2BA0E' }}>${(data?.rewardBalance || 0).toFixed(2)}</div>
+                  <div style={{ fontSize:28, fontWeight:900, color:'#C9A227' }}>${(data?.rewardBalance || 0).toFixed(2)}</div>
                 </div>
                 <GiftIcon size={32}/>
               </div>
@@ -423,7 +423,7 @@ export default function RewardsPage() {
           <div style={{ display:'flex', gap:6 }}>
             {(['weekly', 'monthly'] as const).map(p => (
               <button key={p} onClick={() => setLbPeriod(p)}
-                style={{ flex:1, padding:'9px', borderRadius:99, background:lbPeriod===p?'#F2BA0E':'#111', color:lbPeriod===p?'#000':'#555', fontWeight:lbPeriod===p?700:500, fontSize:12, cursor:'pointer', fontFamily:'inherit', border:`1px solid ${lbPeriod===p?'#F2BA0E':'rgba(255,255,255,0.06)'}` }}>
+                style={{ flex:1, padding:'9px', borderRadius:99, background:lbPeriod===p?'#C9A227':'#111', color:lbPeriod===p?'#000':'#555', fontWeight:lbPeriod===p?700:500, fontSize:12, cursor:'pointer', fontFamily:'inherit', border:`1px solid ${lbPeriod===p?'#C9A227':'rgba(255,255,255,0.06)'}` }}>
                 {p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
@@ -431,8 +431,8 @@ export default function RewardsPage() {
 
           {leaderboard?.myRank && (
             <div style={{ background:'rgba(242,186,14,0.06)', border:'1px solid rgba(242,186,14,0.15)', borderRadius:12, padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <div style={{ fontSize:13, color:'#F2BA0E', fontWeight:700 }}>Your Rank</div>
-              <div style={{ fontSize:22, fontWeight:900, color:'#F2BA0E' }}>#{leaderboard.myRank}</div>
+              <div style={{ fontSize:13, color:'#C9A227', fontWeight:700 }}>Your Rank</div>
+              <div style={{ fontSize:22, fontWeight:900, color:'#C9A227' }}>#{leaderboard.myRank}</div>
             </div>
           )}
 
@@ -444,7 +444,7 @@ export default function RewardsPage() {
             </div>
           ) : leaderboard.leaderboard.map((entry: any) => (
             <div key={entry.userId} style={{ background:entry.isMe ? 'rgba(242,186,14,0.06)' : 'var(--bg-card)', border:`1px solid ${entry.isMe ? 'rgba(242,186,14,0.2)' : 'var(--border)'}`, borderRadius:14, padding:'14px 16px', display:'flex', alignItems:'center', gap:14 }}>
-              <div style={{ width:36, textAlign:'center', fontWeight:900, fontSize:16, color:entry.rank === 1 ? '#F2BA0E' : entry.rank === 2 ? '#ccc' : entry.rank === 3 ? '#cd7f32' : '#555' }}>
+              <div style={{ width:36, textAlign:'center', fontWeight:900, fontSize:16, color:entry.rank === 1 ? '#C9A227' : entry.rank === 2 ? '#ccc' : entry.rank === 3 ? '#cd7f32' : '#555' }}>
                 {entry.rank <= 3 ? ['🥇','🥈','🥉'][entry.rank - 1] : `#${entry.rank}`}
               </div>
               <div style={{ width:38, height:38, borderRadius:'50%', background:'linear-gradient(135deg,#A78BFA40,#7C3AED20)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:16, color:'#A78BFA', flexShrink:0 }}>
@@ -454,7 +454,7 @@ export default function RewardsPage() {
                 <div style={{ fontWeight:700, fontSize:14 }}>{entry.name} {entry.isMe ? '(You)' : ''}</div>
                 <div style={{ color:'var(--text-muted)', fontSize:12 }}>{entry.count} qualified referral{entry.count !== 1 ? 's' : ''}</div>
               </div>
-              {entry.rank <= 3 && <TrophyIcon size={18} color={entry.rank === 1 ? '#F2BA0E' : entry.rank === 2 ? '#ccc' : '#cd7f32'}/>}
+              {entry.rank <= 3 && <TrophyIcon size={18} color={entry.rank === 1 ? '#C9A227' : entry.rank === 2 ? '#ccc' : '#cd7f32'}/>}
             </div>
           ))}
         </div>
@@ -467,9 +467,9 @@ export default function RewardsPage() {
             <div style={{ fontWeight:800, fontSize:15, marginBottom:14 }}>How It Works</div>
             {[
               { step:'1', title:'Share your code', desc:'Send your referral link to friends via any channel', color:'#A78BFA' },
-              { step:'2', title:'Friend signs up', desc:'They create an account using your unique link', color:'#F2BA0E' },
+              { step:'2', title:'Friend signs up', desc:'They create an account using your unique link', color:'#C9A227' },
               { step:'3', title:'They verify & deposit', desc:'Complete KYC and make their first deposit', color:'#0ECB81' },
-              { step:'4', title:'Both earn bonuses', desc:'You get $200 · They get $40 · Credited instantly', color:'#F2BA0E' },
+              { step:'4', title:'Both earn bonuses', desc:'You get $200 · They get $40 · Credited instantly', color:'#C9A227' },
             ].map(s => (
               <div key={s.step} style={{ display:'flex', gap:12, padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
                 <div style={{ width:28, height:28, borderRadius:'50%', background:`${s.color}15`, border:`1.5px solid ${s.color}`, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:13, color:s.color, flexShrink:0 }}>{s.step}</div>

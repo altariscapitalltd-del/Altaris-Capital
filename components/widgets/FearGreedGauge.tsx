@@ -11,7 +11,7 @@ interface FearGreedData {
 const getSentimentColor = (value: number): string => {
   if (value <= 20) return '#F6465D'
   if (value <= 40) return '#FF6B35'
-  if (value <= 60) return '#F2BA0E'
+  if (value <= 60) return '#C9A227'
   if (value <= 80) return '#0ECB81'
   return '#00D084'
 }
@@ -81,7 +81,7 @@ const FearGreedGauge = memo(function FearGreedGauge() {
               <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" stopColor="#F6465D" />
                 <stop offset="25%" stopColor="#FF6B35" />
-                <stop offset="50%" stopColor="#F2BA0E" />
+                <stop offset="50%" stopColor="#C9A227" />
                 <stop offset="75%" stopColor="#0ECB81" />
                 <stop offset="100%" stopColor="#00D084" />
               </linearGradient>

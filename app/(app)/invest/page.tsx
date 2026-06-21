@@ -23,7 +23,7 @@ function Sparkline({ data, color, width=80, height=32 }: { data:number[], color:
 }
 
 function RiskBar({ level }: { level: number }) {
-  const colors = ['#0ECB81','#0ECB81','#F2BA0E','#FF6B35','#F6465D']
+  const colors = ['#0ECB81','#0ECB81','#C9A227','#FF6B35','#F6465D']
   return (
     <div style={{ display:'flex', gap:2 }}>
       {[1,2,3,4,5].map(i=>(
@@ -404,7 +404,7 @@ function InvestContent() {
                       <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1 }}>${summary.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                       <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 12, marginTop: 6 }}>Locked capital plus profit</div>
                     </div>
-                    <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(242,186,14,0.14)', border: '1px solid rgba(242,186,14,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F2BA0E', fontWeight: 900, fontSize: 20 }}>%</div>
+                    <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(242,186,14,0.14)', border: '1px solid rgba(242,186,14,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C9A227', fontWeight: 900, fontSize: 20 }}>%</div>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
@@ -413,7 +413,7 @@ function InvestContent() {
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Daily Earning</div><div style={{ fontWeight: 900, fontSize: 16, color: '#F2BA0E' }}>+${summary.dailyEarning.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day</div></div>
+                    <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Daily Earning</div><div style={{ fontWeight: 900, fontSize: 16, color: '#C9A227' }}>+${summary.dailyEarning.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day</div></div>
                     <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Active Plans</div><div style={{ fontWeight: 900, fontSize: 18 }}>{summary.activeCount}</div></div>
                   </div>
                 </div>
@@ -422,13 +422,13 @@ function InvestContent() {
                 <div key={inv.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 10, position: 'relative', overflow: 'hidden' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div><div style={{ fontWeight: 800, fontSize: 15 }}>{inv.planName}</div><div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>{(inv.dailyRoi * 100).toFixed(2)}% daily ROI · {inv.totalDurationDays}d plan</div></div>
-                    <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 800, background: inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.1)' : inv.status === 'ACTIVE' ? 'rgba(242,186,14,0.1)' : 'rgba(246,70,93,0.1)', color: inv.status === 'COMPLETED' ? '#0ECB81' : inv.status === 'ACTIVE' ? '#F2BA0E' : '#F6465D', border: `1px solid ${inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.2)' : inv.status === 'ACTIVE' ? 'rgba(242,186,14,0.2)' : 'rgba(246,70,93,0.2)'}` }}>{inv.status}</span>
+                    <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 800, background: inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.1)' : inv.status === 'ACTIVE' ? 'rgba(242,186,14,0.1)' : 'rgba(246,70,93,0.1)', color: inv.status === 'COMPLETED' ? '#0ECB81' : inv.status === 'ACTIVE' ? '#C9A227' : '#F6465D', border: `1px solid ${inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.2)' : inv.status === 'ACTIVE' ? 'rgba(242,186,14,0.2)' : 'rgba(246,70,93,0.2)'}` }}>{inv.status}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                     <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: '10px 12px' }}><div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Invested</div><div style={{ fontWeight: 800, fontSize: 17 }}>${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
-                    <div style={{ background: inv.hasStartedEarning ? 'rgba(14,203,129,0.07)' : 'rgba(242,186,14,0.07)', border: `1px solid ${inv.hasStartedEarning ? 'rgba(14,203,129,0.15)' : 'rgba(242,186,14,0.15)'}`, borderRadius: 10, padding: '10px 12px' }}><div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Profit Earned</div>{inv.hasStartedEarning ? <div style={{ fontWeight: 800, fontSize: 17, color: '#0ECB81' }}>+${inv.profitEarned.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div> : <div style={{ fontWeight: 700, fontSize: 13, color: '#F2BA0E' }}>Starts in {inv.hoursUntilProfit}h</div>}</div>
+                    <div style={{ background: inv.hasStartedEarning ? 'rgba(14,203,129,0.07)' : 'rgba(242,186,14,0.07)', border: `1px solid ${inv.hasStartedEarning ? 'rgba(14,203,129,0.15)' : 'rgba(242,186,14,0.15)'}`, borderRadius: 10, padding: '10px 12px' }}><div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Profit Earned</div>{inv.hasStartedEarning ? <div style={{ fontWeight: 800, fontSize: 17, color: '#0ECB81' }}>+${inv.profitEarned.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div> : <div style={{ fontWeight: 700, fontSize: 13, color: '#C9A227' }}>Starts in {inv.hoursUntilProfit}h</div>}</div>
                   </div>
-                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 99, height: 6, overflow: 'hidden', marginBottom: 6 }}><div style={{ height: '100%', background: `linear-gradient(90deg,#F2BA0E,${inv.hasStartedEarning ? '#0ECB81' : '#F2BA0E'})`, width: `${inv.progressPct || 0}%`, borderRadius: 99, transition: 'width .5s' }} /></div>
+                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 99, height: 6, overflow: 'hidden', marginBottom: 6 }}><div style={{ height: '100%', background: `linear-gradient(90deg,#C9A227,${inv.hasStartedEarning ? '#0ECB81' : '#C9A227'})`, width: `${inv.progressPct || 0}%`, borderRadius: 99, transition: 'width .5s' }} /></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: 10, fontWeight: 600 }}><span>{Math.round(inv.progressPct || 0)}% complete</span><span>{inv.status === 'COMPLETED' ? 'Completed' : `${Math.ceil(inv.daysRemaining || 0)}d remaining`}</span></div>
                 </div>
               ))}
@@ -470,7 +470,7 @@ function InvestContent() {
               {msg && <div style={{ padding: '10px 14px', borderRadius: 9, marginBottom: 14, fontSize: 13, fontWeight: 600, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)' }}>{msg.text}</div>}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
                 <button onClick={closeInvestSheet} style={{ padding: '14px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-                <button onClick={invest} disabled={loading || !amount || parseFloat(amount) < selected.min} style={{ padding: '14px', background: '#F2BA0E', color: '#000', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 15, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>{loading ? 'Investing...' : `Invest $${parseFloat(amount || '0').toLocaleString()}`}</button>
+                <button onClick={invest} disabled={loading || !amount || parseFloat(amount) < selected.min} style={{ padding: '14px', background: '#C9A227', color: '#000', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 15, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>{loading ? 'Investing...' : `Invest $${parseFloat(amount || '0').toLocaleString()}`}</button>
               </div>
             </div>
           </div>

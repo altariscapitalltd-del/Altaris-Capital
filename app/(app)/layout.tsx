@@ -56,7 +56,7 @@ const NAV = [
     href: '/invest', label: 'Invest',
     icon: (a: boolean) => (
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-        <circle cx="13" cy="13" r="12" fill={a ? '#F2BA0E' : '#1E1E1E'} stroke={a ? '#F2BA0E' : '#3A3A3A'} strokeWidth="1.5"/>
+        <circle cx="13" cy="13" r="12" fill={a ? '#C9A227' : '#1E1E1E'} stroke={a ? '#C9A227' : '#3A3A3A'} strokeWidth="1.5"/>
         <path d="M9 13h8M13 9v8" stroke={a ? '#000' : '#5A5A5A'} strokeWidth="2.2" strokeLinecap="round"/>
       </svg>
     ),
@@ -682,7 +682,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                   fontSize: 10,
                   fontWeight: active ? 600 : 400,
                   color: active
-                    ? (href === '/invest' ? '#F2BA0E' : '#FFFFFF')
+                    ? (href === '/invest' ? '#C9A227' : '#FFFFFF')
                     : '#4A4A4A',
                   transition: 'color .15s',
                   letterSpacing: '0.01em',

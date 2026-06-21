@@ -69,7 +69,7 @@ export default function AdminUsersPage() {
                         {(() => {
                           const cfg: Record<string,{c:string;l:string}> = {
                             APPROVED:       { c:'#0ECB81', l:'Verified'   },
-                            PENDING_REVIEW: { c:'#F2BA0E', l:'Pending'    },
+                            PENDING_REVIEW: { c:'#C9A227', l:'Pending'    },
                             REJECTED:       { c:'#F6465D', l:'Rejected'   },
                             NOT_SUBMITTED:  { c:'#64748b', l:'Unverified' },
                           }

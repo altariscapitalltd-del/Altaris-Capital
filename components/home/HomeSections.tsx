@@ -48,7 +48,7 @@ export const PromoBanner = memo(function PromoBanner({
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 999, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(242,186,14,0.35)', color: '#F2BA0E' }}>{item.pill}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 999, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(242,186,14,0.35)', color: '#C9A227' }}>{item.pill}</span>
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Limited offer</span>
             </div>
             <h2 style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{item.title}</h2>

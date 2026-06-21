@@ -69,7 +69,7 @@ export default function AdminSettingsPage() {
                     placeholder={`Enter ${coin} wallet address…`}/>
                   <div style={{display:'flex',gap:8}}>
                     <button onClick={()=>setEditing(null)} style={{padding:'9px 16px',borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'transparent',color:'#555',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>Cancel</button>
-                    <button onClick={()=>save(coin)} disabled={saving||!draft.trim()} style={{padding:'9px 20px',borderRadius:8,border:'none',background:'#F2BA0E',color:'#000',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',opacity:!draft.trim()?0.4:1}}>
+                    <button onClick={()=>save(coin)} disabled={saving||!draft.trim()} style={{padding:'9px 20px',borderRadius:8,border:'none',background:'#C9A227',color:'#000',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',opacity:!draft.trim()?0.4:1}}>
                       {saving?'Saving…':'Save Address'}
                     </button>
                   </div>
@@ -79,7 +79,7 @@ export default function AdminSettingsPage() {
                   <code style={{flex:1,background:'#1A1A1A',borderRadius:9,padding:'11px 14px',fontSize:11,fontFamily:'monospace',color:addr?'#888':'#333',border:'1px solid rgba(255,255,255,0.05)',wordBreak:'break-all',lineHeight:1.6}}>
                     {addr||'No address set'}
                   </code>
-                  <button onClick={()=>{setEditing(coin);setDraft(addr||'')}} style={{flexShrink:0,padding:'9px 16px',borderRadius:9,border:'1px solid rgba(242,186,14,0.2)',background:'rgba(242,186,14,0.07)',color:'#F2BA0E',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
+                  <button onClick={()=>{setEditing(coin);setDraft(addr||'')}} style={{flexShrink:0,padding:'9px 16px',borderRadius:9,border:'1px solid rgba(242,186,14,0.2)',background:'rgba(242,186,14,0.07)',color:'#C9A227',fontWeight:600,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
                     {addr?'Edit':'+ Set'}
                   </button>
                 </div>
