@@ -596,6 +596,43 @@ html,body{background:var(--bg-page)!important}
 .wallet-currency-head button{background:var(--gold)!important;color:#0A0A08!important}
 .positive,.positive-text{color:var(--success)!important}.negative,.negative-text{color:var(--danger)!important}
 
+/* ── Admin panel — retune from blue/purple to obsidian + gold ───────────── */
+.admin-shell{background:
+  radial-gradient(circle at 0% 0%,rgba(201,162,39,.10),transparent 30%),
+  radial-gradient(circle at 100% 18%,rgba(201,162,39,.05),transparent 34%),
+  linear-gradient(135deg,#08090C,#07080A)!important;color:#ECE7DB!important}
+.admin-sidebar{background:linear-gradient(180deg,#0C0D11,#08090B)!important;border-right:1px solid rgba(201,162,39,.12)!important}
+.admin-sidebar-head{border-bottom-color:rgba(201,162,39,.12)!important}
+.admin-brand small{color:#C9A227!important}
+.admin-nav-link{color:#9A958A!important}
+.admin-nav-link:hover{background:rgba(201,162,39,.08)!important;border-color:rgba(201,162,39,.18)!important;color:#ECE7DB!important}
+.admin-nav-link.active{background:linear-gradient(180deg,#E4C25C,#C9A227)!important;color:#0A0A08!important;box-shadow:0 12px 28px rgba(201,162,39,.18)!important}
+.admin-nav-link em,.admin-bottom-link em{background:#E0566B!important}
+.admin-topbar{background:rgba(8,9,12,.82)!important;border-bottom:1px solid rgba(201,162,39,.12)!important}
+.admin-search-pill{background:rgba(236,231,219,.04)!important;border-color:rgba(201,162,39,.14)!important;color:#9A958A!important}
+.admin-live,.admin-live span{color:#3FB984!important}.admin-live span{background:#3FB984!important}
+.admin-top-actions a{background:rgba(201,162,39,.12)!important;border-color:rgba(201,162,39,.24)!important;color:#E4C25C!important}
+.admin-panel{background:linear-gradient(160deg,#0E1014,#0A0B0E)!important;border:1px solid rgba(201,162,39,.12)!important;box-shadow:var(--shadow-sm)!important}
+.admin-stat{background:linear-gradient(165deg,rgba(201,162,39,.14),rgba(201,162,39,.03))!important;border:1px solid rgba(201,162,39,.20)!important}
+.admin-stat strong{color:#ECE7DB!important}.admin-stat span{color:#9A958A!important}
+.admin-muted,.admin-page th{color:#8A857A!important}
+.admin-page td{border-top-color:rgba(236,231,219,.07)!important}
+.admin-page input,.admin-page select,.admin-page textarea{background:#121419!important;border-color:rgba(201,162,39,.14)!important;color:#ECE7DB!important}
+.admin-bottom-nav{background:rgba(8,9,12,.98)!important;border-top-color:rgba(201,162,39,.12)!important}
+.admin-bottom-link.active{background:linear-gradient(135deg,rgba(201,162,39,.26),rgba(201,162,39,.14))!important;color:#E4C25C!important}
+/* admin messenger */
+.admin-chat-list-head p{color:#C9A227!important}
+.admin-chat-list-head span{background:rgba(201,162,39,.14)!important;color:#E4C25C!important}
+.admin-chat-avatar{background:linear-gradient(135deg,#E4C25C,#C9A227)!important;color:#0A0A08!important;box-shadow:0 10px 26px rgba(201,162,39,.16)!important}
+.admin-chat-avatar.tiny{background:rgba(201,162,39,.22)!important;color:#E4C25C!important}
+.admin-chat-thread.active{background:linear-gradient(135deg,rgba(201,162,39,.16),rgba(236,231,219,.04))!important;box-shadow:inset 0 0 0 1px rgba(201,162,39,.20)!important}
+.admin-chat-message-row.admin .admin-chat-bubble{background:linear-gradient(135deg,#E4C25C,#C9A227)!important;color:#0A0A08!important}
+.admin-chat-send{background:#C9A227!important;color:#0A0A08!important;box-shadow:0 12px 28px rgba(201,162,39,.22)!important}
+.admin-chat-composer textarea:focus{box-shadow:0 0 0 2px rgba(201,162,39,.6)!important}
+.admin-messenger-shell,.admin-chat-room,.admin-chat-list{background:linear-gradient(135deg,#0C0D11,#08090B)!important}
+.admin-chat-room-head,.admin-chat-composer{background:rgba(8,9,12,.8)!important;border-color:rgba(201,162,39,.12)!important}
+.admin-chat-bubble{background:#14171D!important}
+
 /* Respect reduced motion */
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
