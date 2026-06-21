@@ -124,6 +124,7 @@ export default function MarketChartPage() {
   const [range, setRange] = useState<RangeKey>('1D')
   const [market, setMarket] = useState<MarketInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const [chartSeries, setChartSeries] = useState<number[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -149,11 +150,35 @@ export default function MarketChartPage() {
     return () => { cancelled = true }
   }, [symbol])
 
-  const baseSeries = market?.spark?.length ? market.spark : FALLBACK_SERIES
+  // Real daily price history (Binance klines, CoinGecko daily fallback) for the
+  // longer ranges; short ranges use the real dense sparkline below.
+  useEffect(() => {
+    if (range !== '1M' && range !== '1Y') return
+    let cancelled = false
+    const days = range === '1M' ? 30 : 180
+    fetch(`/api/market/chart?symbol=${symbol}&days=${days}`)
+      .then(r => r.json())
+      .then(d => {
+        if (cancelled) return
+        const values: number[] = Array.isArray(d?.values) ? d.values.map(Number).filter((n: number) => Number.isFinite(n)) : []
+        if (values.length > 1) setChartSeries(values)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [symbol, range])
+
+  // Real data everywhere: dense sparkline for short ranges, daily klines for long.
+  // Synthetic FALLBACK only when no live data is reachable at all.
   const series = useMemo(() => {
-    const multiplier = range === '1H' ? 0.25 : range === '1D' ? 1 : range === '1W' ? 1.8 : range === '1M' ? 2.8 : 4
-    return baseSeries.map((value, index) => value * (1 + Math.sin(index / 3) * 0.002 * multiplier))
-  }, [baseSeries, range])
+    if ((range === '1M' || range === '1Y') && chartSeries.length > 1) return chartSeries
+    const sp = market?.spark || []
+    if (sp.length > 8) {
+      if (range === '1H') return sp.slice(-Math.max(8, Math.round(sp.length * 0.2)))
+      if (range === '1D') return sp.slice(-Math.max(12, Math.round(sp.length * 0.4)))
+      return sp // 1W = full sparkline
+    }
+    return chartSeries.length > 1 ? chartSeries : FALLBACK_SERIES
+  }, [range, chartSeries, market?.spark])
 
   const price = market?.price || series[series.length - 1] || null
   const first = series[0] || price || 0

@@ -118,6 +118,43 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [splashVisible, setSplashVisible] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
 
+  // ── Pull-to-refresh ──
+  const mainScrollRef = useRef<HTMLElement | null>(null)
+  const [pull, setPull] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const ptrStartY = useRef(0)
+  const ptrActive = useRef(false)
+  const PTR_THRESHOLD = 64
+
+  const onPtrStart = useCallback((e: React.TouchEvent) => {
+    const el = mainScrollRef.current
+    if (!el || refreshing || el.scrollTop > 0) { ptrActive.current = false; return }
+    ptrStartY.current = e.touches[0].clientY
+    ptrActive.current = true
+  }, [refreshing])
+
+  const onPtrMove = useCallback((e: React.TouchEvent) => {
+    if (!ptrActive.current || refreshing) return
+    const el = mainScrollRef.current
+    if (el && el.scrollTop > 0) { ptrActive.current = false; setPull(0); return }
+    const dy = e.touches[0].clientY - ptrStartY.current
+    if (dy > 0) setPull(Math.min(dy * 0.5, 96))
+    else { setPull(0) }
+  }, [refreshing])
+
+  const onPtrEnd = useCallback(async () => {
+    if (!ptrActive.current) return
+    ptrActive.current = false
+    if (pull >= PTR_THRESHOLD) {
+      setRefreshing(true)
+      setPull(PTR_THRESHOLD)
+      try { window.dispatchEvent(new Event('balance:refresh')) } catch {}
+      await new Promise((r) => setTimeout(r, 1000))
+      setRefreshing(false)
+    }
+    setPull(0)
+  }, [pull])
+
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)')
     const update = () => setIsMobile(mq.matches)
@@ -556,8 +593,24 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main className="app-main-scroll" style={{ flex: 1, position: 'relative', overscrollBehavior: 'contain', touchAction: 'pan-y', ...(isWallet ? { top: 'env(safe-area-inset-top)' } : {}) }}>
-        <div>{children}</div>
+      <main
+        ref={mainScrollRef}
+        className="app-main-scroll"
+        style={{ flex: 1, position: 'relative', overscrollBehavior: 'contain', touchAction: 'pan-y', ...(isWallet ? { top: 'env(safe-area-inset-top)' } : {}) }}
+        onTouchStart={onPtrStart}
+        onTouchMove={onPtrMove}
+        onTouchEnd={onPtrEnd}
+        onTouchCancel={onPtrEnd}
+      >
+        <div id="ptr-indicator" style={{ height: pull, opacity: pull > 8 || refreshing ? 1 : 0 }}>
+          <div
+            className={`ptr-spinner${refreshing ? ' spinning' : ''}`}
+            style={{ transform: refreshing ? 'none' : `rotate(${pull * 4}deg) scale(${Math.min(0.5 + pull / 96, 1)})`, opacity: Math.min(0.4 + pull / 64, 1) }}
+          />
+        </div>
+        <div className="ptr-content" style={{ transform: `translateY(${pull}px)`, transition: ptrActive.current ? 'none' : 'transform .28s cubic-bezier(.2,.7,.3,1)' }}>
+          {children}
+        </div>
       </main>
 
       <AnimatePresence>
