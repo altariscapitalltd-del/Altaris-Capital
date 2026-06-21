@@ -106,9 +106,11 @@ export async function GET(req: NextRequest) {
     })
     if (!full) return NextResponse.json({ user: null })
     const investments = full.investments.map((inv) => ({ ...inv, ...calcInvestmentState(inv) }))
+    // Never expose the encrypted private key to the client; keep walletAddress.
+    const { walletPrivateKey, ...safe } = full as any
     return NextResponse.json({
       user: normalizeProfilePicture({
-        ...full,
+        ...safe,
         investments,
         investmentSummary: calcInvestmentSummary(investments),
       }),

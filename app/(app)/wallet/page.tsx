@@ -6,9 +6,13 @@ import QRCode from 'qrcode'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
 const DEPOSIT_COINS = [
-  { sym: 'BTC', name: 'Bitcoin', color: '#F7931A', minDeposit: 0.001 },
-  { sym: 'ETH', name: 'Ethereum', color: '#627EEA', minDeposit: 0.01 },
-  { sym: 'USDT', name: 'Tether', color: '#26A17B', minDeposit: 10 },
+  { sym: 'USDT', name: 'Tether USD', color: '#26A17B', minDeposit: 10, network: 'ERC-20', glyph: '₮' },
+  { sym: 'USDC', name: 'USD Coin', color: '#2775CA', minDeposit: 10, network: 'ERC-20', glyph: '$' },
+  { sym: 'ETH', name: 'Ethereum', color: '#627EEA', minDeposit: 0.01, network: 'Native', glyph: '◆' },
+  { sym: 'BNB', name: 'BNB', color: '#F3BA2F', minDeposit: 0.02, network: 'BEP-20', glyph: 'B' },
+  { sym: 'BTC', name: 'Bitcoin', color: '#F7931A', minDeposit: 0.001, network: 'Native', glyph: '₿' },
+  { sym: 'SOL', name: 'Solana', color: '#14F195', minDeposit: 0.1, network: 'SPL', glyph: 'S' },
+  { sym: 'XRP', name: 'XRP', color: '#23292F', minDeposit: 1, network: 'Native', glyph: 'X' },
 ] as const
 
 type WalletTab = 'none' | 'deposit' | 'withdraw' | 'reward'
@@ -129,6 +133,7 @@ export default function WalletPage() {
   const [ready, setReady] = useState(false)
   const [refCode, setRefCode] = useState('')
   const [profile, setProfile] = useState<{ name?: string; avatarUrl?: string }>({})
+  const [userWallet, setUserWallet] = useState('')
   const [balanceHidden, setBalanceHidden] = useState(false)
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
 
@@ -146,6 +151,7 @@ export default function WalletPage() {
         setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
         setRefCode(d.user?.referralCode || 'ALTARIS01')
         setProfile({ name: d.user?.name, avatarUrl: d.user?.avatarUrl || d.user?.avatar })
+        if (d.user?.walletAddress) setUserWallet(d.user.walletAddress)
       })
       .catch(() => {})
   }
@@ -179,6 +185,7 @@ export default function WalletPage() {
           setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
           setRefCode(d.user?.referralCode || 'ALTARIS01')
           setProfile({ name: d.user?.name, avatarUrl: d.user?.avatarUrl || d.user?.avatar })
+        if (d.user?.walletAddress) setUserWallet(d.user.walletAddress)
         }
 
         if (txRes.status === 'fulfilled') {
@@ -227,7 +234,7 @@ export default function WalletPage() {
   }, [tab, depositMode])
 
   useEffect(() => {
-    const address = walletAddresses[coin]
+    const address = userWallet
     if (!address || tab !== 'deposit' || depositMode !== 'crypto') {
       setQrDataUrl(null)
       return
@@ -236,7 +243,7 @@ export default function WalletPage() {
     QRCode.toDataURL(address, { width: 300, margin: 1 })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null))
-  }, [coin, walletAddresses, tab, depositMode])
+  }, [coin, userWallet, tab, depositMode])
 
   const usdBalance = balances.USD || 0
   const cryptoValue = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'USDT'].reduce((sum, sym) => sum + (balances[sym] || 0) * (marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)), 0)
@@ -303,7 +310,7 @@ export default function WalletPage() {
   }, [transactions])
 
   const selectedCoin = DEPOSIT_COINS.find((c) => c.sym === coin)!
-  const activeAddress = walletAddresses[coin] || ''
+  const activeAddress = userWallet
 
   async function submitDeposit() {
     if (!amount || !txHash.trim()) {
@@ -428,7 +435,7 @@ export default function WalletPage() {
     value: `$${((balances[sym] || 0) * (marketPrices[sym]?.price || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
     amount: balances[sym] || 0,
     color: sym === 'BTC' ? '#F7931A' : sym === 'ETH' ? '#627EEA' : sym === 'BNB' ? '#F3BA2F' : sym === 'SOL' ? '#14F195' : '#E74C3C',
-    note: walletAddresses[sym] ? `${walletAddresses[sym].slice(0, 8)}...${walletAddresses[sym].slice(-6)}` : 'Admin address required',
+    note: userWallet ? `${userWallet.slice(0, 8)}...${userWallet.slice(-6)}` : 'Wallet pending',
   }))
 
   const trendingTokens = [
@@ -440,15 +447,16 @@ export default function WalletPage() {
   // Activity list — every supported asset, holdings first then by value
   const ASSET_META: Record<string, { name: string; color: string }> = {
     USDT: { name: 'Tether USD', color: '#26A17B' },
+    USDC: { name: 'USD Coin', color: '#2775CA' },
     BTC: { name: 'Bitcoin', color: '#F7931A' },
     ETH: { name: 'Ethereum', color: '#627EEA' },
     BNB: { name: 'BNB', color: '#F3BA2F' },
     SOL: { name: 'Solana', color: '#14F195' },
     XRP: { name: 'XRP', color: '#23292F' },
   }
-  const activityAssets = ['USDT', ...marketCoins]
+  const activityAssets = ['USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'SOL', 'XRP']
     .map((sym) => {
-      const price = marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)
+      const price = marketPrices[sym]?.price || (sym === 'USDT' || sym === 'USDC' ? 1 : 0)
       const amount = balances[sym] || 0
       return {
         sym,
@@ -627,12 +635,15 @@ export default function WalletPage() {
           {depositMode === 'network' && (
             <div className="network-sheet">
               <div className="network-sheet-head">
-                <h2>Change network</h2>
+                <h2>Receive crypto</h2>
                 <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
+              </div>
+              <div style={{ maxWidth: 430, margin: '0 auto 14px', color: 'var(--text-secondary)', fontSize: 12.5, lineHeight: 1.6 }}>
+                Select an asset to receive. Deposits credit that currency's balance in your wallet.
               </div>
               <div className="network-list">
                 {DEPOSIT_COINS.map((c) => {
-                  const addr = walletAddresses[c.sym] || ''
+                  const addr = userWallet
                   return (
                     <button
                       key={c.sym}
@@ -641,11 +652,11 @@ export default function WalletPage() {
                       className="network-row pressable"
                     >
                       <span className="network-logo" style={{ background: c.color }}>
-                        {c.sym === 'BTC' ? '₿' : c.sym === 'ETH' ? '◆' : '₮'}
+                        {c.glyph}
                       </span>
                       <span className="network-copy">
-                        <strong>{c.name}</strong>
-                        <em>{addr ? `${addr.slice(0, 10)}...${addr.slice(-7)}` : `${c.sym.toLowerCase()} address unavailable`}</em>
+                        <strong>{c.name} <span style={{ fontWeight: 600, fontSize: 11, color: 'var(--text-muted)' }}>· {c.sym} · {c.network}</span></strong>
+                        <em>{addr ? `${addr.slice(0, 10)}...${addr.slice(-7)}` : `${c.sym.toLowerCase()} wallet pending`}</em>
                       </span>
                       <span
                         className="network-icons network-copy-action"
@@ -812,8 +823,8 @@ export default function WalletPage() {
             <div style={{ width: 44 }} />
           </div>
 
-          <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, background: 'rgba(242,186,14,0.16)', border: '1px solid rgba(242,186,14,0.24)', color: '#C9A227', fontSize: 12, fontWeight: 600 }}>
-            Only send {coin} to this address. Other assets may be lost permanently.
+          <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, background: 'rgba(201,162,39,0.12)', border: '1px solid rgba(201,162,39,0.28)', color: 'var(--gold-bright)', fontSize: 12, fontWeight: 600, lineHeight: 1.6 }}>
+            Send only {coin} on the {selectedCoin.network} network to this address. Your deposit is credited to your {coin} balance after confirmation.
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto' }} className="no-scrollbar">
