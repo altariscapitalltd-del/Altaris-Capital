@@ -43,7 +43,7 @@ export default function NotificationsPage() {
         <Link href="/settings" style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: 'var(--text-secondary)' }}>
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </Link>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Notifications</h1>
+        <h1 className="font-display" style={{ fontSize: 22, fontWeight:600, margin: 0 }}>Notifications</h1>
         <button onClick={markAllRead} disabled={marking || notifications.length === 0}
           style={{ padding: '10px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)', fontSize: 12, fontWeight: 600, cursor: marking ? 'not-allowed' : 'pointer' }}>
           {marking ? 'Marking…' : 'Mark all read'}

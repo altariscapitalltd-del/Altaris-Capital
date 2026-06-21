@@ -60,7 +60,7 @@ export default function SupportPage() {
     <div style={{display:'flex',flexDirection:'column',height:'calc(100svh - 58px - 52px)'}}>
       {/* Header */}
       <div style={{padding:'12px 16px',borderBottom:'1px solid var(--border)',flexShrink:0}}>
-        <h1 style={{fontSize:18,fontWeight:800,marginBottom:2}}>Live Support</h1>
+        <h1 className="font-display" style={{fontSize:18,fontWeight:600,marginBottom:2}}>Live Support</h1>
         <div style={{display:'flex',alignItems:'center',gap:6}}>
           <div style={{width:7,height:7,borderRadius:'50%',background:'var(--success)',animation:'pulseLive 2s infinite'}}/>
           <span style={{color:'var(--success)',fontSize:12,fontWeight:600}}>Support team online</span>

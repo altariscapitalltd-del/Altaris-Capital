@@ -136,7 +136,7 @@ export default function TransactionsPage() {
   return (
     <div style={{ padding: '0 0 24px' }}>
       <div style={{ padding: '12px 16px 0' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12 }}>Transaction History</h1>
+        <h1 className="font-display" style={{ fontSize: 22, fontWeight:600, marginBottom: 12 }}>Transaction History</h1>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
           <div style={{ background: 'rgba(14,203,129,0.06)', border: '1px solid rgba(14,203,129,0.14)', borderRadius: 12, padding: '10px 12px' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#0ECB81', letterSpacing: '0.06em', marginBottom: 4 }}>TOTAL IN</div>

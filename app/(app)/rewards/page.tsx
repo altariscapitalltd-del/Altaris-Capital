@@ -159,7 +159,7 @@ export default function RewardsPage() {
             <GiftIcon size={22}/>
           </div>
           <div>
-            <h1 style={{ fontSize:22, fontWeight:900, marginBottom:2 }}>Rewards</h1>
+            <h1 className="font-display" style={{ fontSize:22, fontWeight:600, marginBottom:2 }}>Rewards</h1>
             <div style={{ color:'var(--text-muted)', fontSize:12 }}>Invite friends, earn bonuses</div>
           </div>
           <div style={{ marginLeft:'auto', textAlign:'right' }}>

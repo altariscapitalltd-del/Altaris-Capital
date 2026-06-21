@@ -74,7 +74,7 @@ export default function ProfilePage() {
         <Link href="/settings" style={{ width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', color:'var(--text-secondary)' }}>
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </Link>
-        <h1 style={{ fontSize:20, fontWeight:800 }}>Edit Profile</h1>
+        <h1 className="font-display" style={{ fontSize:20, fontWeight:600 }}>Edit Profile</h1>
       </div>
 
       {/* Avatar */}

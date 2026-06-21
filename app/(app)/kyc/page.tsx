@@ -103,7 +103,7 @@ export default function KYCPage() {
   return <div style={{ padding:'0 0 100px', maxWidth:560, margin:'0 auto' }}>
     <div style={{ padding:'20px 20px 0' }}>
       <div style={{ display:'inline-block', padding:'5px 14px', borderRadius:99, background:'rgba(255,255,255,0.05)', color:'#777', fontSize:11, fontWeight:700, letterSpacing:'0.06em', marginBottom:12 }}>NOT VERIFIED</div>
-      <h1 style={{ fontSize:22, fontWeight:800, marginBottom:6 }}>Identity Verification</h1>
+      <h1 className="font-display" style={{ fontSize:22, fontWeight:600, marginBottom:6 }}>Identity Verification</h1>
       <p style={{ color:'var(--text-muted)', fontSize:13, lineHeight:1.6, marginBottom:24 }}>Complete KYC to unlock withdrawals and full account access.</p>
       <div style={{ display:'flex', alignItems:'flex-start', marginBottom:28, position:'relative' }}>{STEPS.map((s, i) => <div key={s.id} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', position:'relative' }}>{i < STEPS.length - 1 && <div style={{ position:'absolute', top:15, left:'50%', width:'100%', height:2, background:i < step ? '#0ECB81' : 'rgba(255,255,255,0.07)', zIndex:0 }} />}<div style={{ position:'relative', zIndex:1 }}><StepDot idx={i} current={step} /></div></div>)}</div>
     </div>

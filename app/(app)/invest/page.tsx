@@ -270,7 +270,7 @@ function InvestContent() {
         <div>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
             <AltarisLogoMark size={26} />
-            <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', margin:0 }}>Invest</h1>
+            <h1 className="font-display" style={{ fontSize: 24, fontWeight:600, letterSpacing: '-0.02em', margin:0 }}>Invest</h1>
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Grow your wealth with expert plans</div>
         </div>

@@ -323,8 +323,21 @@ export default function HomePage() {
     </div>
   )
 
+  const firstName = (user?.name || '').trim().split(' ')[0]
+  const greeting = (() => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening' })()
+
   return (
     <div style={{ padding: '4px 0 16px' }}>
+
+      {/* ── Personalized greeting ── */}
+      <div style={{ margin: '6px 16px 2px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+        <div>
+          <div className="eyebrow" style={{ color: 'var(--text-muted)' }}>{greeting}</div>
+          <div className="font-display" style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.01em', marginTop: 3, color: 'var(--text-primary)' }}>
+            {firstName ? `Welcome back, ${firstName}.` : 'Welcome back.'}
+          </div>
+        </div>
+      </div>
 
       {/* ── Portfolio Balance — private-bank statement ── */}
       <section className="statement-hero">
@@ -427,7 +440,7 @@ export default function HomePage() {
       {sectionsReady && activeInvestments.length > 0 && (
         <div style={{ margin: '22px 0 0' }}>
           <div style={{ padding: '0 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontWeight: 700, fontSize: 15 }}>Active Plans</span>
+            <span className="font-display" style={{ fontWeight: 600, fontSize: 19 }}>Active Plans</span>
             <Link href="/invest?tab=my" style={{ color: 'var(--brand-primary)', fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>View All →</Link>
           </div>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '0 16px 4px' }} className="no-scrollbar">
@@ -453,7 +466,7 @@ export default function HomePage() {
       {sectionsReady && coins.length > 0 && (
         <div style={{ margin: '22px 16px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={{ fontWeight: 700, fontSize: 15 }}>Markets</span>
+            <span className="font-display" style={{ fontWeight: 600, fontSize: 19 }}>Markets</span>
             <Link href="/markets" style={{ color: 'var(--brand-primary)', fontSize: 12, textDecoration: 'none', fontWeight: 600 }}>View All →</Link>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
