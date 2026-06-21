@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 
 :root, [data-theme="dark"] {
   --app-header-height: 120px;
@@ -441,5 +441,162 @@ html,body{background:#000!important}.root-shell,.app-container{background:#000!i
 .portfolio-range-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.portfolio-range-tabs button{border:1px solid rgba(255,255,255,.08);background:#0d0d0d;color:#737373;border-radius:999px;padding:7px 0;font-size:11px;font-weight:850;cursor:pointer}.portfolio-range-tabs button.active{background:#f2ba0e;color:#000;border-color:#f2ba0e}.wallet-currency-card{text-decoration:none;color:inherit}.wallet-currency-icon img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
 .portfolio-performance-card{border:1px solid rgba(255,255,255,.075);background:linear-gradient(180deg,#0a0a0a,#030303);border-radius:22px;padding:14px;box-shadow:0 20px 48px rgba(0,0,0,.45)}
 .portfolio-performance-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.portfolio-performance-head span{display:block;color:#777;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}.portfolio-performance-head strong{display:block;margin-top:4px;font-size:24px;font-weight:950;letter-spacing:-.04em}.portfolio-performance-head>div:last-child{text-align:right;font-size:15px;font-weight:900}.portfolio-performance-head em{display:block;margin-top:3px;font-size:11px;font-style:normal}.positive{color:#0ECB81!important}.negative{color:#F6465D!important}.portfolio-metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}.portfolio-metric-row span{background:#0f0f0f;border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:8px 7px}.portfolio-metric-row b{display:block;color:#6f6f6f;font-size:9px;font-weight:800;text-transform:uppercase;white-space:nowrap}.portfolio-metric-row em{display:block;margin-top:3px;font-size:11px;font-style:normal;font-weight:850;color:#e9e9e9}.portfolio-range-tabs.compact{display:flex;justify-content:flex-end;gap:5px}.portfolio-range-tabs.compact button{width:auto;min-width:34px;padding:4px 8px;font-size:9px;background:transparent;border-color:rgba(255,255,255,.06);color:#686868}.portfolio-range-tabs.compact button.active{background:rgba(242,186,14,.16);border-color:rgba(242,186,14,.32);color:#f2ba0e}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ALTARIS PRIVATE — Obsidian & Gold
+   Final authoritative design pass. Last definition wins, so this overrides the
+   earlier "premium" and "pure black" passes. One source of truth for the look:
+   warm obsidian surfaces · real muted gold as a precious accent · warm bone ink
+   · gold hairlines as the structural "statement" motif · Fraunces display.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root,[data-theme="dark"]{
+  /* surfaces — warm near-black, never flat #000 */
+  --bg-page:#07080A; --bg-primary:#07080A;
+  --bg-card:#0E1014; --bg-secondary:#0E1014;
+  --bg-input:#121419; --bg-tertiary:#121419;
+  --bg-elevated:#16191F; --bg-hover:#1C2027;
+  --nav-bg:rgba(7,8,10,.92);
+  /* gold — real, muted, not Binance neon */
+  --brand-primary:#C9A227; --brand-primary-hover:#E4C25C; --brand-secondary:#9DB4C0;
+  --gold:#C9A227; --gold-bright:#E4C25C; --gold-soft:rgba(201,162,39,.12);
+  /* warm bone ink */
+  --text-primary:#ECE7DB; --text-secondary:#9A958A; --text-muted:#615C52;
+  /* states — softened to sit inside the warm palette */
+  --success:#3FB984; --success-bg:rgba(63,185,132,.10);
+  --danger:#E0566B; --danger-bg:rgba(224,86,107,.10);
+  --warning:#C9A227; --warning-bg:rgba(201,162,39,.10);
+  --info:#9DB4C0;
+  /* gold hairlines — the signature structural device */
+  --border:rgba(201,162,39,.10); --border-strong:rgba(201,162,39,.24);
+  --hairline:rgba(236,231,219,.07);
+  --border-focus:#C9A227;
+  --shadow-sm:0 1px 0 rgba(236,231,219,.02),0 10px 26px rgba(0,0,0,.55);
+  --shadow-md:0 28px 64px rgba(0,0,0,.6);
+  --shadow-glow:0 0 0 1px rgba(201,162,39,.28),0 10px 34px rgba(201,162,39,.12);
+  --radius-sm:8px; --radius-md:12px; --radius-lg:18px; --radius-xl:26px;
+  --font-display:'Fraunces',Georgia,'Times New Roman',serif;
+  --font-body:'Schibsted Grotesk','Inter',-apple-system,system-ui,sans-serif;
+}
+[data-theme="light"]{
+  --bg-page:#F4F1E9; --bg-primary:#F4F1E9;
+  --bg-card:#FFFFFF; --bg-secondary:#FFFFFF;
+  --bg-input:#F6F3EC; --bg-tertiary:#F6F3EC;
+  --bg-elevated:#EEE9DD; --bg-hover:#E7E1D2;
+  --nav-bg:rgba(244,241,233,.94);
+  --brand-primary:#9A7B14; --brand-primary-hover:#B8941C; --brand-secondary:#5C7384;
+  --gold:#9A7B14; --gold-bright:#B8941C; --gold-soft:rgba(154,123,20,.12);
+  --text-primary:#1A1712; --text-secondary:#6B6557; --text-muted:#A39C8B;
+  --success:#0F9A6A; --danger:#C9415A; --warning:#9A7B14;
+  --border:rgba(154,123,20,.18); --border-strong:rgba(154,123,20,.34);
+  --hairline:rgba(26,23,18,.08); --border-focus:#9A7B14;
+  --shadow-sm:0 1px 0 rgba(0,0,0,.02),0 8px 22px rgba(120,100,40,.08);
+  --shadow-md:0 24px 54px rgba(120,100,40,.12);
+}
+
+/* ── Typography ─────────────────────────────────────────────────────────── */
+body{font-family:var(--font-body);letter-spacing:-.005em}
+.font-display,.display{font-family:var(--font-display);font-optical-sizing:auto}
+/* uppercase tracked gold label — the "statement" eyebrow */
+.eyebrow{font-family:var(--font-body);font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text-secondary)}
+.eyebrow.gold{color:var(--gold)}
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* gold hairline rule — engraved divider */
+.hairline{height:1px;background:linear-gradient(90deg,transparent,var(--border-strong) 12%,var(--border-strong) 88%,transparent);border:0}
+.hairline-solid{height:1px;background:var(--hairline);border:0}
+::selection{background:var(--gold);color:#07080A}
+
+/* ── Backgrounds (beat the black pass !important) ───────────────────────── */
+html,body{background:var(--bg-page)!important}
+.root-shell,.app-container{background:
+  radial-gradient(120% 60% at 50% -8%,rgba(201,162,39,.07),transparent 46%),
+  linear-gradient(180deg,var(--bg-page),#050608)!important}
+.app-main-scroll{background:linear-gradient(180deg,rgba(201,162,39,.02),transparent 220px)!important}
+
+/* ── Top header + bottom nav ────────────────────────────────────────────── */
+.app-top-header{
+  background:linear-gradient(180deg,rgba(7,8,10,.98),rgba(7,8,10,.86))!important;
+  border-bottom:1px solid var(--border)!important;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:0 12px 30px rgba(0,0,0,.35)!important}
+.app-bottom-nav{
+  background:linear-gradient(180deg,rgba(9,10,13,.95),rgba(7,8,10,.99))!important;
+  border-top:1px solid var(--border)!important;
+  box-shadow:0 -18px 40px rgba(0,0,0,.45)!important}
+
+/* ── Cards — ink with a single gold hairline ────────────────────────────── */
+.card,.section-block{
+  background:linear-gradient(180deg,#0E1014,#0B0C0F)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:var(--shadow-sm)!important}
+.ui-upgrade-card:hover,.card.pressable:hover{border-color:var(--border-strong)!important}
+
+/* ── Buttons — gold is a coin, not a slab ───────────────────────────────── */
+.btn-primary{
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold))!important;
+  color:#0A0A08!important;font-family:var(--font-body);font-weight:800;
+  letter-spacing:.01em;border:1px solid rgba(201,162,39,.5)!important;
+  box-shadow:0 10px 26px rgba(201,162,39,.18),inset 0 1px 0 rgba(255,255,255,.25)!important}
+.btn-primary:hover{filter:brightness(1.05)}
+.btn-ghost{
+  background:transparent!important;color:var(--text-primary)!important;
+  border:1px solid var(--border-strong)!important;font-weight:600}
+.btn-ghost:hover{background:var(--gold-soft)!important;border-color:var(--gold)!important;color:var(--gold-bright)!important}
+
+/* ── Inputs · chips · rows ──────────────────────────────────────────────── */
+.input{background:rgba(236,231,219,.025)!important;border:1px solid var(--border)!important;
+  color:var(--text-primary)!important}
+.input:focus{border-color:var(--gold)!important;box-shadow:0 0 0 3px var(--gold-soft)!important}
+.chip{background:rgba(236,231,219,.03)!important;border:1px solid var(--border)!important;
+  color:var(--text-secondary)!important;font-weight:600}
+.chip:hover{border-color:var(--border-strong)!important;color:var(--text-primary)!important}
+.chip.active{background:var(--gold)!important;border-color:var(--gold)!important;color:#0A0A08!important}
+.row-item{border-bottom:1px solid var(--hairline)!important}
+.row-item:hover{background:rgba(201,162,39,.04)!important}
+.badge-success{background:var(--success-bg);color:var(--success)}
+.badge-danger{background:var(--danger-bg);color:var(--danger)}
+.badge-warning{background:var(--warning-bg);color:var(--warning)}
+.gradient-text{background:linear-gradient(135deg,var(--gold-bright),var(--gold))!important;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+/* ── Home balance hero — the private-bank statement (signature) ─────────── */
+.statement-hero{position:relative;margin:10px 16px 0;padding:22px 20px 18px;
+  border-radius:var(--radius-lg);overflow:hidden;
+  background:
+    radial-gradient(140% 120% at 100% 0,rgba(201,162,39,.10),transparent 55%),
+    linear-gradient(180deg,#101116,#0A0B0E);
+  border:1px solid var(--border-strong);
+  box-shadow:var(--shadow-md)}
+.statement-hero::after{content:"";position:absolute;left:20px;right:20px;top:96px;height:1px;
+  background:linear-gradient(90deg,var(--gold),rgba(201,162,39,0));opacity:.55}
+.statement-value{font-family:var(--font-display);font-weight:600;font-size:46px;line-height:1;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text-primary)}
+.statement-value .cents{color:var(--text-secondary)}
+.statement-actions{display:flex;gap:10px;margin-top:22px}
+.statement-action{flex:1;text-decoration:none;border-radius:14px;padding:13px 8px;text-align:center;
+  background:rgba(236,231,219,.03);border:1px solid var(--border);transition:all .15s}
+.statement-action:hover{border-color:var(--gold);background:var(--gold-soft)}
+.statement-action .lbl{color:var(--text-secondary);font-size:11px;font-weight:600;letter-spacing:.02em}
+.statement-action:hover .lbl{color:var(--gold-bright)}
+
+/* ── Trade / wallet / portfolio surfaces retuned to obsidian ────────────── */
+.trade-screen,.receive-shell{background:
+  radial-gradient(circle at 50% 0%,rgba(201,162,39,.07),transparent 32%),
+  linear-gradient(180deg,#07080A,#050608)!important;color:var(--text-primary)}
+.trade-value{font-family:var(--font-display);font-weight:600;letter-spacing:-.02em}
+.trade-buy,.paybis-button,.paybis-flow strong{background:linear-gradient(180deg,var(--gold-bright),var(--gold))!important;color:#0A0A08!important}
+.trade-action-icon{background:var(--gold-soft)!important;color:var(--gold)!important}
+.trade-chart-card,.trade-info-card,.trade-action,.network-sheet,.fiat-sheet{
+  background:linear-gradient(180deg,#0E1014,#0A0B0E)!important;border-color:var(--border)!important}
+.paybis-card{background:linear-gradient(160deg,rgba(201,162,39,.12),#0C0D10 44%,#08090B)!important;border-color:var(--border-strong)!important}
+.portfolio-range-tabs button.active,.trade-buy{box-shadow:0 12px 28px rgba(201,162,39,.18)!important}
+.portfolio-range-tabs button.active{background:var(--gold)!important;color:#0A0A08!important;border-color:var(--gold)!important}
+.portfolio-range-tabs.compact button.active{background:var(--gold-soft)!important;border-color:var(--gold)!important;color:var(--gold-bright)!important}
+.wallet-currency-panel,.portfolio-performance-card{background:linear-gradient(180deg,#0C0D10,#08090B)!important;border-color:var(--border)!important}
+.wallet-currency-card{background:linear-gradient(180deg,#101116,#0B0C0F)!important;border-color:var(--border)!important}
+.wallet-currency-head button{background:var(--gold)!important;color:#0A0A08!important}
+.positive,.positive-text{color:var(--success)!important}.negative,.negative-text{color:var(--danger)!important}
+
+/* Respect reduced motion */
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 .network-copy-action{cursor:pointer;border-radius:14px;padding:6px;margin:-6px;color:var(--brand-primary)}.network-copy-action:focus-visible{outline:2px solid rgba(242,186,14,.55);outline-offset:2px}.network-copy-action:hover{background:rgba(242,186,14,.1)}

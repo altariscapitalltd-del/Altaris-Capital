@@ -326,43 +326,46 @@ export default function HomePage() {
   return (
     <div style={{ padding: '4px 0 16px' }}>
 
-      {/* ── Portfolio Balance ── */}
-      <div style={{ margin: '8px 16px 0', padding: '20px 18px 14px', borderRadius: 20, border: '1px solid rgba(242,186,14,0.2)', background: 'linear-gradient(145deg,rgba(242,186,14,0.12) 0%,rgba(21,26,33,0.96) 35%,rgba(11,14,17,1) 100%)' }}>
-        <div style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 500, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-          Total Portfolio Value
-          <button onClick={() => setBalanceHidden(h => !h)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, lineHeight: 1 }}>
+      {/* ── Portfolio Balance — private-bank statement ── */}
+      <section className="statement-hero">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <span className="eyebrow gold">Total Portfolio</span>
+          <button onClick={() => setBalanceHidden(h => !h)} aria-label={balanceHidden ? 'Show balance' : 'Hide balance'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0, lineHeight: 1, display: 'flex' }}>
             {balanceHidden
               ? <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22" strokeLinecap="round" /></svg>
               : <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
             }
           </button>
         </div>
-        <div className="notranslate" translate="no" style={{ fontSize: 42, fontWeight: 900, letterSpacing: '-1px', marginBottom: 4 }}>
-          {balanceHidden ? '••••••' : `$${usdBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+        <div className="statement-value notranslate" translate="no">
+          {balanceHidden
+            ? '••••••'
+            : (() => {
+                const [whole, cents] = usdBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).split('.')
+                return <>${whole}<span className="cents">.{cents}</span></>
+              })()}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="notranslate" translate="no" style={{ color: 'var(--success)', fontSize: 13, fontWeight: 600 }}>
-            {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '-'}$${Math.abs(cryptoPL).toFixed(2)} crypto P/L`}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <span className="num notranslate" translate="no" style={{ color: cryptoPL >= 0 ? 'var(--success)' : 'var(--danger)', fontSize: 13, fontWeight: 600 }}>
+            {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '−'}$${Math.abs(cryptoPL).toFixed(2)} today`}
           </span>
-          {cryptoPL !== 0 && <span style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '2px 7px', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>LIVE</span>}
+          {cryptoPL !== 0 && <span className="eyebrow" style={{ color: 'var(--gold)', fontSize: 9 }}>● Live</span>}
         </div>
-        {/* Quick actions */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+        {/* Statement actions */}
+        <div className="statement-actions">
           {[
             { l: 'Deposit', Icon: Download, href: '/wallet' },
             { l: 'Withdraw', Icon: Upload, href: '/wallet' },
             { l: 'Invest', Icon: TrendingUp, href: '/invest' },
             { l: 'History', Icon: History, href: '/transactions' },
           ].map(({ l, Icon, href }) => (
-            <Link key={l} href={href} style={{ flex: 1, textDecoration: 'none' }}>
-              <div style={{ background: 'linear-gradient(180deg,var(--bg-card),var(--bg-elevated))', borderRadius: 14, padding: '12px 8px', textAlign: 'center', border: '1px solid var(--border)', transition: 'all .15s' }} className="pressable">
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}><Icon size={20} strokeWidth={2} /></div>
-                <div style={{ color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600 }}>{l}</div>
-              </div>
+            <Link key={l} href={href} className="statement-action pressable">
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6, color: 'var(--gold)' }}><Icon size={19} strokeWidth={1.8} /></div>
+              <div className="lbl">{l}</div>
             </Link>
           ))}
         </div>
-      </div>
+      </section>
 
       {sectionsReady && <BalanceChart usdBalance={usdBal} transactions={transactions} />}
 
