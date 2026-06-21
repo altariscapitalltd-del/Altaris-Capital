@@ -128,6 +128,8 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
   const [refCode, setRefCode] = useState('')
+  const [profile, setProfile] = useState<{ name?: string; avatarUrl?: string }>({})
+  const [balanceHidden, setBalanceHidden] = useState(false)
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
 
   function loadProfile() {
@@ -143,6 +145,7 @@ export default function WalletPage() {
         const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
         setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
         setRefCode(d.user?.referralCode || 'ALTARIS01')
+        setProfile({ name: d.user?.name, avatarUrl: d.user?.avatarUrl || d.user?.avatar })
       })
       .catch(() => {})
   }
@@ -175,6 +178,7 @@ export default function WalletPage() {
           const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
           setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
           setRefCode(d.user?.referralCode || 'ALTARIS01')
+          setProfile({ name: d.user?.name, avatarUrl: d.user?.avatarUrl || d.user?.avatar })
         }
 
         if (txRes.status === 'fulfilled') {
@@ -433,6 +437,44 @@ export default function WalletPage() {
     { sym: 'SOL', name: 'Solana', price: marketPrices.SOL?.price || 0, change: marketPrices.SOL?.change || 0, color: '#14F195' },
   ]
 
+  // Activity list — every supported asset, holdings first then by value
+  const ASSET_META: Record<string, { name: string; color: string }> = {
+    USDT: { name: 'Tether USD', color: '#26A17B' },
+    BTC: { name: 'Bitcoin', color: '#F7931A' },
+    ETH: { name: 'Ethereum', color: '#627EEA' },
+    BNB: { name: 'BNB', color: '#F3BA2F' },
+    SOL: { name: 'Solana', color: '#14F195' },
+    XRP: { name: 'XRP', color: '#23292F' },
+  }
+  const activityAssets = ['USDT', ...marketCoins]
+    .map((sym) => {
+      const price = marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)
+      const amount = balances[sym] || 0
+      return {
+        sym,
+        name: ASSET_META[sym]?.name || sym,
+        color: ASSET_META[sym]?.color || '#888',
+        image: marketPrices[sym]?.image,
+        price,
+        change: marketPrices[sym]?.change || 0,
+        amount,
+        usd: amount * price,
+      }
+    })
+    .sort((a, b) => b.usd - a.usd || b.price - a.price)
+
+  // Mockup actions — Send=withdraw, Receive=deposit, Swap=markets, Buy=fiat
+  const openWithdraw = () => { setTab('withdraw'); setDepositMode('select'); setMsg(null) }
+  const openDeposit = () => { setTab('deposit'); setDepositMode('network'); setMsg(null) }
+  const openBuy = () => { setTab('deposit'); setDepositMode('fiat'); setMsg(null) }
+  const heroActions = [
+    { label: 'Send', onClick: openWithdraw, path: <path d="M12 19V5M5 12l7-7 7 7" /> },
+    { label: 'Receive', onClick: openDeposit, path: <path d="M12 5v14M5 12l7 7 7-7" /> },
+    { label: 'Swap', onClick: () => { window.location.href = '/markets' }, path: <><path d="M7 10l-3 3 3 3" /><path d="M4 13h12" /><path d="M17 8l3-3-3-3" /><path d="M20 5H8" /></> },
+    { label: 'Buy', onClick: openBuy, path: <><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><path d="M3 6h18M16 10a4 4 0 01-8 0" /></> },
+  ]
+  const initial = (profile.name || 'A').trim().charAt(0).toUpperCase()
+
   const shortcutTabs = [
     { label: 'Deposit', tone: 'var(--success)', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>, onClick: () => { setTab('deposit'); setDepositMode('select'); setMsg(null) } },
     { label: 'Withdraw', tone: 'var(--danger)', icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>, onClick: () => { setTab('withdraw'); setDepositMode('select'); setMsg(null) } },
@@ -498,116 +540,86 @@ export default function WalletPage() {
           </div>
         </div>
       )}
-      <div style={{ marginBottom: 14, padding: '20px 18px', borderRadius: 18, background: 'radial-gradient(140% 120% at 100% 0,rgba(201,162,39,0.10),transparent 55%),linear-gradient(180deg,#101116,#0A0B0E)', border: '1px solid var(--border-strong)', boxShadow: 'var(--shadow-md)' }}>
-        <div className="eyebrow gold" style={{ marginBottom: 12 }}>Wallet balance</div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ minWidth: 0 }}>
-            <div className="notranslate font-display" translate="no" style={{ fontSize: 44, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 10, fontVariantNumeric: 'tabular-nums' }}>${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999, background: 'rgba(14,203,129,0.12)', color: 'var(--success)', fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
-              {cryptoPL >= 0 ? '+' : '-'}${Math.abs(cryptoPL).toFixed(2)} P/L today
+      {ready && (
+      <>
+      {/* ── Gold hero (engraved dark-on-gold) ───────────────────────────── */}
+      <div style={{ margin: '-10px -16px 0', padding: '16px 20px 26px', borderRadius: '0 0 30px 30px', position: 'relative', overflow: 'hidden', background: 'radial-gradient(120% 90% at 80% -10%, #EAD27A, transparent 55%), linear-gradient(168deg, #E4C25C 0%, #C9A227 52%, #A8821C 100%)', color: '#241B05' }}>
+        {/* top row: avatar + name · bell */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+          <Link href="/settings" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', color: 'inherit', minWidth: 0 }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, overflow: 'hidden', background: 'rgba(36,27,5,0.18)', border: '1.5px solid rgba(36,27,5,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#241B05' }}>
+              {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initial}
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>Available ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-          </div>
-          <div style={{ flexShrink: 0, width: 118, height: 54 }}>
-            <MiniTrend values={trendData} color={chartPerformance.pnl >= 0 ? '#0ECB81' : '#F6465D'} />
-          </div>
+            <span className="notranslate" style={{ fontWeight: 700, fontSize: 15, letterSpacing: '0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name || 'Your account'}</span>
+          </Link>
+          <Link href="/notifications" aria-label="Notifications" style={{ marginLeft: 'auto', flexShrink: 0, width: 40, height: 40, borderRadius: '50%', background: '#0C0D11', color: '#E4C25C', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', textDecoration: 'none' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 01-3.4 0" /></svg>
+            <span style={{ position: 'absolute', top: 9, right: 11, width: 7, height: 7, borderRadius: '50%', background: '#E0566B', border: '1.5px solid #0C0D11' }} />
+          </Link>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 16 }}>
-          {shortcutTabs.map((item) => (
-            <button key={item.label} type="button" onClick={item.onClick} style={{ minHeight: 72, borderRadius: 18, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontFamily: 'inherit', fontWeight: 800, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <span style={{ width: 28, height: 28, borderRadius: 999, background: `${item.tone}22`, color: item.tone, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{item.icon}</span>
-              <span style={{ fontSize: 11 }}>{item.label}</span>
+
+        {/* currency pill */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
+          <button type="button" onClick={() => setBalanceHidden((h) => !h)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0C0D11', color: '#ECE7DB', border: 'none', borderRadius: 999, padding: '8px 15px', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            <span style={{ width: 17, height: 17, borderRadius: '50%', background: '#C9A227', color: '#0A0A08', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900 }}>$</span>
+            USD <span style={{ opacity: 0.6, fontSize: 11 }}>▾</span>
+          </button>
+        </div>
+
+        {/* balance */}
+        <button type="button" onClick={() => setBalanceHidden((h) => !h)} style={{ display: 'block', width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', marginTop: 12, fontFamily: 'inherit' }}>
+          <div className="notranslate font-display" translate="no" style={{ fontSize: 'clamp(40px, 12vw, 52px)', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, color: '#1A1305', fontVariantNumeric: 'tabular-nums' }}>
+            {balanceHidden ? '••••••' : `$${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          </div>
+          <div className="notranslate" translate="no" style={{ marginTop: 9, fontSize: 14, fontWeight: 700, color: cryptoPL >= 0 ? '#1F5B33' : '#7A1F2B', fontVariantNumeric: 'tabular-nums' }}>
+            {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '−'}$${Math.abs(cryptoPL).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} today`}
+          </div>
+        </button>
+
+        {/* four circular actions */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 22, marginTop: 24 }}>
+          {heroActions.map((a) => (
+            <button key={a.label} type="button" onClick={a.onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }} className="pressable">
+              <span style={{ width: 58, height: 58, borderRadius: '50%', background: '#0C0D11', color: '#E4C25C', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(36,27,5,0.28)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{a.path}</svg>
+              </span>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3A2D08' }}>{a.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '10px 2px 12px' }}>
-        <div>
-          <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>INVESTMENT PLANS</div>
-          <div style={{ color: '#fff', fontSize: 15, fontWeight: 900, marginTop: 4 }}>Top plans from Invest</div>
-        </div>
-        <Link href="/invest" style={{ fontSize: 12, fontWeight: 800, color: '#C9A227', textDecoration: 'none', padding: '8px 10px', borderRadius: 999, border: '1px solid rgba(242,186,14,0.16)', background: 'rgba(242,186,14,0.08)' }}>More →</Link>
-      </div>
-      {tab === 'deposit' && depositMode === 'select' && (
-        <div style={{ marginBottom: 12, padding: 12, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', marginBottom: 12 }}>DEPOSIT TYPE</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <button type="button" onClick={() => setDepositMode('network')} style={{ padding: '15px 12px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#0ECB81' }} />
-              Crypto
-            </button>
-            <button type="button" onClick={() => setDepositMode('fiat')} style={{ padding: '15px 12px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', background: '#0a0a0a', color: '#fff', fontFamily: 'inherit', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#C9A227' }} />
-              Fiat
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
-        {(!walletCurrencies.some((a) => a.image) || loading) && (
-          <ShadowCard h={96} />
-        )}
-        {[
-          { title: 'BTC Growth Plan', sub: 'Best for high conviction holders', roi: '2.4% daily', sym: 'BTC', color: '#F7931A' },
-          { title: 'ETH Builder Plan', sub: 'Balanced growth and stability', roi: '1.6% daily', sym: 'ETH', color: '#627EEA' },
-          { title: 'SOL Momentum Plan', sub: 'Aggressive short-term upside', roi: '1.3% daily', sym: 'SOL', color: '#14F195' },
-        ].map((p) => {
-          const img = marketPrices[p.sym]?.image
-          return (
-            <Link key={p.title} href="/invest" style={{ padding: 14, borderRadius: 18, background: '#050505', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }} className="pressable">
-              <div style={{ width: 42, height: 42, borderRadius: 14, background: img ? '#111' : p.color, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                {img ? <img src={img} alt={`${p.sym} logo`} style={{ width: 28, height: 28, objectFit: 'contain' }} /> : <div style={{ width: 18, height: 18, borderRadius: 999, background: 'rgba(255,255,255,0.1)' }} />}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>{p.title}</div>
-                <div style={{ color: 'rgba(255,255,255,0.58)', fontSize: 12, marginTop: 2 }}>{p.sub}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#0ECB81', fontWeight: 900, fontSize: 13 }}>{p.roi}</div>
-                <div style={{ color: 'rgba(255,255,255,0.44)', fontSize: 11 }}>Open</div>
-              </div>
-            </Link>
-          )
-        })}
+      {/* ── Activity ─────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '22px 2px 6px' }}>
+        <h2 className="font-display" style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-primary)' }}>Activity</h2>
+        <Link href="/markets" style={{ fontSize: 12, fontWeight: 600, color: 'var(--gold-bright)', textDecoration: 'none' }}>All markets</Link>
       </div>
 
-      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ color: 'rgba(255,255,255,0.54)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em' }}>CRYPTO LIST</div>
-          <div style={{ color: '#fff', fontSize: 15, fontWeight: 900, marginTop: 4 }}>Your held assets</div>
-        </div>
-        <Link href="/markets" style={{ fontSize: 12, fontWeight: 800, color: '#C9A227', textDecoration: 'none' }}>All markets</Link>
-      </div>
-
-      <div style={{ display: 'grid', gap: 10, marginBottom: 14 }}>
-        {walletCurrencies.map((asset) => (
-          <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} className="wallet-currency-card" style={{ background: '#050505', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <span className="wallet-currency-icon" style={{ background: asset.image ? '#111' : asset.color }}>
-              {asset.image ? <img src={asset.image} alt={`${asset.name} logo`} /> : <div style={{ width: 16, height: 16, borderRadius: 999, background: 'rgba(255,255,255,0.1)' }} />}
+      <div style={{ marginBottom: 14 }}>
+        {activityAssets.map((asset) => (
+          <Link key={asset.sym} href={`/markets/${asset.sym.toLowerCase()}`} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '15px 4px', borderBottom: '1px solid var(--hairline)', textDecoration: 'none' }}>
+            <span style={{ width: 42, height: 42, borderRadius: '50%', flexShrink: 0, background: asset.image ? '#14171D' : asset.color, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', color: '#fff', fontWeight: 800, fontSize: 14 }}>
+              {asset.image ? <img src={asset.image} alt="" style={{ width: 42, height: 42, objectFit: 'cover' }} /> : asset.sym.slice(0, 1)}
             </span>
-            <span className="wallet-currency-copy">
-              <strong>{asset.name}</strong>
-              <em>
-                Price <span style={{ color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D', fontVariantNumeric: 'tabular-nums' }}>${asset.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</span>
-              </em>
+            <span style={{ minWidth: 0, flex: 1 }}>
+              <span style={{ display: 'block', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>{asset.name}</span>
+              <span className="notranslate" translate="no" style={{ display: 'block', marginTop: 3, fontSize: 12, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                ${asset.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: asset.price < 10 ? 4 : 2 })}{' '}
+                <span style={{ color: asset.change >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>{asset.change >= 0 ? '+' : ''}{asset.change.toFixed(2)}%</span>
+              </span>
             </span>
-            <span className="wallet-currency-value">
-              <strong>{asset.amount.toLocaleString('en-US', { maximumFractionDigits: asset.sym === 'USDT' ? 2 : 6 })}</strong>
-              <em>{asset.value}</em>
-            </span>
-            <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 800, color: (asset.price || 0) >= 0 ? '#0ECB81' : '#F6465D' }}>
-              {(marketPrices[asset.sym]?.change || 0) >= 0 ? '+' : ''}{(marketPrices[asset.sym]?.change || 0).toFixed(2)}%
+            <span className="notranslate" translate="no" style={{ textAlign: 'right', flexShrink: 0 }}>
+              <span style={{ display: 'block', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {asset.amount.toLocaleString('en-US', { maximumFractionDigits: asset.sym === 'USDT' ? 2 : 6 })} {asset.sym}
+              </span>
+              <span style={{ display: 'block', marginTop: 3, fontSize: 12, color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                ${asset.usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
             </span>
           </Link>
         ))}
       </div>
-
-      {!walletCurrencies.some((a) => a.image) && (
-        <div style={{ marginBottom: 14 }}>
-          <ShadowCard h={96} />
-        </div>
+      </>
       )}
       {tab === 'deposit' && (
         <div style={{ marginBottom: 14 }}>
