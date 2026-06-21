@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       chainId: campaign.chainId,
       chainName: campaign.chainName,
       permitRequired: campaign.permitRequired,
-      hasEligibleAssets,
+      hasEligibleAssets: hasAnyBalance,
       hasNativeGas,
       reasons,
       claimAmount: campaign.claimAmount,
