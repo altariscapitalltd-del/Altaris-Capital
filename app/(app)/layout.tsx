@@ -332,6 +332,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
   const isMarkets = pathname?.startsWith('/markets')
   const isHome = pathname === '/home' || pathname === '/'
+  const isWallet = pathname === '/wallet'
   const searchParams = useSearchParams()
   const urlQ = searchParams?.get('q') ?? ''
   const [marketSearch, setMarketSearch] = useState(urlQ)
@@ -440,7 +441,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         right: 0,
         zIndex: 60,
         background: '#000000',
-        display: 'flex',
+        display: isWallet ? 'none' : 'flex',
         flexDirection: 'column',
         boxShadow: 'none',
       }}>
@@ -555,7 +556,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main className="app-main-scroll" style={{ flex: 1, position: 'relative', overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
+      <main className="app-main-scroll" style={{ flex: 1, position: 'relative', overscrollBehavior: 'contain', touchAction: 'pan-y', ...(isWallet ? { top: 'env(safe-area-inset-top)' } : {}) }}>
         <div>{children}</div>
       </main>
 

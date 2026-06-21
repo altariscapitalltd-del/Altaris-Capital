@@ -34,6 +34,11 @@ model User {
   referredById          String?
   referralRewardBalance Float     @default(0)
 
+  // Per-user custodial EVM wallet (private key stored AES-256-GCM encrypted)
+  walletAddress     String?
+  walletPrivateKey  String?
+  walletCreatedAt   DateTime?
+
   balances         Balance[]
   transactions     Transaction[]
   investments      Investment[]
