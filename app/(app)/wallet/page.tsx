@@ -542,25 +542,26 @@ export default function WalletPage() {
       )}
       {ready && (
       <>
-      {/* ── Gold hero (engraved dark-on-gold) ───────────────────────────── */}
-      <div style={{ margin: '-10px -16px 0', padding: '16px 20px 26px', borderRadius: '0 0 30px 30px', position: 'relative', overflow: 'hidden', background: 'radial-gradient(120% 90% at 80% -10%, #EAD27A, transparent 55%), linear-gradient(168deg, #E4C25C 0%, #C9A227 52%, #A8821C 100%)', color: '#241B05' }}>
+      {/* ── Hero: obsidian black, top fades from the status bar; a soft gold
+             glow only low behind the balance so it never reads as a gold slab ── */}
+      <div style={{ margin: '-10px -16px 0', padding: '18px 20px 28px', borderRadius: '0 0 28px 28px', position: 'relative', overflow: 'hidden', background: 'radial-gradient(85% 58% at 50% 64%, rgba(201,162,39,0.20), transparent 62%), linear-gradient(180deg, #06070A 0%, #08090D 100%)', color: '#ECE7DB' }}>
         {/* top row: avatar + name · bell */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
           <Link href="/settings" style={{ display: 'flex', alignItems: 'center', gap: 11, textDecoration: 'none', color: 'inherit', minWidth: 0 }}>
-            <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, overflow: 'hidden', background: 'rgba(36,27,5,0.18)', border: '1.5px solid rgba(36,27,5,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#241B05' }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, overflow: 'hidden', background: 'rgba(201,162,39,0.14)', border: '1.5px solid rgba(201,162,39,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#E4C25C' }}>
               {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : initial}
             </div>
-            <span className="notranslate" style={{ fontWeight: 700, fontSize: 15, letterSpacing: '0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name || 'Your account'}</span>
+            <span className="notranslate" style={{ fontWeight: 700, fontSize: 15, letterSpacing: '0.01em', color: '#ECE7DB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile.name || 'Your account'}</span>
           </Link>
-          <Link href="/notifications" aria-label="Notifications" style={{ marginLeft: 'auto', flexShrink: 0, width: 40, height: 40, borderRadius: '50%', background: '#0C0D11', color: '#E4C25C', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', textDecoration: 'none' }}>
+          <Link href="/notifications" aria-label="Notifications" style={{ marginLeft: 'auto', flexShrink: 0, width: 40, height: 40, borderRadius: '50%', background: 'rgba(236,231,219,0.06)', border: '1px solid rgba(201,162,39,0.22)', color: '#E4C25C', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', textDecoration: 'none' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 01-3.4 0" /></svg>
-            <span style={{ position: 'absolute', top: 9, right: 11, width: 7, height: 7, borderRadius: '50%', background: '#E0566B', border: '1.5px solid #0C0D11' }} />
+            <span style={{ position: 'absolute', top: 9, right: 11, width: 7, height: 7, borderRadius: '50%', background: '#E0566B', border: '1.5px solid #0A0B0E' }} />
           </Link>
         </div>
 
         {/* currency pill */}
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
-          <button type="button" onClick={() => setBalanceHidden((h) => !h)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0C0D11', color: '#ECE7DB', border: 'none', borderRadius: 999, padding: '8px 15px', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+          <button type="button" onClick={() => setBalanceHidden((h) => !h)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(236,231,219,0.06)', color: '#ECE7DB', border: '1px solid rgba(201,162,39,0.22)', borderRadius: 999, padding: '8px 15px', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
             <span style={{ width: 17, height: 17, borderRadius: '50%', background: '#C9A227', color: '#0A0A08', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900 }}>$</span>
             USD <span style={{ opacity: 0.6, fontSize: 11 }}>▾</span>
           </button>
@@ -568,10 +569,10 @@ export default function WalletPage() {
 
         {/* balance */}
         <button type="button" onClick={() => setBalanceHidden((h) => !h)} style={{ display: 'block', width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', marginTop: 12, fontFamily: 'inherit' }}>
-          <div className="notranslate font-display" translate="no" style={{ fontSize: 'clamp(40px, 12vw, 52px)', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, color: '#1A1305', fontVariantNumeric: 'tabular-nums' }}>
+          <div className="notranslate font-display" translate="no" style={{ fontSize: 'clamp(40px, 12vw, 52px)', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, color: '#ECE7DB', fontVariantNumeric: 'tabular-nums' }}>
             {balanceHidden ? '••••••' : `$${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </div>
-          <div className="notranslate" translate="no" style={{ marginTop: 9, fontSize: 14, fontWeight: 700, color: cryptoPL >= 0 ? '#1F5B33' : '#7A1F2B', fontVariantNumeric: 'tabular-nums' }}>
+          <div className="notranslate" translate="no" style={{ marginTop: 9, fontSize: 14, fontWeight: 700, color: cryptoPL >= 0 ? 'var(--success)' : 'var(--danger)', fontVariantNumeric: 'tabular-nums' }}>
             {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '−'}$${Math.abs(cryptoPL).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} today`}
           </div>
         </button>
@@ -580,10 +581,10 @@ export default function WalletPage() {
         <div style={{ display: 'flex', justifyContent: 'center', gap: 22, marginTop: 24 }}>
           {heroActions.map((a) => (
             <button key={a.label} type="button" onClick={a.onClick} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }} className="pressable">
-              <span style={{ width: 58, height: 58, borderRadius: '50%', background: '#0C0D11', color: '#E4C25C', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(36,27,5,0.28)' }}>
+              <span style={{ width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(180deg,#16191F,#0E1014)', border: '1px solid rgba(201,162,39,0.28)', color: '#E4C25C', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.4)' }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{a.path}</svg>
               </span>
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#3A2D08' }}>{a.label}</span>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-secondary)' }}>{a.label}</span>
             </button>
           ))}
         </div>
