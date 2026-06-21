@@ -22,61 +22,56 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:'#000', display:'flex', alignItems:'center', justifyContent:'center', padding:24, fontFamily:'Inter,sans-serif' }}>
-      {/* Background glow */}
-      <div style={{ position:'fixed', top:'40%', left:'50%', transform:'translate(-50%,-50%)', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(242,186,14,0.05),transparent 70%)', pointerEvents:'none' }}/>
-
-      <div style={{ width:'100%', maxWidth:400, position:'relative' }}>
-        {/* Logo */}
-        <div style={{ textAlign:'center', marginBottom:36 }}>
+    <div style={{ minHeight:'100vh', background:'radial-gradient(120% 70% at 50% -5%,rgba(201,162,39,.08),transparent 48%),linear-gradient(180deg,var(--bg-page),#050608)', color:'var(--text-primary)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
+      <div style={{ width:'100%', maxWidth:410, position:'relative' }}>
+        <div style={{ textAlign:'center', marginBottom:32 }}>
           <div style={{ display:'inline-flex', alignItems:'center', gap:12, marginBottom:20 }}>
             <AltarisLogoMark size={36} />
             <div style={{ textAlign:'left' }}>
-              <div style={{ fontWeight:800, fontSize:15, letterSpacing:'0.08em' }}>ALTARIS</div>
-              <div style={{ color:'#505050', fontSize:10, letterSpacing:'0.16em', marginTop:-1 }}>CAPITAL</div>
+              <div style={{ fontFamily:'var(--font-body)', fontWeight:800, fontSize:15, letterSpacing:'0.14em' }}>ALTARIS</div>
+              <div className="eyebrow gold" style={{ marginTop:2 }}>Capital</div>
             </div>
           </div>
-          <h1 style={{ fontSize:26, fontWeight:800, marginBottom:6 }}>Forgot password?</h1>
-          <p style={{ color:'#555', fontSize:13 }}>Enter your email and we'll send a reset link</p>
+          <h1 className="font-display" style={{ fontSize:30, fontWeight:600, letterSpacing:'-0.01em', marginBottom:6 }}>Forgot password?</h1>
+          <p style={{ color:'var(--text-secondary)', fontSize:13 }}>Enter your email and we'll send a reset link.</p>
         </div>
 
         {sent ? (
-          <div style={{ background:'#111', border:'1px solid rgba(14,203,129,0.2)', borderRadius:18, padding:32, textAlign:'center' }}>
-            <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(14,203,129,0.1)', border:'1px solid rgba(14,203,129,0.2)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', fontSize:24 }}>Check</div>
-            <h2 style={{ fontSize:18, fontWeight:700, marginBottom:8, color:'#0ECB81' }}>Check your inbox</h2>
-            <p style={{ color:'#666', fontSize:13, lineHeight:1.6 }}>
-              We sent a password reset link to <strong style={{ color:'#ddd' }}>{email}</strong>. The link expires in 1 hour.
+          <div className="card" style={{ padding:30, textAlign:'center' }}>
+            <div style={{ width:54, height:54, borderRadius:'50%', background:'var(--success-bg)', border:'1px solid var(--success)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', color:'var(--success)' }}>
+              <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2"><polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+            <h2 className="font-display" style={{ fontSize:20, fontWeight:600, marginBottom:8, color:'var(--success)' }}>Check your inbox</h2>
+            <p style={{ color:'var(--text-secondary)', fontSize:13, lineHeight:1.6 }}>
+              We sent a password reset link to <strong style={{ color:'var(--text-primary)' }}>{email}</strong>. The link expires in 1 hour.
             </p>
-            <Link href="/login" style={{ display:'block', marginTop:24, padding:'12px', background:'#1A1A1A', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, color:'#888', textDecoration:'none', fontSize:13, fontWeight:600 }}>
-              ← Back to Sign In
+            <Link href="/login" className="btn-ghost" style={{ display:'block', marginTop:22, textAlign:'center' }}>
+              Back to sign in
             </Link>
           </div>
         ) : (
-          <div style={{ background:'#111', border:'1px solid rgba(255,255,255,0.07)', borderRadius:18, padding:28 }}>
+          <div className="card" style={{ padding:26 }}>
             <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
-                <label style={{ display:'block', color:'#555', fontSize:11, fontWeight:600, marginBottom:7, letterSpacing:'0.06em' }}>EMAIL ADDRESS</label>
+                <label className="eyebrow" style={{ display:'block', marginBottom:9 }}>Email address</label>
                 <input value={email} onChange={e => setEmail(e.target.value)} type="email" required autoFocus
-                  style={{ width:'100%', background:'#1A1A1A', color:'#fff', padding:'13px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', fontSize:14, fontFamily:'inherit', outline:'none', transition:'border-color .2s', boxSizing:'border-box' }}
-                  placeholder="you@example.com"
-                  onFocus={e => e.target.style.borderColor='#F2BA0E'} onBlur={e => e.target.style.borderColor='rgba(255,255,255,0.08)'}/>
+                  className="input" placeholder="you@example.com" />
               </div>
 
               {error && (
-                <div style={{ background:'rgba(246,70,93,0.08)', border:'1px solid rgba(246,70,93,0.18)', borderRadius:9, padding:'10px 14px', color:'#F6465D', fontSize:13 }}>
+                <div style={{ background:'var(--danger-bg)', border:'1px solid var(--danger)', borderRadius:10, padding:'10px 14px', color:'var(--danger)', fontSize:13 }}>
                   {error}
                 </div>
               )}
 
-              <button type="submit" disabled={loading}
-                style={{ background: loading ? 'rgba(242,186,14,0.4)' : '#F2BA0E', color:'#000', border:'none', borderRadius:10, padding:'14px', fontWeight:800, fontSize:15, cursor: loading ? 'not-allowed' : 'pointer', fontFamily:'inherit', transition:'all .15s', marginTop:4 }}>
-                {loading ? 'Sending…' : 'Send Reset Link →'}
+              <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop:4, opacity: loading ? 0.6 : 1 }}>
+                {loading ? 'Sending…' : 'Send reset link'}
               </button>
             </form>
 
-            <p style={{ textAlign:'center', marginTop:20, color:'#444', fontSize:13 }}>
+            <p style={{ textAlign:'center', marginTop:18, color:'var(--text-secondary)', fontSize:13 }}>
               Remember it?{' '}
-              <Link href="/login" style={{ color:'#F2BA0E', textDecoration:'none', fontWeight:600 }}>Sign in</Link>
+              <Link href="/login" style={{ color:'var(--gold-bright)', textDecoration:'none', fontWeight:600 }}>Sign in</Link>
             </p>
           </div>
         )}

@@ -8,9 +8,9 @@ function Logo() {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:12 }}>
       <AltarisLogoMark size={34} />
-      <div>
-        <div style={{ fontWeight:800, fontSize:14, letterSpacing:'0.08em' }}>ALTARIS</div>
-        <div style={{ color:'#505050', fontSize:9, letterSpacing:'0.16em', lineHeight:1 }}>CAPITAL</div>
+      <div style={{ textAlign:'left' }}>
+        <div style={{ fontFamily:'var(--font-body)', fontWeight:800, fontSize:14, letterSpacing:'0.14em' }}>ALTARIS</div>
+        <div className="eyebrow gold" style={{ marginTop:2 }}>Capital</div>
       </div>
     </div>
   )
@@ -73,100 +73,86 @@ export default function SignupPage() {
     finally { setLoading(false) }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width:'100%', background:'#1E2329', color:'#fff', padding:'14px 16px',
-    borderRadius:8, border:'1px solid #2B3139', fontSize:15, fontFamily:'inherit',
-    outline:'none', marginBottom:16,
-  }
-
   return (
-    <div style={{ minHeight:'100vh', background:'#0B0E11', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
-      <div style={{ width:'100%', maxWidth:420 }}>
-        <div style={{ textAlign:'center', marginBottom:40 }}>
-          <div style={{ display:'inline-block', marginBottom:16 }}><Logo /></div>
+    <div style={{ minHeight:'100vh', background:'radial-gradient(120% 70% at 50% -5%,rgba(201,162,39,.08),transparent 48%),linear-gradient(180deg,var(--bg-page),#050608)', color:'var(--text-primary)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}>
+      <div style={{ width:'100%', maxWidth:430 }}>
+        <div style={{ textAlign:'center', marginBottom:32 }}>
+          <div style={{ display:'inline-block', marginBottom:20 }}><Logo /></div>
           {step === 'form' ? (
             <>
-              <h1 style={{ fontSize:28, fontWeight:800, marginBottom:8 }}>Create your account</h1>
-              <p style={{ color:'#B0B3B8', fontSize:15 }}>Join 500,000+ investors worldwide</p>
+              <h1 className="font-display" style={{ fontSize:30, fontWeight:600, letterSpacing:'-0.01em', marginBottom:8 }}>Open an account</h1>
+              <p style={{ color:'var(--text-secondary)', fontSize:14 }}>A considered home for serious capital.</p>
             </>
           ) : (
             <>
-              <h1 style={{ fontSize:28, fontWeight:800, marginBottom:8 }}>Verify your email</h1>
-              <p style={{ color:'#B0B3B8', fontSize:15 }}>We sent a 6-digit code to <strong style={{color:'#fff'}}>{form.email}</strong></p>
+              <h1 className="font-display" style={{ fontSize:30, fontWeight:600, letterSpacing:'-0.01em', marginBottom:8 }}>Verify your email</h1>
+              <p style={{ color:'var(--text-secondary)', fontSize:14 }}>We sent a 6-digit code to <strong style={{color:'var(--text-primary)'}}>{form.email}</strong></p>
             </>
           )}
         </div>
 
-        <div className="card" style={{ padding:32 }}>
+        <div className="card" style={{ padding:28 }}>
           {error && (
-            <div style={{ background:'rgba(246,70,93,0.1)', border:'1px solid rgba(246,70,93,0.3)', borderRadius:8, padding:'12px 16px', marginBottom:20, color:'#F6465D', fontSize:14 }}>
+            <div style={{ background:'var(--danger-bg)', border:'1px solid var(--danger)', borderRadius:10, padding:'10px 14px', marginBottom:18, color:'var(--danger)', fontSize:13 }}>
               {error}
             </div>
           )}
 
           {step === 'form' ? (
-            <form onSubmit={handleSignup}>
-              <label style={{ display:'block', color:'#B0B3B8', fontSize:13, marginBottom:6 }}>Full Name</label>
-              <input style={inputStyle} placeholder="John Doe" value={form.name} required
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                onFocus={e => (e.target.style.borderColor='#F0B90B')}
-                onBlur={e => (e.target.style.borderColor='#2B3139')} />
-
-              <label style={{ display:'block', color:'#B0B3B8', fontSize:13, marginBottom:6 }}>Email Address</label>
-              <input style={inputStyle} type="email" placeholder="you@example.com" value={form.email} required
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                onFocus={e => (e.target.style.borderColor='#F0B90B')}
-                onBlur={e => (e.target.style.borderColor='#2B3139')} />
-
-              <label style={{ display:'block', color:'#B0B3B8', fontSize:13, marginBottom:6 }}>Phone (optional)</label>
-              <input style={inputStyle} type="tel" placeholder="+1 234 567 890" value={form.phone}
-                onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                onFocus={e => (e.target.style.borderColor='#F0B90B')}
-                onBlur={e => (e.target.style.borderColor='#2B3139')} />
-
-              <label style={{ display:'block', color:'#B0B3B8', fontSize:13, marginBottom:6 }}>Password</label>
-              <input style={inputStyle} type="password" placeholder="Minimum 8 characters" value={form.password} required
-                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                onFocus={e => (e.target.style.borderColor='#F0B90B')}
-                onBlur={e => (e.target.style.borderColor='#2B3139')} />
-
-              <label style={{ display:'block', color:'#B0B3B8', fontSize:13, marginBottom:6 }}>Confirm Password</label>
-              <input style={{ ...inputStyle, marginBottom:24 }} type="password" placeholder="Repeat password" value={form.confirm} required
-                onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
-                onFocus={e => (e.target.style.borderColor='#F0B90B')}
-                onBlur={e => (e.target.style.borderColor='#2B3139')} />
-
-              <button type="submit" disabled={loading}
-                style={{ width:'100%', padding:'14px', background:'#F0B90B', color:'#0B0E11', border:'none', borderRadius:8, fontWeight:700, fontSize:16, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-                {loading ? 'Creating Account...' : 'Create Account'}
+            <form onSubmit={handleSignup} style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div>
+                <label className="eyebrow" style={{ display:'block', marginBottom:8 }}>Full name</label>
+                <input className="input" placeholder="John Doe" value={form.name} required
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div>
+                <label className="eyebrow" style={{ display:'block', marginBottom:8 }}>Email address</label>
+                <input className="input" type="email" placeholder="you@example.com" value={form.email} required
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div>
+                <label className="eyebrow" style={{ display:'block', marginBottom:8 }}>Phone <span style={{textTransform:'none',letterSpacing:0,color:'var(--text-muted)'}}>(optional)</span></label>
+                <input className="input" type="tel" placeholder="+1 234 567 890" value={form.phone}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label className="eyebrow" style={{ display:'block', marginBottom:8 }}>Password</label>
+                <input className="input" type="password" placeholder="Minimum 8 characters" value={form.password} required
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+              </div>
+              <div>
+                <label className="eyebrow" style={{ display:'block', marginBottom:8 }}>Confirm password</label>
+                <input className="input" type="password" placeholder="Repeat password" value={form.confirm} required
+                  onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))} />
+              </div>
+              <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop:6, opacity: loading ? 0.6 : 1 }}>
+                {loading ? 'Creating account…' : 'Create account'}
               </button>
             </form>
           ) : (
-            <form onSubmit={handleVerify}>
-              <div style={{ background:'rgba(240,185,11,0.05)', border:'1px solid rgba(240,185,11,0.15)', borderRadius:8, padding:16, marginBottom:24, fontSize:13, color:'#B0B3B8', textAlign:'center' }}>
-                ⏱ Code expires in 5 minutes
+            <form onSubmit={handleVerify} style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              <div style={{ background:'var(--gold-soft)', border:'1px solid var(--border-strong)', borderRadius:10, padding:14, fontSize:12, color:'var(--text-secondary)', textAlign:'center' }} className="eyebrow">
+                Code expires in 5 minutes
               </div>
-              <label style={{ display:'block', color:'#B0B3B8', fontSize:13, marginBottom:6 }}>6-Digit Verification Code</label>
-              <input style={{ ...inputStyle, fontSize:28, textAlign:'center', letterSpacing:'0.3em', fontWeight:700 }}
-                placeholder="000000" maxLength={6} value={otp} required
-                onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
-                onFocus={e => (e.target.style.borderColor='#F0B90B')}
-                onBlur={e => (e.target.style.borderColor='#2B3139')} />
-              <button type="submit" disabled={loading || otp.length !== 6}
-                style={{ width:'100%', padding:'14px', background:'#F0B90B', color:'#0B0E11', border:'none', borderRadius:8, fontWeight:700, fontSize:16, cursor: (loading || otp.length !== 6) ? 'not-allowed' : 'pointer', opacity: (loading || otp.length !== 6) ? 0.7 : 1, marginBottom:16 }}>
-                {loading ? 'Verifying...' : 'Verify & Continue'}
+              <div>
+                <label className="eyebrow" style={{ display:'block', marginBottom:8 }}>6-digit verification code</label>
+                <input className="input num" style={{ fontSize:28, textAlign:'center', letterSpacing:'0.3em', fontWeight:700 }}
+                  placeholder="000000" maxLength={6} value={otp} required
+                  onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} />
+              </div>
+              <button type="submit" disabled={loading || otp.length !== 6} className="btn-primary" style={{ opacity: (loading || otp.length !== 6) ? 0.6 : 1 }}>
+                {loading ? 'Verifying…' : 'Verify & continue'}
               </button>
-              <button type="button" onClick={async () => { await fetch('/api/auth/otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'send',userId,purpose:'SIGNUP'})}) }}
-                style={{ width:'100%', padding:'12px', background:'transparent', color:'#B0B3B8', border:'1px solid #2B3139', borderRadius:8, cursor:'pointer', fontSize:14 }}>
-                Resend Code
+              <button type="button" className="btn-ghost" onClick={async () => { await fetch('/api/auth/otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'send',userId,purpose:'SIGNUP'})}) }}>
+                Resend code
               </button>
             </form>
           )}
         </div>
 
-        <p style={{ textAlign:'center', marginTop:24, color:'#B0B3B8', fontSize:14 }}>
+        <p style={{ textAlign:'center', marginTop:22, color:'var(--text-secondary)', fontSize:13 }}>
           Already have an account?{' '}
-          <Link href="/login" style={{ color:'#F0B90B', textDecoration:'none', fontWeight:600 }}>Sign In</Link>
+          <Link href="/login" style={{ color:'var(--gold-bright)', textDecoration:'none', fontWeight:600 }}>Sign in</Link>
         </p>
       </div>
     </div>
