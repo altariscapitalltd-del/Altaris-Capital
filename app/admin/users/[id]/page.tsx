@@ -22,6 +22,8 @@ export default function UserDetailPage() {
   const [adjNote, setAdjNote]   = useState('')
   const [adjTemplate, setAdjTemplate] = useState<'ADJUSTMENT'|'DEPOSIT'|'WITHDRAWAL'>('ADJUSTMENT')
   const [adjCurrency, setAdjCurrency] = useState('USD')
+  const [currencySearch, setCurrencySearch] = useState('')
+  const [marketCoins, setMarketCoins] = useState<any[]>([])
   const [notifText, setNotifText] = useState('')
   const [loading, setLoading]   = useState(true)
   const [actionLoading, setActionLoading] = useState('')
@@ -34,6 +36,13 @@ export default function UserDetailPage() {
     }).then(d => { if (d) { setUser(d.user); setLoading(false) } })
   }
   useEffect(load, [id])
+
+  useEffect(() => {
+    fetch('/api/markets/list?per_page=100')
+      .then(r => r.json())
+      .then(d => setMarketCoins(d.list || []))
+      .catch(() => {})
+  }, [])
 
   async function action(type: string, body: any) {
     setActionLoading(type); setMsg(null)
@@ -131,14 +140,48 @@ export default function UserDetailPage() {
             </div>
             <div style={{marginBottom:10}}>
               <label style={{display:'block',color:'#444',fontSize:11,fontWeight:600,marginBottom:6,letterSpacing:'0.06em'}}>CURRENCY</label>
-              <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                {['USD','BTC','ETH','USDT','USDC','BNB','SOL','XRP'].map(c => (
-                  <button key={c} type="button" onClick={() => setAdjCurrency(c)}
-                    style={{padding:'7px 12px',borderRadius:8,border:`1px solid ${adjCurrency===c?'rgba(242,186,14,0.35)':'rgba(255,255,255,0.07)'}`,background:adjCurrency===c?'rgba(242,186,14,0.1)':'#1A1A1A',color:adjCurrency===c?'#C9A227':'#777',fontSize:11,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-                    {c}
+              {/* Quick-select: user's existing balance currencies */}
+              <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:8}}>
+                {(user.balances||[]).map((b:any) => (
+                  <button key={b.currency} type="button" onClick={() => { setAdjCurrency(b.currency); setCurrencySearch('') }}
+                    style={{padding:'6px 11px',borderRadius:8,border:`1px solid ${adjCurrency===b.currency?'rgba(242,186,14,0.35)':'rgba(255,255,255,0.07)'}`,background:adjCurrency===b.currency?'rgba(242,186,14,0.1)':'#1A1A1A',color:adjCurrency===b.currency?'#C9A227':'#777',fontSize:11,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+                    {b.currency}
                   </button>
                 ))}
               </div>
+              {/* Search from market list */}
+              <div style={{position:'relative',marginBottom:6}}>
+                <input
+                  value={currencySearch}
+                  onChange={e => { setCurrencySearch(e.target.value); if(e.target.value) setAdjCurrency(e.target.value.toUpperCase()) }}
+                  placeholder="Search or type symbol (e.g. LINK)"
+                  style={{width:'100%',background:'#1A1A1A',color:'#fff',padding:'9px 12px',borderRadius:9,border:`1px solid ${currencySearch?'rgba(242,186,14,0.3)':'rgba(255,255,255,0.07)'}`,fontSize:13,fontFamily:'inherit',outline:'none',boxSizing:'border-box' as const}}
+                />
+              </div>
+              {currencySearch && (
+                <div style={{background:'#0E0E0E',border:'1px solid rgba(255,255,255,0.08)',borderRadius:9,maxHeight:160,overflowY:'auto' as const,marginBottom:4}}>
+                  {marketCoins
+                    .filter(c => {
+                      const q = currencySearch.toLowerCase()
+                      return c.symbol?.toLowerCase().includes(q) || c.name?.toLowerCase().includes(q)
+                    })
+                    .slice(0, 12)
+                    .map((c:any) => (
+                      <button key={c.id} type="button"
+                        onClick={() => { setAdjCurrency(c.symbol.toUpperCase()); setCurrencySearch('') }}
+                        style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'9px 12px',background:'transparent',border:'none',color:'#ccc',cursor:'pointer',fontFamily:'inherit',textAlign:'left' as const,borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                        {c.image && <img src={c.image} alt="" style={{width:22,height:22,borderRadius:'50%',flexShrink:0}}/>}
+                        <span style={{fontWeight:700,fontSize:13}}>{c.symbol?.toUpperCase()}</span>
+                        <span style={{color:'#555',fontSize:12,flex:1}}>{c.name}</span>
+                        <span style={{color:'#C9A227',fontSize:11,fontWeight:700}}>${c.price?.toLocaleString('en-US',{maximumFractionDigits:4})}</span>
+                      </button>
+                    ))}
+                  {marketCoins.filter(c => { const q=currencySearch.toLowerCase(); return c.symbol?.toLowerCase().includes(q)||c.name?.toLowerCase().includes(q) }).length === 0 && (
+                    <div style={{padding:'12px 14px',color:'#555',fontSize:12}}>No coins found — "{currencySearch.toUpperCase()}" will be used as the currency symbol</div>
+                  )}
+                </div>
+              )}
+              {adjCurrency && <div style={{fontSize:11,color:'#C9A227',fontWeight:700,marginTop:2}}>Selected: {adjCurrency}</div>}
             </div>
             <div style={{marginBottom:10}}>
               <label style={{display:'block',color:'#444',fontSize:11,fontWeight:600,marginBottom:6,letterSpacing:'0.06em'}}>AMOUNT ({adjCurrency}) {adjTemplate === 'WITHDRAWAL' ? '— debits user' : adjTemplate === 'DEPOSIT' ? '— credits user' : '— use negative to debit'}</label>

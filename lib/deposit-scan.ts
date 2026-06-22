@@ -102,6 +102,17 @@ async function scanUser(u: any): Promise<number> {
         data: { userId: u.id, type: 'DEPOSIT' as any, amount: delta, currency: p.sym, status: 'SUCCESS' as any, note: `Auto-detected ${p.sym} deposit` },
       })
       credited++
+      // Notify user and admin of the auto-detected deposit
+      try {
+        const { notifyUser, notifyAdminTelegram } = await import('@/lib/push')
+        await notifyUser(
+          prisma, u.id,
+          `${p.sym} deposit received`,
+          `${delta.toFixed(delta < 1 ? 6 : 2)} ${p.sym} has been credited to your wallet automatically.`,
+          '/wallet'
+        )
+        await notifyAdminTelegram(`💰 <b>Auto Deposit</b>\nUser: ${u.id}\nAmount: ${delta.toFixed(6)} ${p.sym}`)
+      } catch {}
     }
   }
   await prisma.user.update({ where: { id: u.id }, data: { onchainSeen: nextSeen as any } })

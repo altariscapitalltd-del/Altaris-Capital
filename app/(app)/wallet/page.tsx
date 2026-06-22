@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import QRCode from 'qrcode'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
+import CoinIcon from '@/components/ui/CoinIcon'
 
 type ChainType = 'EVM' | 'BTC' | 'SOL' | 'XRP'
 const ALL_CRYPTOS: { sym: string; name: string; color: string; minDeposit: number; network: string; glyph: string; chain: ChainType; popular?: boolean }[] = [
@@ -39,6 +40,33 @@ const ALL_CRYPTOS: { sym: string; name: string; color: string; minDeposit: numbe
   { sym: 'JTO',   name: 'Jito',         color: '#65D497', minDeposit: 1,      network: 'Solana SPL',   glyph: 'J', chain: 'SOL' },
 ]
 const DEFAULT_MANAGED = ['BTC','ETH','USDT','USDC','BNB','SOL','XRP']
+
+// Chain detection — used for both the static list and live market coins
+const _SOL_SYMS = new Set(['SOL','RAY','JUP','BONK','JTO','PYTH','WIF','BOME','ORCA','MNGO','SAMO','STEP'])
+const _SOL_IDS  = new Set(['solana'])
+const _BTC_IDS  = new Set(['bitcoin'])
+const _XRP_IDS  = new Set(['ripple','xrp'])
+function detectCoinChain(sym: string, id: string = ''): ChainType {
+  const s = sym.toUpperCase()
+  if (s === 'BTC' || _BTC_IDS.has(id)) return 'BTC'
+  if (_SOL_SYMS.has(s) || _SOL_IDS.has(id)) return 'SOL'
+  if (s === 'XRP' || _XRP_IDS.has(id)) return 'XRP'
+  return 'EVM'
+}
+const _NET_LABELS: Record<string, string> = {
+  ETH:'Ethereum', BNB:'BNB Chain', MATIC:'Polygon', AVAX:'Avalanche C', FTM:'Fantom',
+  ARB:'Arbitrum One', OP:'Optimism', CRO:'Cronos', BASE:'Base',
+  USDT:'ERC-20', USDC:'ERC-20', DAI:'ERC-20', WBTC:'ERC-20',
+  LINK:'ERC-20', UNI:'ERC-20', AAVE:'ERC-20', SHIB:'ERC-20', PEPE:'ERC-20',
+  SOL:'Solana', XRP:'XRP Ledger', BTC:'Bitcoin',
+}
+function coinNetworkLabel(sym: string, id: string = ''): string {
+  const chain = detectCoinChain(sym, id)
+  if (chain === 'BTC') return 'Bitcoin'
+  if (chain === 'SOL') return 'Solana SPL'
+  if (chain === 'XRP') return 'XRP Ledger'
+  return _NET_LABELS[sym.toUpperCase()] || 'EVM Compatible'
+}
 
 type WalletTab = 'none' | 'deposit' | 'withdraw' | 'reward'
 
@@ -146,6 +174,9 @@ export default function WalletPage() {
   const [receiveFilter, setReceiveFilter] = useState<'All' | 'Bitcoin' | 'Ethereum' | 'Solana' | 'XRP'>('All')
   const [showManage, setShowManage] = useState(false)
   const [managedCoins, setManagedCoins] = useState<string[]>(DEFAULT_MANAGED)
+  const [receiveCoinList, setReceiveCoinList] = useState<any[]>([])
+  const [receiveLoaded, setReceiveLoaded] = useState(false)
+  const [selectedCoinData, setSelectedCoinData] = useState<any>(null)
   const [amount, setAmount] = useState('')
   const [txHash, setTxHash] = useState('')
   const [withdrawAddress, setWithdrawAddress] = useState('')
@@ -283,6 +314,15 @@ export default function WalletPage() {
   }, [tab, depositMode])
 
   useEffect(() => {
+    if (tab !== 'deposit' || depositMode !== 'network') return
+    if (receiveLoaded) return
+    fetch('/api/markets/list?per_page=250')
+      .then(r => r.json())
+      .then(d => { setReceiveCoinList(d.list || []); setReceiveLoaded(true) })
+      .catch(() => setReceiveLoaded(true))
+  }, [tab, depositMode, receiveLoaded])
+
+  useEffect(() => {
     const address = coin === 'BTC' ? chainAddrs.btc : coin === 'SOL' ? chainAddrs.sol : coin === 'XRP' ? chainAddrs.xrp : userWallet
     if (!address || tab !== 'deposit' || depositMode !== 'crypto') {
       setQrDataUrl(null)
@@ -358,28 +398,35 @@ export default function WalletPage() {
     }
   }, [transactions])
 
-  // Per-coin receive address: look up chain type from ALL_CRYPTOS
+  // Per-coin receive address — uses detectCoinChain so market-API coins work too
   const addrFor = (sym: string) => {
-    const chain = ALL_CRYPTOS.find(c => c.sym === sym)?.chain ?? 'EVM'
+    const chain = detectCoinChain(sym)
     if (chain === 'BTC') return chainAddrs.btc || ''
     if (chain === 'SOL') return chainAddrs.sol || ''
     if (chain === 'XRP') return chainAddrs.xrp || ''
     return userWallet
   }
-  const selectedCoin = ALL_CRYPTOS.find((c) => c.sym === coin) ?? ALL_CRYPTOS[0]
+  const selectedCoin = selectedCoinData
+    ? { ...selectedCoinData, network: coinNetworkLabel(selectedCoinData.sym, selectedCoinData.id || '') }
+    : (ALL_CRYPTOS.find((c) => c.sym === coin) ?? ALL_CRYPTOS[0])
   const activeAddress = addrFor(coin)
 
-  const filteredCryptos = ALL_CRYPTOS.filter(c => {
+  // Build receive list: live market data when loaded, static fallback while loading
+  const filteredReceiveCoins = useMemo(() => {
+    const source = receiveLoaded && receiveCoinList.length > 0
+      ? receiveCoinList.map((c: any) => {
+          const sym = String(c.symbol || '').toUpperCase()
+          const chain = detectCoinChain(sym, c.id || '')
+          return { sym, id: c.id || '', name: c.name || sym, image: c.image || '', chain, network: coinNetworkLabel(sym, c.id || ''), glyph: sym.slice(0, 1), color: '#888' }
+        })
+      : ALL_CRYPTOS.map(c => ({ ...c, id: '', image: '' }))
     const q = receiveSearch.toLowerCase()
-    const matchSearch = !q || c.sym.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.network.toLowerCase().includes(q)
-    const matchFilter =
-      receiveFilter === 'All' ? true :
-      receiveFilter === 'Bitcoin' ? c.chain === 'BTC' :
-      receiveFilter === 'Ethereum' ? c.chain === 'EVM' :
-      receiveFilter === 'Solana' ? c.chain === 'SOL' :
-      receiveFilter === 'XRP' ? c.chain === 'XRP' : true
-    return matchSearch && matchFilter
-  })
+    return source.filter((c: any) => {
+      const matchSearch = !q || c.sym.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.network.toLowerCase().includes(q)
+      const matchFilter = receiveFilter === 'All' ? true : receiveFilter === 'Bitcoin' ? c.chain === 'BTC' : receiveFilter === 'Ethereum' ? c.chain === 'EVM' : receiveFilter === 'Solana' ? c.chain === 'SOL' : receiveFilter === 'XRP' ? c.chain === 'XRP' : true
+      return matchSearch && matchFilter
+    })
+  }, [receiveLoaded, receiveCoinList, receiveSearch, receiveFilter])
 
   async function submitDeposit() {
     if (!amount || !txHash.trim()) {
@@ -724,20 +771,25 @@ export default function WalletPage() {
                 ))}
               </div>
               <div className="network-list">
-                {filteredCryptos.length === 0 && (
+                {!receiveLoaded && receiveCoinList.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--text-muted)', fontSize: 13 }}>Loading coins…</div>
+                )}
+                {receiveLoaded && filteredReceiveCoins.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--text-muted)', fontSize: 13 }}>No coins match your search</div>
                 )}
-                {filteredCryptos.map((c) => {
+                {filteredReceiveCoins.map((c: any) => {
                   const addr = addrFor(c.sym)
                   return (
                     <button
-                      key={c.sym}
+                      key={`${c.id || c.sym}-${c.sym}`}
                       type="button"
-                      onClick={() => { setCoin(c.sym); setDepositMode('crypto') }}
+                      onClick={() => { setCoin(c.sym); setSelectedCoinData(c); setDepositMode('crypto') }}
                       className="network-row pressable"
                     >
-                      <span className="network-logo" style={{ background: c.color }}>
-                        {c.glyph}
+                      <span className="network-logo" style={{ background: c.image ? '#14171D' : (c.color || '#444'), overflow: 'hidden', padding: c.image ? 0 : undefined }}>
+                        {c.image
+                          ? <img src={c.image} alt={c.sym} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          : <CoinIcon symbol={c.sym} size={24} />}
                       </span>
                       <span className="network-copy">
                         <strong>{c.name} <span style={{ fontWeight: 600, fontSize: 11, color: 'var(--text-muted)' }}>· {c.sym} · {c.network}</span></strong>
