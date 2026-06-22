@@ -97,7 +97,6 @@ export default function AdminPlansPage() {
               ['symbol', 'Symbol (BTC, ETH...)', 'text'],
               ['category', 'Category', 'text'],
               ['badge', 'Badge (Hot, Popular...)', 'text'],
-              ['image', 'Image URL', 'text'],
               ['description', 'Description', 'text'],
             ] as const).map(([key, label]) => (
               <div key={key}>
@@ -106,6 +105,30 @@ export default function AdminPlansPage() {
                   style={{ width: '100%', background: '#0a0a0a', color: '#fff', border: '1px solid #222', borderRadius: 8, padding: '9px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
               </div>
             ))}
+            {/* Image upload or URL */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ display: 'block', color: '#888', fontSize: 11, marginBottom: 5 }}>Coin Image (upload SVG/PNG or paste URL)</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input value={form.image || ''} onChange={e => setForm((f: any) => ({ ...f, image: e.target.value }))}
+                  placeholder="https://... or upload →"
+                  style={{ flex: 1, background: '#0a0a0a', color: '#fff', border: '1px solid #222', borderRadius: 8, padding: '9px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }} />
+                <label style={{ padding: '9px 14px', background: '#1a1a1a', border: '1px solid #222', borderRadius: 8, color: '#ccc', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
+                  Upload
+                  <input type="file" accept="image/svg+xml,image/png,image/jpeg,image/webp" style={{ display: 'none' }} onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const reader = new FileReader()
+                    reader.onload = ev => { if (ev.target?.result) setForm((f: any) => ({ ...f, image: ev.target!.result as string })) }
+                    reader.readAsDataURL(file)
+                  }} />
+                </label>
+                {form.image && (
+                  <div style={{ width: 38, height: 38, borderRadius: 8, background: '#111', border: '1px solid #222', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <img src={form.image} alt="" style={{ width: 28, height: 28, objectFit: 'contain' }} onError={() => {}} />
+                  </div>
+                )}
+              </div>
+            </div>
             {([
               ['dailyRoi', 'Daily ROI (0.024 = 2.4%)', 'number'],
               ['duration', 'Duration (days)', 'number'],

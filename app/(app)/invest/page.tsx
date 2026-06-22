@@ -83,14 +83,24 @@ function InvestContent() {
   const [summary, setSummary] = useState<any>(null)
   const [claimingId, setClaimingId] = useState<string | null>(null)
   const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set())
+  const [coinImageMap, setCoinImageMap] = useState<Record<string, string>>({})
 
   useBodyScrollLock(sheetOpen)
 
   useEffect(() => {
-    fetch('/api/investments/plans')
-      .then(r => r.json())
-      .then(d => { setPlans(d.plans || []); setLoading(false) })
-      .catch(() => setLoading(false))
+    // Load plans + fetch coin images from market API in parallel
+    Promise.all([
+      fetch('/api/investments/plans').then(r => r.json()).catch(() => ({ plans: [] })),
+      fetch('/api/markets/list?per_page=100').then(r => r.json()).catch(() => ({ list: [] })),
+    ]).then(([plansData, mktData]) => {
+      setPlans(plansData.plans || [])
+      setLoading(false)
+      const imgMap: Record<string, string> = {}
+      ;(mktData.list || []).forEach((c: any) => {
+        if (c.symbol && c.image) imgMap[String(c.symbol).toUpperCase()] = c.image
+      })
+      setCoinImageMap(imgMap)
+    }).catch(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -198,7 +208,7 @@ function InvestContent() {
                     <div style={{ position: 'absolute', top: 0, right: 0, background: plan.badge === 'Hot' ? '#F6465D' : plan.badge === 'Popular' || plan.badge === 'Most Popular' ? '#C9A227' : '#0ECB81', color: '#000', fontSize: 9, fontWeight: 900, padding: '4px 11px', borderRadius: '0 18px 0 10px', letterSpacing: '0.06em' }}>{plan.badge.toUpperCase()}</div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-                    <CoinLogo symbol={plan.symbol} image={plan.image || undefined} size={48} />
+                    <CoinLogo symbol={plan.symbol} image={plan.image || coinImageMap[plan.symbol.toUpperCase()] || undefined} size={48} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                         <span style={{ fontSize: 10, fontWeight: 700, color: riskColor(plan.riskLevel), background: `${riskColor(plan.riskLevel)}18`, padding: '2px 7px', borderRadius: 4 }}>{plan.category}</span>

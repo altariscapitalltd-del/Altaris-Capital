@@ -64,7 +64,7 @@ const Sparkline = memo(
 
 // ─── Portfolio chart (canvas + touch scrub, Coinbase-style) ──────────────
 const PortfolioChart = memo(
-  function PortfolioChart({ data, times, color = '#C9A227', height = 180 }: { data: number[]; times: number[]; color?: string; height?: number }) {
+  function PortfolioChart({ data, times, color = '#C9A227', height = 110 }: { data: number[]; times: number[]; color?: string; height?: number }) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const wrapRef = useRef<HTMLDivElement>(null)
     const rafRef = useRef(0)
@@ -310,7 +310,13 @@ export default function HomePage() {
           coinsHashRef.current = hash
           startTransition(() => {
             setCoins(next)
-            try { localStorage.setItem('altaris_coins_cache', JSON.stringify(next)) } catch {}
+            try {
+              localStorage.setItem('altaris_coins_cache', JSON.stringify(next))
+              // Share price map for consistent balance display across pages
+              const priceCache: Record<string, number> = { USD: 1, USDT: 1, USDC: 1 }
+              next.forEach((c: any) => { priceCache[c.sym] = c.price })
+              localStorage.setItem('altaris_price_cache', JSON.stringify({ prices: priceCache, ts: Date.now() }))
+            } catch {}
           })
         }
       })
@@ -364,7 +370,7 @@ export default function HomePage() {
   const usdBal = useMemo(() => balanceList.reduce((sum, b) => {
     const cur = String(b.currency || '').toUpperCase()
     const amt = Number(b.amount || 0)
-    if (cur === 'USD' || cur === 'USDT') return sum + amt
+    if (cur === 'USD' || cur === 'USDT' || cur === 'USDC') return sum + amt
     return sum + amt * Number(priceMap[cur] || 0)
   }, 0), [balanceList, priceMap])
 

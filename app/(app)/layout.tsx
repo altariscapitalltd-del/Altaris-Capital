@@ -609,15 +609,9 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           />
         </div>
         <div className="ptr-content" style={{ transform: `translateY(${pull}px)`, transition: ptrActive.current ? 'none' : 'transform .28s cubic-bezier(.2,.7,.3,1)' }}>
-          <motion.div
-            key={pathname}
-            initial={{ opacity: 0, y: 7 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-            style={{ minHeight: '100%', willChange: 'transform, opacity' }}
-          >
+          <div key={pathname} style={{ minHeight: '100%' }}>
             {children}
-          </motion.div>
+          </div>
         </div>
       </main>
 

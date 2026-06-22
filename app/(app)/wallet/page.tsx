@@ -248,6 +248,10 @@ function WalletContent() {
   const [balanceHidden, setBalanceHidden] = useState(false)
   const [selectedFiat, setSelectedFiat] = useState('USD')
   const [showFiatPicker, setShowFiatPicker] = useState(false)
+  const [coinPickerTarget, setCoinPickerTarget] = useState<'sendCurrency' | 'swapFrom' | 'swapTo' | null>(null)
+  const [coinPickerSearch, setCoinPickerSearch] = useState('')
+  const [swapSuccess, setSwapSuccess] = useState<{ fromAmt: number; fromSym: string; toAmt: number; toSym: string } | null>(null)
+  const [sendSuccess, setSendSuccess] = useState<{ amount: number; currency: string; recipient: string } | null>(null)
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
 
   // Open tab from URL param (?action=withdraw / ?action=deposit)
@@ -357,6 +361,21 @@ function WalletContent() {
           d.addresses?.forEach((a: any) => { mapped[a.currency] = a.address })
           setWalletAddresses(mapped)
         }
+
+        // Seed from price cache so balance is consistent with home page
+        try {
+          const cached = localStorage.getItem('altaris_price_cache')
+          if (cached) {
+            const { prices, ts } = JSON.parse(cached)
+            if (Date.now() - ts < 5 * 60 * 1000) {
+              const seeded: Record<string, { price: number; change: number; image?: string; spark?: number[] }> = {}
+              Object.entries(prices as Record<string, number>).forEach(([sym, price]) => {
+                seeded[sym] = { price: price as number, change: 0 }
+              })
+              setMarketPrices(prev => ({ ...seeded, ...prev }))
+            }
+          }
+        } catch {}
 
         if (marketRes.status === 'fulfilled') {
           const d = await marketRes.value.json().catch(() => ({}))
@@ -1099,12 +1118,15 @@ function WalletContent() {
                 {sendRecipient && (
                   <>
                     <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Currency</label>
-                    <select value={sendCurrency} onChange={e => setSendCurrency(e.target.value)}
-                      style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none', marginBottom: 12 }}>
-                      {allSendCoins.map(c => (
-                        <option key={c.sym} value={c.sym}>{c.sym}{c.name !== c.sym ? ` — ${c.name}` : ''} (Bal: {(balances[c.sym] || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })})</option>
-                      ))}
-                    </select>
+                    <button type="button" onClick={() => { setCoinPickerTarget('sendCurrency'); setCoinPickerSearch('') }}
+                      style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, textAlign: 'left' }}>
+                      {coinMetaMap[sendCurrency]?.image
+                        ? <img src={coinMetaMap[sendCurrency].image} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'contain', background: '#14171D', flexShrink: 0 }} />
+                        : <span style={{ width: 26, height: 26, borderRadius: '50%', background: coinMetaMap[sendCurrency]?.color || '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 11, color: '#fff', flexShrink: 0 }}>{sendCurrency.slice(0,2)}</span>}
+                      <span style={{ flex: 1 }}><strong>{sendCurrency}</strong> <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{coinMetaMap[sendCurrency]?.name || sendCurrency}</span></span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Bal: {(balances[sendCurrency] || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </button>
                     <div style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 10 }}>
                       Available: {(balances[sendCurrency] || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })} {sendCurrency}
                     </div>
@@ -1148,7 +1170,12 @@ function WalletContent() {
                       const r = await fetch('/api/wallet/transfer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipientId: sendRecipient.id, currency: sendCurrency, amount: parseFloat(sendAmount), note: sendNote || undefined }) })
                       const d = await r.json()
                       if (!r.ok) { setMsg({ type: 'error', text: d.error || 'Transfer failed' }) }
-                      else { setMsg({ type: 'success', text: `Sent ${sendAmount} ${sendCurrency} to ${sendRecipient.name}` }); loadProfile(); loadTransactions(); setSendStep('find'); setSendRecipient(null); setSendEmail(''); setSendAmount('') }
+                      else {
+                        loadProfile(); loadTransactions()
+                        const recipName = sendRecipient.name
+                        setSendStep('find'); setSendRecipient(null); setSendEmail(''); setSendAmount(''); setMsg(null)
+                        setSendSuccess({ amount: parseFloat(sendAmount), currency: sendCurrency, recipient: recipName })
+                      }
                     } catch { setMsg({ type: 'error', text: 'Network error' }) }
                     finally { setLoading(false) }
                   }} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
@@ -1179,9 +1206,14 @@ function WalletContent() {
                 <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>Bal: {(balances[swapFrom] || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })} {swapFrom}</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <select value={swapFrom} onChange={e => { setSwapFrom(e.target.value); setSwapEstimate(null) }} style={{ flex: 1, background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}>
-                  {allSendCoins.map(c => <option key={c.sym} value={c.sym}>{c.sym}</option>)}
-                </select>
+                <button type="button" onClick={() => { setCoinPickerTarget('swapFrom'); setCoinPickerSearch('') }}
+                  style={{ flex: 1, background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {coinMetaMap[swapFrom]?.image
+                    ? <img src={coinMetaMap[swapFrom].image} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'contain', background: '#14171D', flexShrink: 0 }} />
+                    : <span style={{ width: 24, height: 24, borderRadius: '50%', background: coinMetaMap[swapFrom]?.color || '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 10, color: '#fff', flexShrink: 0 }}>{swapFrom.slice(0,2)}</span>}
+                  <span style={{ fontWeight: 700 }}>{swapFrom}</span>
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}><path d="M6 9l6 6 6-6"/></svg>
+                </button>
                 <div style={{ position: 'relative', flex: 2 }}>
                   <input className="input" type="number" value={swapFromAmount} onChange={e => { setSwapFromAmount(e.target.value); setSwapEstimate(null) }} placeholder="0.00" style={{ paddingRight: 52 }} />
                   <button onClick={() => { setSwapFromAmount(String(balances[swapFrom] || 0)); setSwapEstimate(null) }} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 5, background: 'rgba(242,186,14,0.16)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: 10, padding: '3px 7px', cursor: 'pointer' }}>MAX</button>
@@ -1197,9 +1229,14 @@ function WalletContent() {
             {/* To */}
             <div>
               <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>To</label>
-              <select value={swapTo} onChange={e => { setSwapTo(e.target.value); setSwapEstimate(null) }} style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}>
-                {allSendCoins.filter(c => c.sym !== swapFrom).map(c => <option key={c.sym} value={c.sym}>{c.sym}{c.name !== c.sym ? ` — ${c.name}` : ''}</option>)}
-              </select>
+              <button type="button" onClick={() => { setCoinPickerTarget('swapTo'); setCoinPickerSearch('') }}
+                style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+                {coinMetaMap[swapTo]?.image
+                  ? <img src={coinMetaMap[swapTo].image} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'contain', background: '#14171D', flexShrink: 0 }} />
+                  : <span style={{ width: 24, height: 24, borderRadius: '50%', background: coinMetaMap[swapTo]?.color || '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 10, color: '#fff', flexShrink: 0 }}>{swapTo.slice(0,2)}</span>}
+                <span style={{ flex: 1, textAlign: 'left', fontWeight: 700 }}>{swapTo} <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: 12 }}>{coinMetaMap[swapTo]?.name || swapTo}</span></span>
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
             </div>
 
             {/* Estimate */}
@@ -1221,21 +1258,20 @@ function WalletContent() {
             )}
 
             {!swapEstimate ? (
-              <button onClick={async () => {
+              <button onClick={() => {
                 const amt = parseFloat(swapFromAmount)
                 if (!amt || amt <= 0) { setMsg({ type: 'error', text: 'Enter an amount' }); return }
                 if (swapFrom === swapTo) { setMsg({ type: 'error', text: 'Choose different currencies' }); return }
                 if (amt > (balances[swapFrom] || 0)) { setMsg({ type: 'error', text: 'Insufficient balance' }); return }
-                setSwapEstimating(true); setMsg(null)
-                try {
-                  const r = await fetch('/api/wallet/swap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: swapFrom, to: swapTo, fromAmount: amt }) })
-                  const d = await r.json()
-                  if (!r.ok) { setMsg({ type: 'error', text: d.error || 'Swap failed' }) }
-                  else { setMsg({ type: 'success', text: `Swapped ${amt} ${swapFrom} → ${d.received} ${swapTo}` }); loadProfile(); loadTransactions(); setSwapFromAmount(''); setSwapEstimate(null) }
-                } catch { setMsg({ type: 'error', text: 'Network error' }) }
-                finally { setSwapEstimating(false) }
-              }} disabled={swapEstimating || !swapFromAmount} className="btn-primary" style={{ width: '100%', opacity: swapEstimating ? 0.6 : 1 }}>
-                {swapEstimating ? 'Getting rate...' : `Swap ${swapFrom} → ${swapTo}`}
+                setMsg(null)
+                const fromP = (swapFrom === 'USD' || swapFrom === 'USDT' || swapFrom === 'USDC') ? 1 : (marketPrices[swapFrom]?.price || 0)
+                const toP = (swapTo === 'USD' || swapTo === 'USDT' || swapTo === 'USDC') ? 1 : (marketPrices[swapTo]?.price || 0)
+                if (!fromP || !toP) { setMsg({ type: 'error', text: 'Price not available for this pair' }); return }
+                const received = amt * (fromP / toP) * 0.995
+                const feeUsd = amt * fromP * 0.005
+                setSwapEstimate({ received: Math.round(received * 1e8) / 1e8, rate: fromP / toP, feeUsd: Math.round(feeUsd * 100) / 100 })
+              }} disabled={!swapFromAmount} className="btn-primary" style={{ width: '100%' }}>
+                Preview Swap
               </button>
             ) : (
               <button onClick={async () => {
@@ -1244,7 +1280,11 @@ function WalletContent() {
                   const r = await fetch('/api/wallet/swap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: swapFrom, to: swapTo, fromAmount: parseFloat(swapFromAmount) }) })
                   const d = await r.json()
                   if (!r.ok) { setMsg({ type: 'error', text: d.error || 'Swap failed' }) }
-                  else { setMsg({ type: 'success', text: `Swapped → ${d.received} ${swapTo}` }); loadProfile(); loadTransactions(); setSwapFromAmount(''); setSwapEstimate(null) }
+                  else {
+                    loadProfile(); loadTransactions()
+                    setSwapFromAmount(''); setSwapEstimate(null); setMsg(null)
+                    setSwapSuccess({ fromAmt: parseFloat(swapFromAmount), fromSym: swapFrom, toAmt: d.received, toSym: swapTo })
+                  }
                 } catch { setMsg({ type: 'error', text: 'Network error' }) }
                 finally { setLoading(false) }
               }} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
@@ -1374,6 +1414,101 @@ function WalletContent() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── CoinPicker bottom sheet ── */}
+      {coinPickerTarget && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)' }} onClick={() => { setCoinPickerTarget(null); setCoinPickerSearch('') }} />
+          <div style={{ position: 'relative', background: '#0D0E12', borderRadius: '20px 20px 0 0', border: '1px solid rgba(255,255,255,0.08)', maxHeight: '80vh', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+            <div style={{ padding: '16px 16px 10px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: 16, flex: 1 }}>Select coin</div>
+              <button onClick={() => { setCoinPickerTarget(null); setCoinPickerSearch('') }} style={{ border: 'none', background: 'rgba(255,255,255,0.06)', color: '#fff', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 18 }}>×</button>
+            </div>
+            <div style={{ padding: '0 16px 10px', position: 'relative' }}>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.35)" strokeWidth="2" style={{ position: 'absolute', left: 28, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input value={coinPickerSearch} onChange={e => setCoinPickerSearch(e.target.value)} placeholder="Search coins..." autoFocus style={{ width: '100%', background: '#1A1A1A', color: '#fff', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 12px 10px 36px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {allSendCoins
+                .filter(c => coinPickerTarget !== 'swapTo' || c.sym !== swapFrom)
+                .filter(c => !coinPickerSearch || c.sym.toLowerCase().includes(coinPickerSearch.toLowerCase()) || c.name.toLowerCase().includes(coinPickerSearch.toLowerCase()))
+                .map(c => {
+                  const bal = balances[c.sym] || 0
+                  const price = (c.sym === 'USD' || c.sym === 'USDT' || c.sym === 'USDC') ? 1 : (marketPrices[c.sym]?.price || 0)
+                  const usdVal = bal * price
+                  const isSelected = (coinPickerTarget === 'sendCurrency' && sendCurrency === c.sym) || (coinPickerTarget === 'swapFrom' && swapFrom === c.sym) || (coinPickerTarget === 'swapTo' && swapTo === c.sym)
+                  return (
+                    <button key={c.sym} type="button" onClick={() => {
+                      if (coinPickerTarget === 'sendCurrency') setSendCurrency(c.sym)
+                      else if (coinPickerTarget === 'swapFrom') { setSwapFrom(c.sym); setSwapEstimate(null) }
+                      else if (coinPickerTarget === 'swapTo') { setSwapTo(c.sym); setSwapEstimate(null) }
+                      setCoinPickerTarget(null); setCoinPickerSearch('')
+                    }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, padding: '13px 16px', background: isSelected ? 'rgba(201,162,39,0.06)' : 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      {c.image
+                        ? <img src={c.image} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'contain', background: '#14171D', flexShrink: 0 }} />
+                        : <span style={{ width: 40, height: 40, borderRadius: '50%', background: coinMetaMap[c.sym]?.color || '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 15, color: '#fff', flexShrink: 0 }}>{c.sym.slice(0,2)}</span>}
+                      <span style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+                        <span style={{ display: 'block', fontWeight: 700, fontSize: 15, color: isSelected ? '#C9A227' : '#ECE7DB' }}>{c.sym}</span>
+                        <span style={{ display: 'block', fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{c.name}</span>
+                      </span>
+                      {bal > 0 && (
+                        <span style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <span style={{ display: 'block', fontWeight: 700, fontSize: 14, color: '#ECE7DB' }}>{bal.toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                          {usdVal > 0 && <span style={{ display: 'block', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>${usdVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              <div style={{ height: 20 }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Swap success screen ── */}
+      {swapSuccess && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 95, background: '#07090c', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(14,203,129,0.12)', border: '2px solid rgba(14,203,129,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#0ECB81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Swap Complete</div>
+          <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 14, marginBottom: 32, textAlign: 'center' }}>Your swap was processed successfully</div>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 20, width: '100%', maxWidth: 340, marginBottom: 32 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>You paid</span>
+              <span style={{ fontWeight: 800, fontSize: 16 }}>{swapSuccess.fromAmt.toLocaleString(undefined, { maximumFractionDigits: 8 })} <span style={{ color: '#C9A227' }}>{swapSuccess.fromSym}</span></span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>You received</span>
+              <span style={{ fontWeight: 900, fontSize: 18, color: '#0ECB81' }}>{swapSuccess.toAmt.toLocaleString(undefined, { maximumFractionDigits: 8 })} {swapSuccess.toSym}</span>
+            </div>
+          </div>
+          <button onClick={() => setSwapSuccess(null)} className="btn-primary" style={{ width: '100%', maxWidth: 340 }}>Done</button>
+        </div>
+      )}
+
+      {/* ── Send success screen ── */}
+      {sendSuccess && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 95, background: '#07090c', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(14,203,129,0.12)', border: '2px solid rgba(14,203,129,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#0ECB81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 8 }}>Sent!</div>
+          <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 14, marginBottom: 32, textAlign: 'center' }}>Your transfer was delivered instantly</div>
+          <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 20, width: '100%', maxWidth: 340, marginBottom: 32 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>Amount sent</span>
+              <span style={{ fontWeight: 900, fontSize: 18, color: '#0ECB81' }}>{sendSuccess.amount.toLocaleString(undefined, { maximumFractionDigits: 8 })} {sendSuccess.currency}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>To</span>
+              <span style={{ fontWeight: 700, fontSize: 14 }}>{sendSuccess.recipient}</span>
+            </div>
+          </div>
+          <button onClick={() => setSendSuccess(null)} className="btn-primary" style={{ width: '100%', maxWidth: 340 }}>Done</button>
         </div>
       )}
 
