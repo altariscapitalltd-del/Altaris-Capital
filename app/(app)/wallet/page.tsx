@@ -68,7 +68,7 @@ function coinNetworkLabel(sym: string, id: string = ''): string {
   return _NET_LABELS[sym.toUpperCase()] || 'EVM Compatible'
 }
 
-type WalletTab = 'none' | 'deposit' | 'withdraw' | 'reward'
+type WalletTab = 'none' | 'deposit' | 'withdraw' | 'send' | 'swap' | 'reward'
 
 function ShadowCard({ h = 96 }: { h?: number }) {
   return (
@@ -198,6 +198,22 @@ export default function WalletPage() {
   const [chainAddrs, setChainAddrs] = useState<{ btc?: string; sol?: string; xrp?: string }>({})
   const [balanceHidden, setBalanceHidden] = useState(false)
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
+
+  // Send (internal transfer) state
+  const [sendEmail, setSendEmail] = useState('')
+  const [sendRecipient, setSendRecipient] = useState<{ id: string; name: string; avatarUrl?: string } | null>(null)
+  const [sendLookingUp, setSendLookingUp] = useState(false)
+  const [sendCurrency, setSendCurrency] = useState('USD')
+  const [sendAmount, setSendAmount] = useState('')
+  const [sendNote, setSendNote] = useState('')
+  const [sendStep, setSendStep] = useState<'find' | 'confirm'>('find')
+
+  // Swap state
+  const [swapFrom, setSwapFrom] = useState('USDT')
+  const [swapTo, setSwapTo] = useState('BTC')
+  const [swapFromAmount, setSwapFromAmount] = useState('')
+  const [swapEstimate, setSwapEstimate] = useState<{ received: number; rate: number; feeUsd: number } | null>(null)
+  const [swapEstimating, setSwapEstimating] = useState(false)
 
   useEffect(() => {
     try {
@@ -618,15 +634,17 @@ export default function WalletPage() {
     .sort((a, b) => b.usd - a.usd || b.price - a.price),
   [managedCoins, coinMetaMap, marketPrices, balances])
 
-  // Mockup actions — Send=withdraw, Receive=deposit, Swap=markets, Buy=fiat
   const openWithdraw = () => { setTab('withdraw'); setDepositMode('select'); setMsg(null) }
-  const openDeposit = () => { setTab('deposit'); setDepositMode('network'); setMsg(null) }
-  const openBuy = () => { setTab('deposit'); setDepositMode('fiat'); setMsg(null) }
+  const openDeposit  = () => { setTab('deposit');  setDepositMode('network'); setMsg(null) }
+  const openBuy      = () => { setTab('deposit');  setDepositMode('fiat');    setMsg(null) }
+  const openSend     = () => { setSendStep('find'); setSendEmail(''); setSendRecipient(null); setSendAmount(''); setSendNote(''); setTab('send'); setMsg(null) }
+  const openSwap     = () => { setSwapFromAmount(''); setSwapEstimate(null); setTab('swap'); setMsg(null) }
+
   const heroActions = [
-    { label: 'Send', onClick: openWithdraw, path: <path d="M12 19V5M5 12l7-7 7 7" /> },
+    { label: 'Send',    onClick: openSend,    path: <path d="M12 19V5M5 12l7-7 7 7" /> },
     { label: 'Receive', onClick: openDeposit, path: <path d="M12 5v14M5 12l7 7 7-7" /> },
-    { label: 'Swap', onClick: () => { window.location.href = '/markets' }, path: <><path d="M7 10l-3 3 3 3" /><path d="M4 13h12" /><path d="M17 8l3-3-3-3" /><path d="M20 5H8" /></> },
-    { label: 'Buy', onClick: openBuy, path: <><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><path d="M3 6h18M16 10a4 4 0 01-8 0" /></> },
+    { label: 'Swap',    onClick: openSwap,    path: <><path d="M7 10l-3 3 3 3" /><path d="M4 13h12" /><path d="M17 8l3-3-3-3" /><path d="M20 5H8" /></> },
+    { label: 'Buy',     onClick: openBuy,     path: <><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" /><path d="M3 6h18M16 10a4 4 0 01-8 0" /></> },
   ]
   const initial = (profile.name || 'A').trim().charAt(0).toUpperCase()
 
@@ -930,6 +948,216 @@ export default function WalletPage() {
                 {loading ? 'Processing...' : 'Request Withdrawal'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Send (internal transfer to Altaris user) ── */}
+      {tab === 'send' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(73px + env(safe-area-inset-bottom))', zIndex: 45, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>Send</div>
+            <div style={{ width: 36 }} />
+          </div>
+
+          {sendStep === 'find' && (
+            <div style={{ display: 'grid', gap: 14 }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Send to Altaris user</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 14 }}>Transfers arrive instantly. No fees.</div>
+
+                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Recipient email</label>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <input
+                    className="input" type="email" placeholder="user@example.com"
+                    value={sendEmail} onChange={e => { setSendEmail(e.target.value); setSendRecipient(null) }}
+                    onKeyDown={async e => { if (e.key === 'Enter') { setSendLookingUp(true); setMsg(null); try { const r = await fetch(`/api/user/lookup?email=${encodeURIComponent(sendEmail)}`); const d = await r.json(); if (!r.ok) { setMsg({ type: 'error', text: d.error || 'User not found' }); setSendRecipient(null) } else setSendRecipient(d) } catch { setMsg({ type: 'error', text: 'Lookup failed' }) } finally { setSendLookingUp(false) } } }}
+                    style={{ flex: 1 }}
+                  />
+                  <button onClick={async () => {
+                    setSendLookingUp(true); setMsg(null)
+                    try {
+                      const r = await fetch(`/api/user/lookup?email=${encodeURIComponent(sendEmail)}`)
+                      const d = await r.json()
+                      if (!r.ok) { setMsg({ type: 'error', text: d.error || 'User not found' }); setSendRecipient(null) }
+                      else setSendRecipient(d)
+                    } catch { setMsg({ type: 'error', text: 'Lookup failed' }) }
+                    finally { setSendLookingUp(false) }
+                  }} disabled={sendLookingUp || !sendEmail.includes('@')} className="btn-primary" style={{ whiteSpace: 'nowrap', opacity: sendLookingUp ? 0.6 : 1 }}>
+                    {sendLookingUp ? '...' : 'Find'}
+                  </button>
+                </div>
+
+                {sendRecipient && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, background: 'rgba(14,203,129,0.07)', border: '1px solid rgba(14,203,129,0.2)', marginBottom: 14 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(201,162,39,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16, color: '#C9A227', overflow: 'hidden', flexShrink: 0 }}>
+                      {sendRecipient.avatarUrl ? <img src={sendRecipient.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : sendRecipient.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{sendRecipient.name}</div>
+                      <div style={{ color: '#0ECB81', fontSize: 11, fontWeight: 600 }}>Altaris user found</div>
+                    </div>
+                  </div>
+                )}
+
+                {sendRecipient && (
+                  <>
+                    <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Currency</label>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                      {Object.entries(balances).filter(([, v]) => Number(v) > 0).map(([sym]) => (
+                        <button key={sym} type="button" onClick={() => setSendCurrency(sym)}
+                          style={{ padding: '5px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, border: `1px solid ${sendCurrency === sym ? '#C9A227' : 'var(--border)'}`, background: sendCurrency === sym ? 'rgba(201,162,39,0.12)' : 'transparent', color: sendCurrency === sym ? '#C9A227' : 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          {sym}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 10 }}>
+                      Available: {(balances[sendCurrency] || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })} {sendCurrency}
+                    </div>
+
+                    <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Amount</label>
+                    <div style={{ position: 'relative', marginBottom: 12 }}>
+                      <input className="input" type="number" value={sendAmount} onChange={e => setSendAmount(e.target.value)} placeholder="0.00" style={{ paddingRight: 64 }} />
+                      <button onClick={() => setSendAmount(String(balances[sendCurrency] || 0))} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 6, background: 'rgba(242,186,14,0.16)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: 11, padding: '4px 8px', cursor: 'pointer' }}>MAX</button>
+                    </div>
+
+                    <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Note (optional)</label>
+                    <input className="input" value={sendNote} onChange={e => setSendNote(e.target.value)} placeholder="What's this for?" style={{ marginBottom: 16 }} />
+
+                    <button onClick={() => {
+                      const amt = parseFloat(sendAmount)
+                      if (!amt || amt <= 0) { setMsg({ type: 'error', text: 'Enter a valid amount' }); return }
+                      if (amt > (balances[sendCurrency] || 0)) { setMsg({ type: 'error', text: 'Insufficient balance' }); return }
+                      setSendStep('confirm'); setMsg(null)
+                    }} className="btn-primary" style={{ width: '100%' }}>
+                      Continue
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {sendStep === 'confirm' && sendRecipient && (
+            <div style={{ display: 'grid', gap: 14 }}>
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+                <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 6 }}>You are sending</div>
+                  <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: '-0.02em' }}>{parseFloat(sendAmount).toLocaleString(undefined, { maximumFractionDigits: 6 })} <span style={{ color: '#C9A227' }}>{sendCurrency}</span></div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>to {sendRecipient.name}</div>
+                </div>
+                {sendNote && <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: 13, marginBottom: 16, fontStyle: 'italic' }}>"{sendNote}"</div>}
+                <div style={{ display: 'grid', gap: 10 }}>
+                  <button onClick={async () => {
+                    setLoading(true); setMsg(null)
+                    try {
+                      const r = await fetch('/api/wallet/transfer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipientId: sendRecipient.id, currency: sendCurrency, amount: parseFloat(sendAmount), note: sendNote || undefined }) })
+                      const d = await r.json()
+                      if (!r.ok) { setMsg({ type: 'error', text: d.error || 'Transfer failed' }) }
+                      else { setMsg({ type: 'success', text: `Sent ${sendAmount} ${sendCurrency} to ${sendRecipient.name}` }); loadProfile(); loadTransactions(); setSendStep('find'); setSendRecipient(null); setSendEmail(''); setSendAmount('') }
+                    } catch { setMsg({ type: 'error', text: 'Network error' }) }
+                    finally { setLoading(false) }
+                  }} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
+                    {loading ? 'Sending...' : `Confirm Send`}
+                  </button>
+                  <button onClick={() => setSendStep('find')} style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text-muted)', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Back</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Swap ── */}
+      {tab === 'swap' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 'calc(73px + env(safe-area-inset-bottom))', zIndex: 45, background: '#07090c', overflowY: 'auto', padding: 'calc(var(--app-header-height, 64px) + 14px) 16px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <button onClick={closeDashboard} type="button" style={{ border: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }}>←</button>
+            <div style={{ fontSize: 20, fontWeight: 800 }}>Swap</div>
+            <div style={{ width: 36 }} />
+          </div>
+
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, display: 'grid', gap: 14 }}>
+            {/* From */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <label style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 600 }}>From</label>
+                <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>Bal: {(balances[swapFrom] || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })} {swapFrom}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <select value={swapFrom} onChange={e => { setSwapFrom(e.target.value); setSwapEstimate(null) }} style={{ flex: 1, background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}>
+                  {Object.entries(balances).filter(([, v]) => Number(v) > 0).map(([sym]) => <option key={sym} value={sym}>{sym}</option>)}
+                </select>
+                <div style={{ position: 'relative', flex: 2 }}>
+                  <input className="input" type="number" value={swapFromAmount} onChange={e => { setSwapFromAmount(e.target.value); setSwapEstimate(null) }} placeholder="0.00" style={{ paddingRight: 52 }} />
+                  <button onClick={() => { setSwapFromAmount(String(balances[swapFrom] || 0)); setSwapEstimate(null) }} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 5, background: 'rgba(242,186,14,0.16)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: 10, padding: '3px 7px', cursor: 'pointer' }}>MAX</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Swap arrow */}
+            <button type="button" onClick={() => { const tmp = swapFrom; setSwapFrom(swapTo); setSwapTo(tmp); setSwapFromAmount(''); setSwapEstimate(null) }} style={{ alignSelf: 'center', width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--gold-bright)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', margin: '0 auto' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M7 10l-3 3 3 3"/><path d="M4 13h12"/><path d="M17 8l3-3-3-3"/><path d="M20 5H8"/></svg>
+            </button>
+
+            {/* To */}
+            <div>
+              <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>To</label>
+              <select value={swapTo} onChange={e => { setSwapTo(e.target.value); setSwapEstimate(null) }} style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}>
+                {['BTC','ETH','USDT','USDC','BNB','SOL','XRP','MATIC','AVAX','DOGE','ADA','TRX','LTC','LINK','DOT'].filter(s => s !== swapFrom).map(sym => <option key={sym} value={sym}>{sym}</option>)}
+              </select>
+            </div>
+
+            {/* Estimate */}
+            {swapEstimate && (
+              <div style={{ background: 'rgba(14,203,129,0.06)', border: '1px solid rgba(14,203,129,0.18)', borderRadius: 12, padding: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>You receive</span>
+                  <span style={{ fontWeight: 800, color: '#0ECB81' }}>{swapEstimate.received.toLocaleString(undefined, { maximumFractionDigits: 8 })} {swapTo}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Rate</span>
+                  <span style={{ fontSize: 12 }}>1 {swapFrom} = {swapEstimate.rate.toLocaleString(undefined, { maximumFractionDigits: 6 })} {swapTo}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>Fee (0.5%)</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>${swapEstimate.feeUsd.toFixed(4)}</span>
+                </div>
+              </div>
+            )}
+
+            {!swapEstimate ? (
+              <button onClick={async () => {
+                const amt = parseFloat(swapFromAmount)
+                if (!amt || amt <= 0) { setMsg({ type: 'error', text: 'Enter an amount' }); return }
+                if (swapFrom === swapTo) { setMsg({ type: 'error', text: 'Choose different currencies' }); return }
+                if (amt > (balances[swapFrom] || 0)) { setMsg({ type: 'error', text: 'Insufficient balance' }); return }
+                setSwapEstimating(true); setMsg(null)
+                try {
+                  const r = await fetch('/api/wallet/swap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: swapFrom, to: swapTo, fromAmount: amt }) })
+                  const d = await r.json()
+                  if (!r.ok) { setMsg({ type: 'error', text: d.error || 'Swap failed' }) }
+                  else { setMsg({ type: 'success', text: `Swapped ${amt} ${swapFrom} → ${d.received} ${swapTo}` }); loadProfile(); loadTransactions(); setSwapFromAmount(''); setSwapEstimate(null) }
+                } catch { setMsg({ type: 'error', text: 'Network error' }) }
+                finally { setSwapEstimating(false) }
+              }} disabled={swapEstimating || !swapFromAmount} className="btn-primary" style={{ width: '100%', opacity: swapEstimating ? 0.6 : 1 }}>
+                {swapEstimating ? 'Getting rate...' : `Swap ${swapFrom} → ${swapTo}`}
+              </button>
+            ) : (
+              <button onClick={async () => {
+                setLoading(true); setMsg(null)
+                try {
+                  const r = await fetch('/api/wallet/swap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: swapFrom, to: swapTo, fromAmount: parseFloat(swapFromAmount) }) })
+                  const d = await r.json()
+                  if (!r.ok) { setMsg({ type: 'error', text: d.error || 'Swap failed' }) }
+                  else { setMsg({ type: 'success', text: `Swapped → ${d.received} ${swapTo}` }); loadProfile(); loadTransactions(); setSwapFromAmount(''); setSwapEstimate(null) }
+                } catch { setMsg({ type: 'error', text: 'Network error' }) }
+                finally { setLoading(false) }
+              }} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
+                {loading ? 'Swapping...' : 'Confirm Swap'}
+              </button>
+            )}
           </div>
         </div>
       )}
