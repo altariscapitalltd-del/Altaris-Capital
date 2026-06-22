@@ -64,3 +64,8 @@ replit.md
 # duplicate nested project copy
 /Altaris-Capital/tmp/
 .env*
+
+# agent skills (local tooling, not app code)
+.agents/
+.claude/skills/
+skills-lock.json

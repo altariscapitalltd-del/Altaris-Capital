@@ -1,0 +1,18 @@
+{
+  "name": "altaris-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Altaris Capital brand motion — Private Bank language. Isolated from the Next app deploy.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render:balance": "remotion render src/index.ts BalanceReveal out/balance-reveal.mp4",
+    "render:sting": "remotion render src/index.ts BrandSting out/brand-sting.mp4",
+    "render:all": "npm run render:sting && npm run render:balance"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.0",
+    "remotion": "4.0.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  }
+}

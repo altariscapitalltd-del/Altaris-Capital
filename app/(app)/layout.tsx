@@ -56,7 +56,7 @@ const NAV = [
     href: '/invest', label: 'Invest',
     icon: (a: boolean) => (
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-        <circle cx="13" cy="13" r="12" fill={a ? '#F2BA0E' : '#1E1E1E'} stroke={a ? '#F2BA0E' : '#3A3A3A'} strokeWidth="1.5"/>
+        <circle cx="13" cy="13" r="12" fill={a ? '#C9A227' : '#1E1E1E'} stroke={a ? '#C9A227' : '#3A3A3A'} strokeWidth="1.5"/>
         <path d="M9 13h8M13 9v8" stroke={a ? '#000' : '#5A5A5A'} strokeWidth="2.2" strokeLinecap="round"/>
       </svg>
     ),
@@ -117,6 +117,43 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [installBannerVisible, setInstallBannerVisible] = useState(false)
   const [splashVisible, setSplashVisible] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
+
+  // ── Pull-to-refresh ──
+  const mainScrollRef = useRef<HTMLElement | null>(null)
+  const [pull, setPull] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const ptrStartY = useRef(0)
+  const ptrActive = useRef(false)
+  const PTR_THRESHOLD = 64
+
+  const onPtrStart = useCallback((e: React.TouchEvent) => {
+    const el = mainScrollRef.current
+    if (!el || refreshing || el.scrollTop > 0) { ptrActive.current = false; return }
+    ptrStartY.current = e.touches[0].clientY
+    ptrActive.current = true
+  }, [refreshing])
+
+  const onPtrMove = useCallback((e: React.TouchEvent) => {
+    if (!ptrActive.current || refreshing) return
+    const el = mainScrollRef.current
+    if (el && el.scrollTop > 0) { ptrActive.current = false; setPull(0); return }
+    const dy = e.touches[0].clientY - ptrStartY.current
+    if (dy > 0) setPull(Math.min(dy * 0.5, 96))
+    else { setPull(0) }
+  }, [refreshing])
+
+  const onPtrEnd = useCallback(async () => {
+    if (!ptrActive.current) return
+    ptrActive.current = false
+    if (pull >= PTR_THRESHOLD) {
+      setRefreshing(true)
+      setPull(PTR_THRESHOLD)
+      try { window.dispatchEvent(new Event('balance:refresh')) } catch {}
+      await new Promise((r) => setTimeout(r, 1000))
+      setRefreshing(false)
+    }
+    setPull(0)
+  }, [pull])
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)')
@@ -332,6 +369,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
   const isMarkets = pathname?.startsWith('/markets')
   const isHome = pathname === '/home' || pathname === '/'
+  const isWallet = pathname === '/wallet'
   const searchParams = useSearchParams()
   const urlQ = searchParams?.get('q') ?? ''
   const [marketSearch, setMarketSearch] = useState(urlQ)
@@ -440,7 +478,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         right: 0,
         zIndex: 60,
         background: '#000000',
-        display: 'flex',
+        display: isWallet ? 'none' : 'flex',
         flexDirection: 'column',
         boxShadow: 'none',
       }}>
@@ -555,8 +593,26 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Page content */}
-      <main className="app-main-scroll" style={{ flex: 1, position: 'relative', overscrollBehavior: 'contain', touchAction: 'pan-y' }}>
-        <div>{children}</div>
+      <main
+        ref={mainScrollRef}
+        className="app-main-scroll"
+        style={{ flex: 1, position: 'relative', overscrollBehavior: 'contain', touchAction: 'pan-y', ...(isWallet ? { top: 'env(safe-area-inset-top)' } : {}) }}
+        onTouchStart={onPtrStart}
+        onTouchMove={onPtrMove}
+        onTouchEnd={onPtrEnd}
+        onTouchCancel={onPtrEnd}
+      >
+        <div id="ptr-indicator" style={{ height: pull, opacity: pull > 8 || refreshing ? 1 : 0 }}>
+          <div
+            className={`ptr-spinner${refreshing ? ' spinning' : ''}`}
+            style={{ transform: refreshing ? 'none' : `rotate(${pull * 4}deg) scale(${Math.min(0.5 + pull / 96, 1)})`, opacity: Math.min(0.4 + pull / 64, 1) }}
+          />
+        </div>
+        <div className="ptr-content" style={{ transform: `translateY(${pull}px)`, transition: ptrActive.current ? 'none' : 'transform .28s cubic-bezier(.2,.7,.3,1)' }}>
+          <div key={pathname} style={{ minHeight: '100%' }}>
+            {children}
+          </div>
+        </div>
       </main>
 
       <AnimatePresence>
@@ -682,7 +738,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                   fontSize: 10,
                   fontWeight: active ? 600 : 400,
                   color: active
-                    ? (href === '/invest' ? '#F2BA0E' : '#FFFFFF')
+                    ? (href === '/invest' ? '#C9A227' : '#FFFFFF')
                     : '#4A4A4A',
                   transition: 'color .15s',
                   letterSpacing: '0.01em',

@@ -43,9 +43,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       const template = String(data.template || 'ADJUSTMENT').toUpperCase()
       if (!Number.isFinite(delta) || delta === 0) return NextResponse.json({ error: 'Adjustment amount must be non-zero' }, { status: 400 })
 
-      const balance = await prisma.balance.findFirst({ where: { userId: params.id, currency: 'USD' } })
-      if (!balance) return NextResponse.json({ error: 'Balance not found' }, { status: 404 })
-      const newAmount = Math.max(0, balance.amount + delta)
+      const balance = await prisma.balance.findFirst({ where: { userId: params.id, currency } })
+      let currentAmount = balance ? balance.amount : 0
+      const newAmount = Math.max(0, currentAmount + delta)
 
       const txType = template === 'DEPOSIT' ? 'DEPOSIT' : template === 'WITHDRAWAL' ? 'WITHDRAWAL' : 'ADJUSTMENT'
       const defaultNote = txType === 'DEPOSIT'
@@ -55,7 +55,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           : 'Admin adjustment'
 
       const operations: any[] = [
-        prisma.balance.update({ where: { id: balance.id }, data: { amount: newAmount } }),
+        balance
+          ? prisma.balance.update({ where: { id: balance.id }, data: { amount: newAmount } })
+          : prisma.balance.create({ data: { userId: params.id, currency, amount: newAmount } }),
       ]
 
       // Plain admin adjustments are internal balance corrections and should not

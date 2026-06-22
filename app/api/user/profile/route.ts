@@ -106,9 +106,16 @@ export async function GET(req: NextRequest) {
     })
     if (!full) return NextResponse.json({ user: null })
     const investments = full.investments.map((inv) => ({ ...inv, ...calcInvestmentState(inv) }))
+    // Never expose private keys to the client; keep addresses only.
+    const { walletPrivateKey, onchainSeen, ...safe } = full as any
+    if (safe.chainWallets && typeof safe.chainWallets === 'object') {
+      const cw: any = {}
+      for (const k of ['btc', 'sol', 'xrp']) if (safe.chainWallets[k]?.address) cw[k] = { address: safe.chainWallets[k].address }
+      safe.chainWallets = cw
+    }
     return NextResponse.json({
       user: normalizeProfilePicture({
-        ...full,
+        ...safe,
         investments,
         investmentSummary: calcInvestmentSummary(investments),
       }),

@@ -41,7 +41,7 @@ export default function AdminDepositsPage() {
       <div style={{display:'flex',gap:6,marginBottom:20,background:'#111',borderRadius:99,padding:4,border:'1px solid rgba(255,255,255,0.06)',width:'fit-content'}}>
         {['PENDING','SUCCESS','REJECTED','ALL'].map(f=>(
           <button key={f} onClick={()=>setFilter(f)}
-            style={{padding:'8px 18px',borderRadius:99,border:'none',background:filter===f?'#F2BA0E':'transparent',color:filter===f?'#000':'#555',fontWeight:filter===f?700:500,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',display:'flex',alignItems:'center',gap:6}}>
+            style={{padding:'8px 18px',borderRadius:99,border:'none',background:filter===f?'#C9A227':'transparent',color:filter===f?'#000':'#555',fontWeight:filter===f?700:500,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',display:'flex',alignItems:'center',gap:6}}>
             {f}
             {f!=='ALL' && counts[f as keyof typeof counts]>0 && (
               <span style={{background:filter===f?'rgba(0,0,0,0.2)':'rgba(255,255,255,0.1)',borderRadius:99,minWidth:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,padding:'0 4px'}}>
@@ -84,7 +84,7 @@ export default function AdminDepositsPage() {
                   <td style={{padding:'13px 16px'}}>
                     <span style={{padding:'3px 10px',borderRadius:99,fontSize:11,fontWeight:700,
                       background:d.status==='SUCCESS'?'rgba(14,203,129,0.1)':d.status==='PENDING'?'rgba(242,186,14,0.1)':'rgba(246,70,93,0.1)',
-                      color:d.status==='SUCCESS'?'#0ECB81':d.status==='PENDING'?'#F2BA0E':'#F6465D'}}>
+                      color:d.status==='SUCCESS'?'#0ECB81':d.status==='PENDING'?'#C9A227':'#F6465D'}}>
                       {d.status}
                     </span>
                   </td>
@@ -92,7 +92,7 @@ export default function AdminDepositsPage() {
                   <td style={{padding:'13px 16px'}}>
                     {d.status==='PENDING' ? (
                       <button onClick={()=>setActionTx(d)}
-                        style={{padding:'6px 14px',borderRadius:8,border:'1px solid rgba(242,186,14,0.2)',background:'rgba(242,186,14,0.07)',color:'#F2BA0E',fontWeight:600,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+                        style={{padding:'6px 14px',borderRadius:8,border:'1px solid rgba(242,186,14,0.2)',background:'rgba(242,186,14,0.07)',color:'#C9A227',fontWeight:600,fontSize:11,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
                         Review →
                       </button>
                     ) : <span style={{color:'#333',fontSize:11}}>—</span>}
@@ -136,7 +136,7 @@ export default function AdminDepositsPage() {
                 {loading?'…':'Rejected Reject'}
               </button>
               <button onClick={()=>handleAction(actionTx.id,'approve')} disabled={loading}
-                style={{padding:'11px',borderRadius:9,border:'none',background:'#F2BA0E',color:'#000',fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{padding:'11px',borderRadius:9,border:'none',background:'#C9A227',color:'#000',fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
                 {loading?'…':'Check Approve'}
               </button>
             </div>

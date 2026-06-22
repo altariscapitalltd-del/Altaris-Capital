@@ -11,7 +11,7 @@ const schema = z.object({ email: z.string().email() })
 export async function POST(req: NextRequest) {
   try {
     const { email } = schema.parse(await req.json())
-    const user = await prisma.user.findUnique({ where: { email } })
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } })
 
     // Always return success to prevent email enumeration
     if (!user) {

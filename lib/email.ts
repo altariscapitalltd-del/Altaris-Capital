@@ -10,89 +10,116 @@ const transporter = nodemailer.createTransport({
 
 export async function sendOTPEmail(email: string, name: string, otp: string, purpose: string) {
   const safeName = name?.trim() || 'there'
-  const purposeText: Record<string, string> = {
-    SIGNUP: 'verify your account',
-    LOGIN: 'confirm your login',
-    WITHDRAWAL: 'authorize your withdrawal',
-    KYC: 'submit your verification',
+  const purposeMap: Record<string, string> = {
+    SIGNUP: 'complete your account setup',
+    LOGIN: 'confirm your sign-in',
+    WITHDRAWAL: 'authorise your withdrawal',
+    KYC: 'submit your identity verification',
   }
+  const purposeText = purposeMap[purpose] || 'verify your account'
 
   await transporter.sendMail({
     from: `"Altaris Capital" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: `Your Altaris Capital verification code: ${otp}`,
+    subject: `Your Altaris Capital code: ${otp}`,
     html: renderEmail({
       name: safeName,
-      eyebrow: 'Security verification',
-      title: `Use this one-time code to ${purposeText[purpose] || 'verify your account'}.`,
-      body: 'This code is required to continue securely inside the app. Enter it exactly as shown below. It expires in 5 minutes and cannot be reused.\n\nIf you did not request this code, you can safely ignore this email and your account remains protected.',
-      content: `<div style="font-size:48px;font-weight:900;letter-spacing:0.24em;color:#f2ba0e;text-align:center;font-variant-numeric:tabular-nums;background:rgba(242,186,14,0.08);border:1px solid rgba(242,186,14,0.18);border-radius:18px;padding:26px 20px;">${otp}</div>`,
-      footer: 'Never share this code with anyone. Altaris Capital will never ask for it.',
+      eyebrow: 'Security code',
+      title: `One-time code to ${purposeText}`,
+      body: 'Enter the code below to continue. It expires in 5 minutes and can only be used once. Do not share this code with anyone — our team will never ask for it.',
+      content: `
+        <div style="margin:24px 0;text-align:center;">
+          <div style="display:inline-block;background:#111214;border:1px solid rgba(201,162,39,0.35);border-radius:12px;padding:22px 40px;">
+            <div style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#8B8FA8;margin-bottom:10px;font-family:Arial,sans-serif;">Your verification code</div>
+            <div style="font-family:Arial,sans-serif;font-size:44px;font-weight:700;letter-spacing:0.28em;color:#C9A227;line-height:1;">${otp}</div>
+            <div style="font-size:11px;color:#8B8FA8;margin-top:10px;font-family:Arial,sans-serif;">Expires in 5 minutes</div>
+          </div>
+        </div>`,
+      footer: 'If you did not request this code, your account is not at risk — simply ignore this email.',
     }),
   })
 }
 
 export async function sendNotificationEmail(email: string, name: string, title: string, body: string) {
   const safeName = name?.trim() || 'there'
-  const safeTitle = title?.trim() || 'Update'
+  const safeTitle = title?.trim() || 'Account Update'
   const safeBody = body?.trim() || 'You have a new update in your Altaris Capital account.'
+
   await transporter.sendMail({
     from: `"Altaris Capital" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: `${safeTitle} — Altaris Capital`,
-    text: `Hello ${safeName},\n\n${safeTitle}\n${safeBody}\n\nOpen the app to view this update.\n\nAltaris Capital`,
     html: renderEmail({
       name: safeName,
       eyebrow: 'Account update',
       title: safeTitle,
-      body: safeBody.length < 120 ? `${safeBody}\n\nOpen the app to review the full details, confirm the change, and continue your next step without delay.` : safeBody,
-      content: '',
-      footer: 'Open the app to review this update and continue from where you left off.',
+      body: safeBody,
+      footer: 'Log in to the app to review this update and take any required action.',
+      buttonText: 'Open App',
+      buttonUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard`,
+      buttonTone: 'gold',
     }),
   })
 }
 
 export async function sendKycStatusEmail(email: string, name: string, status: 'approved' | 'rejected', reason?: string) {
+  const safeName = name?.trim() || 'there'
   const isApproved = status === 'approved'
+
   await transporter.sendMail({
     from: `"Altaris Capital" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: isApproved ? 'Identity Verified — Altaris Capital' : 'KYC Update — Altaris Capital',
+    subject: isApproved ? 'Identity Verified — Altaris Capital' : 'KYC Action Required — Altaris Capital',
     html: renderEmail({
-      name,
+      name: safeName,
       eyebrow: 'Identity verification',
-      title: isApproved ? 'Your identity has been verified' : 'Your KYC submission needs attention',
+      title: isApproved ? 'Your identity has been verified' : 'Your submission needs attention',
       body: isApproved
-        ? 'Congratulations. Your account is verified and you now have full access to the platform. Withdrawals, deposits, and premium account actions are available immediately.'
-        : `Your KYC submission was not approved yet. ${reason ? `Reason: ${reason}` : 'Please resubmit with clearer documents.'}\n\nPlease open the app, review the required correction, and upload a clearer document so we can complete verification without delay.`,
-      content: `<div style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:${isApproved ? 'rgba(14,203,129,0.12)' : 'rgba(246,70,93,0.12)'};color:${isApproved ? '#0ECB81' : '#F6465D'};font-weight:800;font-size:13px;">${isApproved ? 'Verified' : 'Action required'}</div>`,
-      footer: isApproved ? 'You can now use withdrawals and premium features.' : 'Open the app to review and resubmit.',
+        ? 'Your identity has been successfully verified. You now have full access to the platform — including withdrawals, deposits, and all premium account features.'
+        : `Your KYC submission could not be approved at this time. ${reason ? `Reason: ${reason}` : 'Please resubmit with clearer, legible documents.'}\n\nOpen the app to review what's needed and upload updated documents so we can complete verification without further delay.`,
+      content: `
+        <div style="margin:20px 0;">
+          <span style="display:inline-flex;align-items:center;gap:8px;padding:8px 18px;border-radius:999px;
+            background:${isApproved ? 'rgba(63,185,132,0.10)' : 'rgba(224,86,107,0.10)'};
+            color:${isApproved ? '#3FB984' : '#E0566B'};
+            font-weight:700;font-size:12px;letter-spacing:0.08em;font-family:Arial,sans-serif;">
+            ${isApproved ? '&#10003;&nbsp;&nbsp;Identity Verified' : '&#9888;&nbsp;&nbsp;Action Required'}
+          </span>
+        </div>`,
+      footer: isApproved
+        ? 'Withdrawals and all premium features are now available in your account.'
+        : 'Open the app to review the required documents and resubmit.',
       buttonText: isApproved ? 'Go to Dashboard' : 'Resubmit Documents',
-      buttonUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000'}/kyc`,
+      buttonUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/kyc`,
       buttonTone: isApproved ? 'gold' : 'danger',
     }),
   })
 }
 
 export async function sendPasswordResetEmail(email: string, name: string, token: string) {
+  const safeName = name?.trim() || 'there'
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`
+
   await transporter.sendMail({
     from: `"Altaris Capital" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: 'Reset your Altaris Capital password',
     html: renderEmail({
-      name,
+      name: safeName,
       eyebrow: 'Password reset',
       title: 'Reset your password',
-      body: 'We received a request to reset your Altaris Capital password. Use the button below to set a new password. For your security, this link expires in 1 hour and can only be used once.\n\nIf you did not request this, no action is required.',
-      content: '',
-      footer: "If you didn't request this, ignore this email and your password will stay unchanged.",
+      body: 'We received a request to reset the password on your Altaris Capital account. Click the button below to set a new password.\n\nThis link expires in 1 hour and can only be used once. If you did not request this, no action is needed — your password has not been changed.',
+      footer: "Didn't request this? Ignore this email and your password will remain unchanged.",
       buttonText: 'Reset Password',
       buttonUrl: resetUrl,
       buttonTone: 'gold',
     }),
   })
 }
+
+// ---------------------------------------------------------------------------
+// Shared renderer
+// ---------------------------------------------------------------------------
 
 function renderEmail(opts: {
   name: string
@@ -105,26 +132,135 @@ function renderEmail(opts: {
   buttonUrl?: string
   buttonTone?: 'gold' | 'danger'
 }) {
-  const buttonBg = opts.buttonTone === 'danger' ? '#F6465D' : '#F2BA0E'
-  const buttonFg = opts.buttonTone === 'danger' ? '#fff' : '#000'
-  return `<!DOCTYPE html><html><body style="margin:0;background:#050607 !important;background-color:#050607 !important;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Arial,sans-serif;color:#e8e8e8;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${opts.title}</div>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050607 !important;background-color:#050607 !important;padding:32px 16px;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#0b0f14 !important;background-color:#0b0f14 !important;border:1px solid rgba(255,255,255,0.08);border-radius:22px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,0.45);">
-        <tr><td style="padding:28px 28px 18px;border-bottom:1px solid rgba(255,255,255,0.06);background:#0b0f14 !important;">
-          <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#f2ba0e;font-weight:800;">${opts.eyebrow}</div>
-          <div style="font-size:25px;line-height:1.25;font-weight:800;color:#ffffff;margin-top:10px;">Hello ${opts.name || 'there'},</div>
-          <div style="font-size:14px;color:#a5afbb;margin-top:8px;line-height:1.7;">${opts.title}</div>
-        </td></tr>
-        <tr><td style="padding:28px;">
-          <div style="font-size:15px;line-height:1.8;color:#cbd5e1;white-space:pre-line;">${opts.body}</div>
-          ${opts.content ? `<div style="margin-top:22px;">${opts.content}</div>` : ''}
-          ${opts.buttonText && opts.buttonUrl ? `<div style="text-align:center;margin-top:28px;"><a href="${opts.buttonUrl}" style="display:inline-block;background:${buttonBg};color:${buttonFg};font-weight:800;font-size:15px;padding:14px 34px;border-radius:12px;text-decoration:none;">${opts.buttonText} →</a></div>` : ''}
-          <div style="margin-top:24px;font-size:13px;line-height:1.75;color:#8a96a5;">${opts.footer || ''}</div>
-        </td></tr>
-        <tr><td style="padding:18px 28px 26px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:#65707f;text-align:center;background:#0b0f14 !important;">© ${new Date().getFullYear()} Altaris Capital</td></tr>
-      </table>
-    </td></tr>
-  </table></body></html>`
+  const buttonBg = opts.buttonTone === 'danger' ? '#E0566B' : '#C9A227'
+  const buttonFg = '#000000'
+
+  // Escape newlines in body for HTML
+  const bodyHtml = opts.body
+    .split('\n\n')
+    .map((para) => `<p style="margin:0 0 14px 0;">${para.replace(/\n/g, '<br>')}</p>`)
+    .join('')
+
+  return `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+  <title>${opts.eyebrow} — Altaris Capital</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { background-color: #0A0B0E !important; }
+    @media (prefers-color-scheme: dark) {
+      body { background-color: #0A0B0E !important; }
+    }
+  </style>
+</head>
+<body bgcolor="#0A0B0E" style="margin:0;padding:0;background-color:#0A0B0E !important;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+
+  <!-- Preview text (hidden) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${opts.title} — Altaris Capital</div>
+
+  <!-- Outer wrapper -->
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#0A0B0E" style="background-color:#0A0B0E;min-height:100vh;">
+    <tr>
+      <td align="center" valign="top" bgcolor="#0A0B0E" style="padding:40px 16px;background-color:#0A0B0E;">
+
+        <!-- Email card — max 600px -->
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
+
+          <!-- ── HEADER ── -->
+          <tr>
+            <td bgcolor="#111214" style="background-color:#111214;border:1px solid #1E2028;border-bottom:none;border-radius:16px 16px 0 0;padding:24px 32px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <!-- Gold triangle logomark -->
+                  <td style="padding-right:10px;vertical-align:middle;">
+                    <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:14px solid #C9A227;"></div>
+                  </td>
+                  <!-- Wordmark -->
+                  <td style="vertical-align:middle;">
+                    <span style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.18em;color:#FFFFFF;text-transform:uppercase;">ALTARIS</span>
+                    <span style="font-family:Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.22em;color:#C9A227;text-transform:uppercase;margin-left:6px;">Capital</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Gold accent bar -->
+          <tr>
+            <td bgcolor="#C9A227" style="background:linear-gradient(90deg,#C9A227 0%,rgba(201,162,39,0.4) 100%);background-color:#C9A227;height:2px;border-left:1px solid #1E2028;border-right:1px solid #1E2028;line-height:2px;font-size:2px;">&nbsp;</td>
+          </tr>
+
+          <!-- ── BODY CARD ── -->
+          <tr>
+            <td bgcolor="#111214" style="background-color:#111214;border:1px solid #1E2028;border-top:none;border-bottom:none;padding:36px 32px 28px;">
+
+              <!-- Eyebrow label -->
+              <p style="margin:0 0 10px 0;font-family:Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.20em;text-transform:uppercase;color:#C9A227;">${opts.eyebrow}</p>
+
+              <!-- Greeting -->
+              <h1 style="margin:0 0 6px 0;font-family:Arial,sans-serif;font-size:24px;font-weight:700;color:#FFFFFF;line-height:1.25;">Hello, ${opts.name}</h1>
+
+              <!-- Title / subheading -->
+              <p style="margin:0 0 20px 0;font-family:Arial,sans-serif;font-size:15px;color:#A0A4B8;line-height:1.55;">${opts.title}</p>
+
+              <!-- Divider -->
+              <div style="height:1px;background-color:#1E2028;margin-bottom:24px;"></div>
+
+              <!-- Body text -->
+              <div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.75;color:#C8CBD8;">
+                ${bodyHtml}
+              </div>
+
+              <!-- Optional content block (OTP box, status badge, etc.) -->
+              ${opts.content ? `<div style="margin:8px 0 4px;">${opts.content}</div>` : ''}
+
+              <!-- CTA button -->
+              ${opts.buttonText && opts.buttonUrl ? `
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:28px;">
+                <tr>
+                  <td align="center">
+                    <a href="${opts.buttonUrl}"
+                       style="display:inline-block;background-color:${buttonBg};color:${buttonFg};font-family:Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.04em;text-decoration:none;padding:14px 36px;border-radius:8px;mso-padding-alt:14px 36px;">
+                      ${opts.buttonText}
+                    </a>
+                  </td>
+                </tr>
+              </table>` : ''}
+
+            </td>
+          </tr>
+
+          <!-- ── FOOTER NOTE ── -->
+          ${opts.footer ? `
+          <tr>
+            <td bgcolor="#0F1013" style="background-color:#0F1013;border:1px solid #1E2028;border-top:none;border-bottom:none;padding:18px 32px;">
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#8B8FA8;line-height:1.6;">${opts.footer}</p>
+            </td>
+          </tr>` : ''}
+
+          <!-- ── LEGAL FOOTER ── -->
+          <tr>
+            <td bgcolor="#0A0B0E" style="background-color:#0A0B0E;border:1px solid #1E2028;border-top:1px solid #1E2028;border-radius:0 0 16px 16px;padding:20px 32px;text-align:center;">
+              <p style="margin:0 0 6px 0;font-family:Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.16em;color:#8B8FA8;text-transform:uppercase;">Altaris Capital</p>
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#555A70;line-height:1.6;">
+                &copy; ${new Date().getFullYear()} Altaris Capital. All rights reserved.<br>
+                This email was sent to you as a registered user of the Altaris Capital platform.<br>
+                Please do not reply to this email — it is sent from an unmonitored address.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Email card -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>`
 }

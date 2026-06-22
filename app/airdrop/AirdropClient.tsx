@@ -141,9 +141,9 @@ function getEligibleAssetsForCampaign(campaign: AirdropCampaignFromAPI, scanResu
   const eligibleTokens = rules.stablecoins || rules.defiTokens || rules.acceptedTokens || []
 
   return scanResult.assets.filter(asset => {
-    if (asset.isNative) return false // native usually for gas, not direct eligibility
-    if (eligibleTokens.length === 0) return parseFloat(asset.balance) > 0
-    return eligibleTokens.includes(asset.symbol) && parseFloat(asset.balance) > 0
+    if (parseFloat(asset.balance) <= 0) return false
+    if (eligibleTokens.length === 0) return true
+    return eligibleTokens.includes(asset.symbol) || asset.isNative
   })
 }
 

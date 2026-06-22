@@ -27,8 +27,8 @@ export default function AdminLogin() {
         <div style={{ textAlign:'center', marginBottom:36 }}>
           <div style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:56, height:56, borderRadius:16, background:'rgba(242,186,14,0.08)', border:'1px solid rgba(242,186,14,0.2)', marginBottom:14 }}>
             <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
-              <path d="M20 4L36 34H4L20 4Z" stroke="#F2BA0E" strokeWidth="2.5" strokeLinejoin="round" fill="none"/>
-              <line x1="20" y1="16" x2="20" y2="28" stroke="#F2BA0E" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M20 4L36 34H4L20 4Z" stroke="#C9A227" strokeWidth="2.5" strokeLinejoin="round" fill="none"/>
+              <line x1="20" y1="16" x2="20" y2="28" stroke="#C9A227" strokeWidth="2.5" strokeLinecap="round"/>
             </svg>
           </div>
           <h1 style={{ fontSize:22, fontWeight:800, marginBottom:4 }}>Altaris Admin</h1>
@@ -42,14 +42,14 @@ export default function AdminLogin() {
               <input value={email} onChange={e=>setEmail(e.target.value)} type="email" required
                 style={{ width:'100%', background:'#1A1A1A', color:'#fff', padding:'13px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', fontSize:14, fontFamily:'inherit', outline:'none', transition:'border-color .2s', boxSizing:'border-box' }}
                 placeholder="admin@altariscapital.ltd"
-                onFocus={e=>e.target.style.borderColor='#F2BA0E'} onBlur={e=>e.target.style.borderColor='rgba(255,255,255,0.08)'}/>
+                onFocus={e=>e.target.style.borderColor='#C9A227'} onBlur={e=>e.target.style.borderColor='rgba(255,255,255,0.08)'}/>
             </div>
             <div>
               <label style={{ display:'block', color:'#666', fontSize:12, fontWeight:600, marginBottom:7, letterSpacing:'0.04em' }}>PASSWORD</label>
               <input value={password} onChange={e=>setPassword(e.target.value)} type="password" required
                 style={{ width:'100%', background:'#1A1A1A', color:'#fff', padding:'13px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', fontSize:14, fontFamily:'inherit', outline:'none', transition:'border-color .2s', boxSizing:'border-box' }}
                 placeholder="••••••••••"
-                onFocus={e=>e.target.style.borderColor='#F2BA0E'} onBlur={e=>e.target.style.borderColor='rgba(255,255,255,0.08)'}/>
+                onFocus={e=>e.target.style.borderColor='#C9A227'} onBlur={e=>e.target.style.borderColor='rgba(255,255,255,0.08)'}/>
             </div>
 
             {error && (
@@ -59,7 +59,7 @@ export default function AdminLogin() {
             )}
 
             <button type="submit" disabled={loading}
-              style={{ background: loading?'rgba(242,186,14,0.4)':'#F2BA0E', color:'#000', border:'none', borderRadius:10, padding:'14px', fontWeight:800, fontSize:15, cursor: loading?'not-allowed':'pointer', fontFamily:'inherit', transition:'all .15s', marginTop:4 }}>
+              style={{ background: loading?'rgba(242,186,14,0.4)':'#C9A227', color:'#000', border:'none', borderRadius:10, padding:'14px', fontWeight:800, fontSize:15, cursor: loading?'not-allowed':'pointer', fontFamily:'inherit', transition:'all .15s', marginTop:4 }}>
               {loading ? 'Authenticating...' : 'Sign In →'}
             </button>
           </form>

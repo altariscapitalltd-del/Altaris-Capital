@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 
 :root, [data-theme="dark"] {
   --app-header-height: 120px;
@@ -442,4 +442,333 @@ html,body{background:#000!important}.root-shell,.app-container{background:#000!i
 .portfolio-performance-card{border:1px solid rgba(255,255,255,.075);background:linear-gradient(180deg,#0a0a0a,#030303);border-radius:22px;padding:14px;box-shadow:0 20px 48px rgba(0,0,0,.45)}
 .portfolio-performance-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.portfolio-performance-head span{display:block;color:#777;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}.portfolio-performance-head strong{display:block;margin-top:4px;font-size:24px;font-weight:950;letter-spacing:-.04em}.portfolio-performance-head>div:last-child{text-align:right;font-size:15px;font-weight:900}.portfolio-performance-head em{display:block;margin-top:3px;font-size:11px;font-style:normal}.positive{color:#0ECB81!important}.negative{color:#F6465D!important}.portfolio-metric-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}.portfolio-metric-row span{background:#0f0f0f;border:1px solid rgba(255,255,255,.06);border-radius:13px;padding:8px 7px}.portfolio-metric-row b{display:block;color:#6f6f6f;font-size:9px;font-weight:800;text-transform:uppercase;white-space:nowrap}.portfolio-metric-row em{display:block;margin-top:3px;font-size:11px;font-style:normal;font-weight:850;color:#e9e9e9}.portfolio-range-tabs.compact{display:flex;justify-content:flex-end;gap:5px}.portfolio-range-tabs.compact button{width:auto;min-width:34px;padding:4px 8px;font-size:9px;background:transparent;border-color:rgba(255,255,255,.06);color:#686868}.portfolio-range-tabs.compact button.active{background:rgba(242,186,14,.16);border-color:rgba(242,186,14,.32);color:#f2ba0e}
 
+/* ══════════════════════════════════════════════════════════════════════════
+   ALTARIS PRIVATE — Obsidian & Gold
+   Final authoritative design pass. Last definition wins, so this overrides the
+   earlier "premium" and "pure black" passes. One source of truth for the look:
+   warm obsidian surfaces · real muted gold as a precious accent · warm bone ink
+   · gold hairlines as the structural "statement" motif · Fraunces display.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root,[data-theme="dark"]{
+  /* surfaces — warm near-black, never flat #000 */
+  --bg-page:#07080A; --bg-primary:#07080A;
+  --bg-card:#0E1014; --bg-secondary:#0E1014;
+  --bg-input:#121419; --bg-tertiary:#121419;
+  --bg-elevated:#16191F; --bg-hover:#1C2027;
+  --nav-bg:rgba(7,8,10,.92);
+  /* gold — real, muted, not Binance neon */
+  --brand-primary:#C9A227; --brand-primary-hover:#E4C25C; --brand-secondary:#9DB4C0;
+  --gold:#C9A227; --gold-bright:#E4C25C; --gold-soft:rgba(201,162,39,.12);
+  /* warm bone ink */
+  --text-primary:#ECE7DB; --text-secondary:#9A958A; --text-muted:#615C52;
+  /* states — softened to sit inside the warm palette */
+  --success:#3FB984; --success-bg:rgba(63,185,132,.10);
+  --danger:#E0566B; --danger-bg:rgba(224,86,107,.10);
+  --warning:#C9A227; --warning-bg:rgba(201,162,39,.10);
+  --info:#9DB4C0;
+  /* gold hairlines — the signature structural device */
+  --border:rgba(201,162,39,.10); --border-strong:rgba(201,162,39,.24);
+  --hairline:rgba(236,231,219,.07);
+  --border-focus:#C9A227;
+  --shadow-sm:0 1px 0 rgba(236,231,219,.02),0 10px 26px rgba(0,0,0,.55);
+  --shadow-md:0 28px 64px rgba(0,0,0,.6);
+  --shadow-glow:0 0 0 1px rgba(201,162,39,.28),0 10px 34px rgba(201,162,39,.12);
+  --radius-sm:8px; --radius-md:12px; --radius-lg:18px; --radius-xl:26px;
+  --font-display:'Fraunces',Georgia,'Times New Roman',serif;
+  --font-body:'Schibsted Grotesk','Inter',-apple-system,system-ui,sans-serif;
+}
+[data-theme="light"]{
+  --bg-page:#F4F1E9; --bg-primary:#F4F1E9;
+  --bg-card:#FFFFFF; --bg-secondary:#FFFFFF;
+  --bg-input:#F6F3EC; --bg-tertiary:#F6F3EC;
+  --bg-elevated:#EEE9DD; --bg-hover:#E7E1D2;
+  --nav-bg:rgba(244,241,233,.94);
+  --brand-primary:#9A7B14; --brand-primary-hover:#B8941C; --brand-secondary:#5C7384;
+  --gold:#9A7B14; --gold-bright:#B8941C; --gold-soft:rgba(154,123,20,.12);
+  --text-primary:#1A1712; --text-secondary:#6B6557; --text-muted:#A39C8B;
+  --success:#0F9A6A; --danger:#C9415A; --warning:#9A7B14;
+  --border:rgba(154,123,20,.18); --border-strong:rgba(154,123,20,.34);
+  --hairline:rgba(26,23,18,.08); --border-focus:#9A7B14;
+  --shadow-sm:0 1px 0 rgba(0,0,0,.02),0 8px 22px rgba(120,100,40,.08);
+  --shadow-md:0 24px 54px rgba(120,100,40,.12);
+}
+
+/* ── Typography ─────────────────────────────────────────────────────────── */
+body{font-family:var(--font-body);letter-spacing:-.005em}
+.font-display,.display{font-family:var(--font-display);font-optical-sizing:auto}
+/* uppercase tracked gold label — the "statement" eyebrow */
+.eyebrow{font-family:var(--font-body);font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text-secondary)}
+.eyebrow.gold{color:var(--gold)}
+.num{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* gold hairline rule — engraved divider */
+.hairline{height:1px;background:linear-gradient(90deg,transparent,var(--border-strong) 12%,var(--border-strong) 88%,transparent);border:0}
+.hairline-solid{height:1px;background:var(--hairline);border:0}
+::selection{background:var(--gold);color:#07080A}
+
+/* ── Backgrounds (beat the black pass !important) ───────────────────────── */
+html,body{background:var(--bg-page)!important}
+.root-shell,.app-container{background:
+  radial-gradient(120% 60% at 50% -8%,rgba(201,162,39,.07),transparent 46%),
+  linear-gradient(180deg,var(--bg-page),#050608)!important}
+.app-main-scroll{background:linear-gradient(180deg,rgba(201,162,39,.02),transparent 220px)!important}
+
+/* ── Top header + bottom nav ────────────────────────────────────────────── */
+.app-top-header{
+  background:linear-gradient(180deg,rgba(7,8,10,.98),rgba(7,8,10,.86))!important;
+  border-bottom:1px solid var(--border)!important;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:0 12px 30px rgba(0,0,0,.35)!important}
+.app-bottom-nav{
+  background:linear-gradient(180deg,rgba(9,10,13,.95),rgba(7,8,10,.99))!important;
+  border-top:1px solid var(--border)!important;
+  box-shadow:0 -18px 40px rgba(0,0,0,.45)!important}
+
+/* ── Cards — ink with a single gold hairline ────────────────────────────── */
+.card,.section-block{
+  background:linear-gradient(180deg,#0E1014,#0B0C0F)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:var(--shadow-sm)!important}
+.ui-upgrade-card:hover,.card.pressable:hover{border-color:var(--border-strong)!important}
+
+/* ── Buttons — gold is a coin, not a slab ───────────────────────────────── */
+.btn-primary{
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold))!important;
+  color:#0A0A08!important;font-family:var(--font-body);font-weight:800;
+  letter-spacing:.01em;border:1px solid rgba(201,162,39,.5)!important;
+  box-shadow:0 10px 26px rgba(201,162,39,.18),inset 0 1px 0 rgba(255,255,255,.25)!important}
+.btn-primary:hover{filter:brightness(1.05)}
+.btn-ghost{
+  background:transparent!important;color:var(--text-primary)!important;
+  border:1px solid var(--border-strong)!important;font-weight:600}
+.btn-ghost:hover{background:var(--gold-soft)!important;border-color:var(--gold)!important;color:var(--gold-bright)!important}
+
+/* ── Inputs · chips · rows ──────────────────────────────────────────────── */
+.input{background:rgba(236,231,219,.025)!important;border:1px solid var(--border)!important;
+  color:var(--text-primary)!important}
+.input:focus{border-color:var(--gold)!important;box-shadow:0 0 0 3px var(--gold-soft)!important}
+.chip{background:rgba(236,231,219,.03)!important;border:1px solid var(--border)!important;
+  color:var(--text-secondary)!important;font-weight:600}
+.chip:hover{border-color:var(--border-strong)!important;color:var(--text-primary)!important}
+.chip.active{background:var(--gold)!important;border-color:var(--gold)!important;color:#0A0A08!important}
+.row-item{border-bottom:1px solid var(--hairline)!important}
+.row-item:hover{background:rgba(201,162,39,.04)!important}
+.badge-success{background:var(--success-bg);color:var(--success)}
+.badge-danger{background:var(--danger-bg);color:var(--danger)}
+.badge-warning{background:var(--warning-bg);color:var(--warning)}
+.gradient-text{background:linear-gradient(135deg,var(--gold-bright),var(--gold))!important;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+/* ── Home balance hero — the private-bank statement (signature) ─────────── */
+.statement-hero{position:relative;margin:10px 16px 0;padding:22px 20px 18px;
+  border-radius:var(--radius-lg);overflow:hidden;
+  background:
+    radial-gradient(140% 120% at 100% 0,rgba(201,162,39,.10),transparent 55%),
+    linear-gradient(180deg,#101116,#0A0B0E);
+  border:1px solid var(--border-strong);
+  box-shadow:var(--shadow-md)}
+.statement-hero::after{content:"";position:absolute;left:20px;right:20px;top:96px;height:1px;
+  background:linear-gradient(90deg,var(--gold),rgba(201,162,39,0));opacity:.55}
+.statement-value{font-family:var(--font-display);font-weight:600;font-size:46px;line-height:1;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--text-primary)}
+.statement-value .cents{color:var(--text-secondary)}
+.statement-actions{display:flex;gap:10px;margin-top:22px}
+.statement-action{flex:1;text-decoration:none;border-radius:14px;padding:13px 8px;text-align:center;
+  background:rgba(236,231,219,.03);border:1px solid var(--border);transition:all .15s}
+.statement-action:hover{border-color:var(--gold);background:var(--gold-soft)}
+.statement-action .lbl{color:var(--text-secondary);font-size:11px;font-weight:600;letter-spacing:.02em}
+.statement-action:hover .lbl{color:var(--gold-bright)}
+
+/* ── Trade / wallet / portfolio surfaces retuned to obsidian ────────────── */
+.trade-screen,.receive-shell{background:
+  radial-gradient(circle at 50% 0%,rgba(201,162,39,.07),transparent 32%),
+  linear-gradient(180deg,#07080A,#050608)!important;color:var(--text-primary)}
+.trade-value{font-family:var(--font-display);font-weight:600;letter-spacing:-.02em}
+.trade-buy,.paybis-button,.paybis-flow strong{background:linear-gradient(180deg,var(--gold-bright),var(--gold))!important;color:#0A0A08!important}
+.trade-action-icon{background:var(--gold-soft)!important;color:var(--gold)!important}
+.trade-chart-card,.trade-info-card,.trade-action,.network-sheet,.fiat-sheet{
+  background:linear-gradient(180deg,#0E1014,#0A0B0E)!important;border-color:var(--border)!important}
+.paybis-card{background:linear-gradient(160deg,rgba(201,162,39,.12),#0C0D10 44%,#08090B)!important;border-color:var(--border-strong)!important}
+.portfolio-range-tabs button.active,.trade-buy{box-shadow:0 12px 28px rgba(201,162,39,.18)!important}
+.portfolio-range-tabs button.active{background:var(--gold)!important;color:#0A0A08!important;border-color:var(--gold)!important}
+.portfolio-range-tabs.compact button.active{background:var(--gold-soft)!important;border-color:var(--gold)!important;color:var(--gold-bright)!important}
+.wallet-currency-panel,.portfolio-performance-card{background:linear-gradient(180deg,#0C0D10,#08090B)!important;border-color:var(--border)!important}
+.wallet-currency-card{background:linear-gradient(180deg,#101116,#0B0C0F)!important;border-color:var(--border)!important}
+.wallet-currency-head button{background:var(--gold)!important;color:#0A0A08!important}
+.positive,.positive-text{color:var(--success)!important}.negative,.negative-text{color:var(--danger)!important}
+
+/* ── Admin panel — retune from blue/purple to obsidian + gold ───────────── */
+.admin-shell{background:
+  radial-gradient(circle at 0% 0%,rgba(201,162,39,.10),transparent 30%),
+  radial-gradient(circle at 100% 18%,rgba(201,162,39,.05),transparent 34%),
+  linear-gradient(135deg,#08090C,#07080A)!important;color:#ECE7DB!important}
+.admin-sidebar{background:linear-gradient(180deg,#0C0D11,#08090B)!important;border-right:1px solid rgba(201,162,39,.12)!important}
+.admin-sidebar-head{border-bottom-color:rgba(201,162,39,.12)!important}
+.admin-brand small{color:#C9A227!important}
+.admin-nav-link{color:#9A958A!important}
+.admin-nav-link:hover{background:rgba(201,162,39,.08)!important;border-color:rgba(201,162,39,.18)!important;color:#ECE7DB!important}
+.admin-nav-link.active{background:linear-gradient(180deg,#E4C25C,#C9A227)!important;color:#0A0A08!important;box-shadow:0 12px 28px rgba(201,162,39,.18)!important}
+.admin-nav-link em,.admin-bottom-link em{background:#E0566B!important}
+.admin-topbar{background:rgba(8,9,12,.82)!important;border-bottom:1px solid rgba(201,162,39,.12)!important}
+.admin-search-pill{background:rgba(236,231,219,.04)!important;border-color:rgba(201,162,39,.14)!important;color:#9A958A!important}
+.admin-live,.admin-live span{color:#3FB984!important}.admin-live span{background:#3FB984!important}
+.admin-top-actions a{background:rgba(201,162,39,.12)!important;border-color:rgba(201,162,39,.24)!important;color:#E4C25C!important}
+.admin-panel{background:linear-gradient(160deg,#0E1014,#0A0B0E)!important;border:1px solid rgba(201,162,39,.12)!important;box-shadow:var(--shadow-sm)!important}
+.admin-stat{background:linear-gradient(165deg,rgba(201,162,39,.14),rgba(201,162,39,.03))!important;border:1px solid rgba(201,162,39,.20)!important}
+.admin-stat strong{color:#ECE7DB!important}.admin-stat span{color:#9A958A!important}
+.admin-muted,.admin-page th{color:#8A857A!important}
+.admin-page td{border-top-color:rgba(236,231,219,.07)!important}
+.admin-page input,.admin-page select,.admin-page textarea{background:#121419!important;border-color:rgba(201,162,39,.14)!important;color:#ECE7DB!important}
+.admin-bottom-nav{background:rgba(8,9,12,.98)!important;border-top-color:rgba(201,162,39,.12)!important}
+.admin-bottom-link.active{background:linear-gradient(135deg,rgba(201,162,39,.26),rgba(201,162,39,.14))!important;color:#E4C25C!important}
+/* admin messenger */
+.admin-chat-list-head p{color:#C9A227!important}
+.admin-chat-list-head span{background:rgba(201,162,39,.14)!important;color:#E4C25C!important}
+.admin-chat-avatar{background:linear-gradient(135deg,#E4C25C,#C9A227)!important;color:#0A0A08!important;box-shadow:0 10px 26px rgba(201,162,39,.16)!important}
+.admin-chat-avatar.tiny{background:rgba(201,162,39,.22)!important;color:#E4C25C!important}
+.admin-chat-thread.active{background:linear-gradient(135deg,rgba(201,162,39,.16),rgba(236,231,219,.04))!important;box-shadow:inset 0 0 0 1px rgba(201,162,39,.20)!important}
+.admin-chat-message-row.admin .admin-chat-bubble{background:linear-gradient(135deg,#E4C25C,#C9A227)!important;color:#0A0A08!important}
+.admin-chat-send{background:#C9A227!important;color:#0A0A08!important;box-shadow:0 12px 28px rgba(201,162,39,.22)!important}
+.admin-chat-composer textarea:focus{box-shadow:0 0 0 2px rgba(201,162,39,.6)!important}
+.admin-messenger-shell,.admin-chat-room,.admin-chat-list{background:linear-gradient(135deg,#0C0D11,#08090B)!important}
+.admin-chat-room-head,.admin-chat-composer{background:rgba(8,9,12,.8)!important;border-color:rgba(201,162,39,.12)!important}
+.admin-chat-bubble{background:#14171D!important}
+
+/* ── Cards & buttons — tactile premium rebuild ──────────────────────────── */
+.card,.section-block{
+  position:relative;
+  background:linear-gradient(180deg,#13151B,#0C0D11)!important;
+  border:1px solid var(--border)!important;
+  box-shadow:inset 0 1px 0 rgba(236,231,219,.04), 0 14px 34px rgba(0,0,0,.5)!important;
+  transition:transform .18s cubic-bezier(.2,.7,.3,1),border-color .2s,box-shadow .2s;
+}
+/* engraved gold top edge */
+.card::before,.section-block::before{
+  content:'';position:absolute;left:16px;right:16px;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,162,39,.4),transparent);opacity:.6;pointer-events:none;
+}
+a.card:active,.card.pressable:active{transform:scale(.985)}
+
+/* pressable — used across inline cards/buttons app-wide */
+.pressable{transition:transform .15s cubic-bezier(.2,.7,.3,1),opacity .15s,box-shadow .2s}
+.pressable:active{transform:scale(.955);opacity:.92}
+
+/* primary button — minted-coin depth + sheen */
+.btn-primary{position:relative;overflow:hidden;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold) 62%,#A8821C)!important;
+  box-shadow:0 10px 24px rgba(201,162,39,.22),inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(0,0,0,.18)!important;
+  transition:filter .15s,transform .12s,box-shadow .2s}
+.btn-primary::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.22) 48%,transparent 62%);transform:translateX(-120%);transition:transform .6s ease}
+.btn-primary:hover::after{transform:translateX(120%)}
+.btn-primary:active{transform:translateY(1px) scale(.99)}
+
+/* ghost button + chips + rows */
+.btn-ghost{transition:all .16s;backdrop-filter:blur(4px)}
+.btn-ghost:active{transform:scale(.98)}
+.chip{transition:all .15s cubic-bezier(.2,.7,.3,1)}
+.chip.active{box-shadow:0 6px 16px rgba(201,162,39,.22)}
+.row-item{transition:background .16s}
+
+/* ── Pull-to-refresh ────────────────────────────────────────────────────── */
+#ptr-indicator{
+  position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;z-index:5;overflow:hidden;
+}
+.ptr-spinner{
+  width:30px;height:30px;border-radius:50%;
+  border:2.5px solid rgba(201,162,39,.2);border-top-color:var(--gold-bright);
+}
+.ptr-spinner.spinning{animation:ptr-spin .7s linear infinite}
+@keyframes ptr-spin{to{transform:rotate(360deg)}}
+.ptr-content{will-change:transform}
+
+/* Respect reduced motion */
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
 .network-copy-action{cursor:pointer;border-radius:14px;padding:6px;margin:-6px;color:var(--brand-primary)}.network-copy-action:focus-visible{outline:2px solid rgba(242,186,14,.55);outline-offset:2px}.network-copy-action:hover{background:rgba(242,186,14,.1)}
+
+/* ═══════════════════════════════════════════════════════════════
+   iOS-CLASS SMOOTHNESS PASS
+   Tap highlight, touch delay, page transitions, sheet springs,
+   row feedback, input stability, and selection hygiene.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. Kill the tap highlight flash — single most impactful mobile-native fix */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+}
+
+/* 2. Remove 300ms tap delay on interactive elements */
+a, button, [role="button"], label, select, summary, input[type="submit"], input[type="button"] {
+  touch-action: manipulation;
+}
+
+/* 3. Prevent iOS viewport jump on input focus (keyboard resize) */
+input:not([type="range"]), textarea, select {
+  font-size: max(16px, 1em) !important;
+}
+
+/* 4. Page entrance — subtle fade + 8 px rise, mirrors iOS tab-switch feel */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: pageEnter 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+
+/* 5. Full-screen sheet entrance — iOS spring slide-up */
+@keyframes sheetEnter {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sheet-enter { animation: sheetEnter 0.34s cubic-bezier(0.32, 0.72, 0, 1) both; }
+
+/* 6. Bottom drawer entrance (manage / action sheet) */
+@keyframes drawerSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes backdropFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.drawer-backdrop { animation: backdropFadeIn 0.22s ease both; }
+.drawer-panel    { animation: drawerSlideUp 0.38s cubic-bezier(0.32, 0.72, 0, 1) both; }
+
+/* 7. Notification / toast slide-down */
+@keyframes toastSlideDown {
+  from { opacity: 0; transform: translateY(-10px) scaleY(0.92); }
+  to   { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+.toast-enter { animation: toastSlideDown 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+
+/* 8. Instant row press — zero-lag press feel */
+.row-item { transition: background 0.12s ease, transform 0.08s ease; }
+.row-item:active { transform: scale(0.983) !important; background: var(--bg-hover) !important; transition: none !important; }
+
+/* 9. Tighten pressable to native-grade snappiness */
+.pressable { transition: transform 0.09s cubic-bezier(0.2, 0.7, 0.3, 1), opacity 0.09s !important; }
+.pressable:active { transform: scale(0.952) !important; opacity: 0.85 !important; transition: none !important; }
+
+/* 10. Primary button active — push-down coin effect */
+.btn-primary:active { transform: translateY(1px) scale(0.985) !important; transition: none !important; }
+
+/* 11. Nav tab press — instant opacity dip */
+.app-bottom-nav a { transition: opacity 0.06s ease; }
+.app-bottom-nav a:active { opacity: 0.55; }
+
+/* 12. Card pressable tap */
+a.card:active, button.card:active, [role="button"].card:active { transform: scale(0.975); transition: transform 0.08s ease !important; }
+
+/* 13. Message banner — always animate in */
+.msg-inline { animation: toastSlideDown 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+
+/* 14. Prevent text-selection popover on long-press of chrome elements */
+nav, .app-bottom-nav, .app-top-header, .chip, .badge, .statement-action {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 15. Smooth input focus ring — no jarring outline flash */
+.input:focus, .input:focus-visible {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* 16. Horizontal scroll containers — no bounce bleed */
+.no-scrollbar { overscroll-behavior-x: contain; }
+
+/* 17. Sheet receive + network overlays — inherit sheet animation */
+.receive-shell, .network-sheet { animation: sheetEnter 0.34s cubic-bezier(0.32, 0.72, 0, 1) both; }

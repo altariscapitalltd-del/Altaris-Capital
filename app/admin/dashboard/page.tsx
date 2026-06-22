@@ -49,7 +49,7 @@ export default function AdminDashboard() {
   const aum = ((stats?.totalAUM || 0) / 1000).toFixed(1)
 
   const kycColor = (s: string) =>
-    s === 'APPROVED' ? '#0ECB81' : s === 'PENDING_REVIEW' ? '#F2BA0E' : s === 'REJECTED' ? '#F6465D' : '#666'
+    s === 'APPROVED' ? '#0ECB81' : s === 'PENDING_REVIEW' ? '#C9A227' : s === 'REJECTED' ? '#F6465D' : '#666'
   const kycLabel = (s: string) =>
     s === 'APPROVED' ? 'Verified' : s === 'PENDING_REVIEW' ? 'Pending' : s === 'REJECTED' ? 'Rejected' : 'Unverified'
 
@@ -75,12 +75,12 @@ export default function AdminDashboard() {
       {/* ─── KPI grid ───────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
         {[
-          { label: 'Total Users',       value: (stats?.totalUsers || 0).toLocaleString(), sub: `+${stats?.newToday || 0} today`,       icon: '👥', grad: 'linear-gradient(135deg,#4f46e5,#7c3aed)', badge: null },
-          { label: 'KYC Verified',      value: (stats?.verifiedUsers || 0).toLocaleString(), sub: 'Trusted investors',                icon: '✅', grad: 'linear-gradient(135deg,#0ea5e9,#2563eb)', badge: null },
-          { label: 'Pending Reviews',   value: pending.toLocaleString(), sub: 'Deposits · KYC · Withdrawals',                         icon: '⏳', grad: 'linear-gradient(135deg,#ef4444,#f97316)', badge: pending > 0 ? pending : null },
-          { label: 'AUM',               value: `$${aum}K`, sub: 'Assets under management',                                           icon: '💰', grad: 'linear-gradient(135deg,#14b8a6,#059669)', badge: null },
-          { label: 'Active Plans',      value: (stats?.activePlans || 0).toLocaleString(), sub: 'Live investments',                   icon: '📈', grad: 'linear-gradient(135deg,#f59e0b,#d97706)', badge: null },
-          { label: 'Total Deposits',    value: `$${((stats?.totalDeposited || 0)/1000).toFixed(1)}K`, sub: 'All time',                icon: '📥', grad: 'linear-gradient(135deg,#a21caf,#7c3aed)', badge: null },
+          { label: 'Total Users',       value: (stats?.totalUsers || 0).toLocaleString(), sub: `+${stats?.newToday || 0} today`,       icon: '👥', grad: 'linear-gradient(135deg,#E4C25C,#C9A227)', badge: null },
+          { label: 'KYC Verified',      value: (stats?.verifiedUsers || 0).toLocaleString(), sub: 'Trusted investors',                icon: '✅', grad: 'linear-gradient(135deg,#C9A227,#9A7B14)', badge: null },
+          { label: 'Pending Reviews',   value: pending.toLocaleString(), sub: 'Deposits · KYC · Withdrawals',                         icon: '⏳', grad: 'linear-gradient(135deg,#E0A84A,#C98A1A)', badge: pending > 0 ? pending : null },
+          { label: 'AUM',               value: `$${aum}K`, sub: 'Assets under management',                                           icon: '💰', grad: 'linear-gradient(135deg,#E4C25C,#B8941C)', badge: null },
+          { label: 'Active Plans',      value: (stats?.activePlans || 0).toLocaleString(), sub: 'Live investments',                   icon: '📈', grad: 'linear-gradient(135deg,#D4B24A,#A8841A)', badge: null },
+          { label: 'Total Deposits',    value: `$${((stats?.totalDeposited || 0)/1000).toFixed(1)}K`, sub: 'All time',                icon: '📥', grad: 'linear-gradient(135deg,#C9A227,#8A6E15)', badge: null },
         ].map(card => (
           <article key={card.label} style={{ borderRadius: 16, padding: 16, background: card.grad, boxShadow: '0 8px 24px rgba(0,0,0,0.3)', position: 'relative', overflow: 'hidden' }}>
             {card.badge !== null && <div style={{ position: 'absolute', top: 10, right: 10, minWidth: 20, height: 20, borderRadius: 999, background: '#fff', color: '#ef4444', fontSize: 10, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>{card.badge}</div>}
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
           </div>
           <div style={{ height: 180, display: 'flex', alignItems: 'flex-end', gap: 5, padding: '0 4px' }}>
             {chartBars.map((h, idx) => (
-              <div key={idx} style={{ flex: 1, minWidth: 8, height: `${h}%`, borderRadius: '6px 6px 2px 2px', background: idx % 2 ? 'linear-gradient(180deg,#818cf8,#4f46e5)' : 'linear-gradient(180deg,#c4b5fd,#7c3aed)', opacity: 0.85, transition: 'height .3s ease' }} />
+              <div key={idx} style={{ flex: 1, minWidth: 8, height: `${h}%`, borderRadius: '6px 6px 2px 2px', background: idx % 2 ? 'linear-gradient(180deg,#E4C25C,#C9A227)' : 'linear-gradient(180deg,#C9A227,#9A7B14)', opacity: 0.85, transition: 'height .3s ease' }} />
             ))}
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
@@ -139,8 +139,8 @@ export default function AdminDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
         {[
           { label: 'KYC Approval Rate', value: stats?.verifiedUsers && stats?.totalUsers ? `${Math.round((stats.verifiedUsers / stats.totalUsers) * 100)}%` : '—', icon: '🛡️', color: '#0ECB81' },
-          { label: 'Pending KYC',       value: (stats?.pendingKyc || 0).toString(),                                                                                 icon: '📋', color: '#F2BA0E' },
-          { label: 'New Today',         value: (stats?.newToday || 0).toString(),                                                                                    icon: '🆕', color: '#3B82F6' },
+          { label: 'Pending KYC',       value: (stats?.pendingKyc || 0).toString(),                                                                                 icon: '📋', color: '#C9A227' },
+          { label: 'New Today',         value: (stats?.newToday || 0).toString(),                                                                                    icon: '🆕', color: '#C9A227' },
           { label: 'Frozen Accounts',   value: (stats?.frozenAccounts || 0).toString(),                                                                              icon: '🚫', color: '#F6465D' },
         ].map(s => (
           <div key={s.label} className="admin-panel" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>

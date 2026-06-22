@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { createAndSendOTP, verifyOTP } from '@/lib/otp'
 import { signToken } from '@/lib/auth'
+import { rateLimit, clientIp, tooManyHeaders } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const otpSchema = z.object({
@@ -30,8 +31,22 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
     if (action === 'send') {
+      // Throttle code sends — protects email/SMS quota and prevents harassment
+      const ip = clientIp(req)
+      const sendByUser = rateLimit(`otp:send:user:${userId}`, 3, 5 * 60_000)   // 3 per 5 min per account
+      const sendByIp   = rateLimit(`otp:send:ip:${ip}`, 10, 10 * 60_000)        // 10 per 10 min per IP
+      if (!sendByUser.ok || !sendByIp.ok) {
+        const retry = Math.max(sendByUser.retryAfter, sendByIp.retryAfter)
+        return NextResponse.json({ error: 'Too many code requests. Please wait before requesting another.' }, { status: 429, headers: tooManyHeaders(retry) })
+      }
       await createAndSendOTP(user.id, user.email, user.name, purpose)
       return NextResponse.json({ success: true })
+    }
+
+    // Throttle verification attempts — prevents brute-forcing the 6-digit code
+    const verifyLimit = rateLimit(`otp:verify:${userId}`, 6, 5 * 60_000)        // 6 per 5 min
+    if (!verifyLimit.ok) {
+      return NextResponse.json({ error: 'Too many verification attempts. Please wait and request a new code.' }, { status: 429, headers: tooManyHeaders(verifyLimit.retryAfter) })
     }
 
     const result = await verifyOTP(userId, code || '', purpose)

@@ -34,6 +34,15 @@ model User {
   referredById          String?
   referralRewardBalance Float     @default(0)
 
+  // Per-user custodial EVM wallet (private key stored AES-256-GCM encrypted)
+  walletAddress     String?
+  walletPrivateKey  String?
+  walletCreatedAt   DateTime?
+  // Native non-EVM wallets: { btc:{address,encryptedKey}, sol:{...}, xrp:{...} }
+  chainWallets      Json?
+  // On-chain balances last seen by the deposit scanner, per asset (for delta credit)
+  onchainSeen       Json?
+
   balances         Balance[]
   transactions     Transaction[]
   investments      Investment[]
@@ -93,6 +102,7 @@ model Investment {
   planId      String
   planName    String
   amount      Float
+  currency    String           @default("USD")
   dailyRoi    Float
   startDate   DateTime         @default(now())
   endDate     DateTime
@@ -100,6 +110,25 @@ model Investment {
   totalEarned Float            @default(0)
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@map("investments")
+}
+
+model InvestmentPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String   @default("Crypto")
+  symbol      String
+  image       String?
+  dailyRoi    Float
+  duration    Int
+  minDeposit  Float
+  riskLevel   Int      @default(3)
+  badge       String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("investment_plans")
 }
 
 model OTP {
@@ -370,6 +399,8 @@ enum TransactionType {
   BONUS
   ADJUSTMENT
   REFERRAL_BONUS
+  TRANSFER
+  SWAP
 }
 
 enum TransactionStatus {

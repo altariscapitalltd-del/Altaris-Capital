@@ -147,8 +147,8 @@ async function main() {
     skipDuplicates: true,
   })
 
-  // Seed airdrop campaigns - chain-branded titles, not token-branded
-  await prisma.airdropCampaign.createMany({
+  // Airdrop campaigns are created through the admin panel, not seeded here
+  if (false) await prisma.airdropCampaign.createMany({
     data: [
       {
         chainId: 8453,
@@ -322,7 +322,7 @@ async function main() {
     skipDuplicates: true,
   })
 
-  console.log('Seed complete: chain configs + airdrop campaigns')
+  console.log('Seed complete: admin user, demo user, wallet addresses, chain configs')
 }
 
 main()
