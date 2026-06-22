@@ -22,17 +22,34 @@ function createOpenRouterClient() {
 }
 
 export async function getAIResponse(userId: string, conversationId: string, userMessage: string) {
-  const systemPrompt = `You are the Altaris Capital AI Support Assistant. 
-Your goal is to provide quick, professional, and helpful responses to users of our premium investment platform.
-Altaris Capital offers investments in Crypto, DeFi, Stocks, Real Estate, Bonds, Fixed Income, Commodities, Forex, ETF, and Hedge Funds.
+  const systemPrompt = `You are the Altaris Capital support assistant — knowledgeable, calm, and direct.
 
-Guidelines:
-1. Be professional, concise, and helpful.
-2. If the user asks about their balance, withdrawals, or specific account details, inform them you can help with general questions but for account-specific actions they should speak to a live agent.
-3. ALWAYS end your response by asking if they would like to be connected to a live human agent for further assistance.
-4. If the user explicitly asks for a "human", "live agent", "person", or "support team", acknowledge this and tell them you are connecting them now.
+Altaris Capital is a premium investment platform offering Crypto, DeFi, Stocks, Real Estate, Bonds, Fixed Income, Commodities, Forex, ETFs, and Hedge Funds.
 
-Current User Message: ${userMessage}`
+How to behave:
+- Greet the user naturally on first contact, like a real support person would — warm but professional.
+- Answer questions clearly and concisely. Do not pad responses.
+- For account-specific actions (balance lookups, withdrawals, account changes), explain that you can cover general guidance but account actions require a human agent.
+- If the user seems frustrated, has asked the same question more than once, or the issue is clearly complex, offer once to connect them with a human agent: "Would you like me to connect you with a human agent?" Do NOT offer this on every reply — only when it genuinely makes sense.
+- If the user explicitly asks for a human, live agent, or to speak to someone, acknowledge it immediately and tell them you are flagging the conversation for a human agent now.
+- Never say you are an AI unless directly asked. Do not use robotic phrasing.`
+
+  // Fetch recent conversation history for context (last 10 messages)
+  const recentMessages = await prisma.message.findMany({
+    where: { conversationId },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+  })
+  const historyMessages = recentMessages.reverse().map((msg) => ({
+    role: msg.sender === 'user' ? ('user' as const) : ('assistant' as const),
+    content: msg.content,
+  }))
+
+  const messages = [
+    { role: 'system' as const, content: systemPrompt },
+    ...historyMessages,
+    { role: 'user' as const, content: userMessage },
+  ]
 
   let responseText = ''
   let provider = 'groq'
@@ -43,7 +60,7 @@ Current User Message: ${userMessage}`
     if (!groq) throw new Error('GROQ_API_KEY is not configured')
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+      messages,
       max_tokens: 500,
     })
     responseText = completion.choices[0]?.message?.content || ''
@@ -56,13 +73,13 @@ Current User Message: ${userMessage}`
       if (!openrouter) throw new Error('OPENROUTER_API_KEY is not configured')
       const completion = await openrouter.chat.completions.create({
         model: 'google/gemini-2.0-flash-001',
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+        messages,
         max_tokens: 500,
       })
       responseText = completion.choices[0]?.message?.content || ''
     } catch (fallbackError) {
       console.error('All AI providers failed:', fallbackError)
-      responseText = "I'm sorry, I'm having trouble connecting to my brain right now. Would you like me to connect you to a live human agent instead?"
+      responseText = "Sorry, I'm having a technical issue right now. Would you like me to connect you with a human agent?"
     }
   }
 

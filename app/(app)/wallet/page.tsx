@@ -1,10 +1,49 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import QRCode from 'qrcode'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 import CoinIcon from '@/components/ui/CoinIcon'
+
+const FIAT_CURRENCIES = [
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+  { code: 'CAD', symbol: '$', name: 'Canadian Dollar' },
+  { code: 'AUD', symbol: '$', name: 'Australian Dollar' },
+  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
+  { code: 'SGD', symbol: '$', name: 'Singapore Dollar' },
+  { code: 'HKD', symbol: '$', name: 'Hong Kong Dollar' },
+  { code: 'NZD', symbol: '$', name: 'New Zealand Dollar' },
+  { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
+  { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
+  { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+  { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' },
+  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
+  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+  { code: 'MXN', symbol: '$', name: 'Mexican Peso' },
+  { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+  { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
+  { code: 'TRY', symbol: '₺', name: 'Turkish Lira' },
+  { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' },
+  { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+  { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' },
+]
+
+// Approximate rates vs USD (for display conversion only; CoinGecko drives crypto prices)
+const FIAT_RATES: Record<string, number> = {
+  USD:1, EUR:0.92, GBP:0.79, JPY:157, CNY:7.25, CAD:1.37, AUD:1.52, CHF:0.9,
+  SGD:1.35, HKD:7.82, NZD:1.63, SEK:10.5, NOK:10.6, DKK:6.88, INR:83.5,
+  AED:3.67, SAR:3.75, NGN:1550, BRL:5.1, MXN:17.2, ZAR:18.5, KRW:1350,
+  TRY:32.5, IDR:16200, PHP:58, THB:36, VND:25000,
+}
 
 type ChainType = 'EVM' | 'BTC' | 'SOL' | 'XRP'
 const ALL_CRYPTOS: { sym: string; name: string; color: string; minDeposit: number; network: string; glyph: string; chain: ChainType; popular?: boolean }[] = [
@@ -70,22 +109,31 @@ function coinNetworkLabel(sym: string, id: string = ''): string {
 
 type WalletTab = 'none' | 'deposit' | 'withdraw' | 'send' | 'swap' | 'reward'
 
-function ShadowCard({ h = 96 }: { h?: number }) {
+function ShadowCard({ h = 96, variant = 'coin' }: { h?: number; variant?: 'hero' | 'coin' | 'chart' }) {
   return (
-    <div style={{
-      height: h,
-      borderRadius: 18,
-      background: '#050505',
-      border: '1px solid rgba(255,255,255,0.06)',
-      boxShadow: 'none',
-      overflow: 'hidden',
-      position: 'relative',
-    }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(110deg, transparent 18%, rgba(255,255,255,0.06) 32%, transparent 46%)', backgroundSize: '200% 100%', opacity: 0.35 }} />
-      <div style={{ position: 'absolute', top: 14, left: 14, right: 14, height: 12, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }} />
-      <div style={{ position: 'absolute', top: 38, left: 14, right: 70, height: 18, borderRadius: 999, background: 'rgba(255,255,255,0.08)' }} />
-      <div style={{ position: 'absolute', bottom: 14, left: 14, width: '58%', height: 12, borderRadius: 999, background: 'rgba(255,255,255,0.05)' }} />
-      <div style={{ position: 'absolute', bottom: 14, right: 14, width: 54, height: 54, borderRadius: 16, background: 'rgba(255,255,255,0.05)' }} />
+    <div style={{ height: h, borderRadius: 20, background: 'linear-gradient(180deg,#0D0E12,#080910)', border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', position: 'relative' }}>
+      {/* shimmer sweep */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 20%, rgba(201,162,39,0.05) 38%, transparent 52%)', backgroundSize: '200% 100%', animation: 'shimmer 1.8s infinite' }} />
+      {variant === 'hero' && (
+        <>
+          <div style={{ position: 'absolute', top: 22, left: 20, width: 42, height: 42, borderRadius: '50%', background: 'rgba(201,162,39,0.08)' }} />
+          <div style={{ position: 'absolute', top: 24, left: 74, right: 80, height: 10, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }} />
+          <div style={{ position: 'absolute', top: 42, left: 74, right: 120, height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.04)' }} />
+          <div style={{ position: 'absolute', top: 80, left: 20, right: 20, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.04)' }} />
+        </>
+      )}
+      {variant === 'coin' && (
+        <>
+          <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', right: 16, width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+          <div style={{ position: 'absolute', top: 16, left: 16, right: 80, height: 10, borderRadius: 999, background: 'rgba(255,255,255,0.06)' }} />
+          <div style={{ position: 'absolute', top: 36, left: 16, right: 100, height: 16, borderRadius: 999, background: 'rgba(201,162,39,0.06)' }} />
+          <div style={{ position: 'absolute', bottom: 16, left: 16, width: '42%', height: 9, borderRadius: 999, background: 'rgba(255,255,255,0.04)' }} />
+          <div style={{ position: 'absolute', bottom: 16, right: 16, width: 60, height: 9, borderRadius: 999, background: 'rgba(255,255,255,0.04)' }} />
+        </>
+      )}
+      {variant === 'chart' && (
+        <div style={{ position: 'absolute', bottom: 16, left: 16, right: 16, height: 2, borderRadius: 999, background: 'rgba(255,255,255,0.04)' }} />
+      )}
     </div>
   )
 }
@@ -166,7 +214,8 @@ function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 96 }: {
   return <canvas ref={canvasRef} style={{ width: '100%', height, display: 'block' }} />
 }
 
-export default function WalletPage() {
+function WalletContent() {
+  const searchParams = useSearchParams()
   const [tab, setTab] = useState<WalletTab>('none')
   const [depositMode, setDepositMode] = useState<'select' | 'network' | 'crypto' | 'fiat'>('select')
   const [coin, setCoin] = useState<string>('USDT')
@@ -197,13 +246,22 @@ export default function WalletPage() {
   const [userWallet, setUserWallet] = useState('')
   const [chainAddrs, setChainAddrs] = useState<{ btc?: string; sol?: string; xrp?: string }>({})
   const [balanceHidden, setBalanceHidden] = useState(false)
+  const [selectedFiat, setSelectedFiat] = useState('USD')
+  const [showFiatPicker, setShowFiatPicker] = useState(false)
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
+
+  // Open tab from URL param (?action=withdraw / ?action=deposit)
+  useEffect(() => {
+    const action = searchParams?.get('action')
+    if (action === 'withdraw') { setTab('withdraw'); setMsg(null) }
+    else if (action === 'deposit') { setTab('deposit'); setDepositMode('network'); setMsg(null) }
+  }, [searchParams])
 
   // Send (internal transfer) state
   const [sendEmail, setSendEmail] = useState('')
   const [sendRecipient, setSendRecipient] = useState<{ id: string; name: string; avatarUrl?: string } | null>(null)
   const [sendLookingUp, setSendLookingUp] = useState(false)
-  const [sendCurrency, setSendCurrency] = useState('USD')
+  const [sendCurrency, setSendCurrency] = useState('USDT')
   const [sendAmount, setSendAmount] = useState('')
   const [sendNote, setSendNote] = useState('')
   const [sendStep, setSendStep] = useState<'find' | 'confirm'>('find')
@@ -246,7 +304,7 @@ export default function WalletPage() {
         const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
         setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
         setRefCode(d.user?.referralCode || 'ALTARIS01')
-        setProfile({ name: d.user?.name, avatarUrl: d.user?.avatarUrl || d.user?.avatar })
+        setProfile({ name: d.user?.name, avatarUrl: d.user?.profilePicture || d.user?.avatarUrl || d.user?.avatar })
         if (d.user?.walletAddress) setUserWallet(d.user.walletAddress)
         const cw = d.user?.chainWallets
         if (cw) setChainAddrs({ btc: cw.btc?.address, sol: cw.sol?.address, xrp: cw.xrp?.address })
@@ -282,7 +340,7 @@ export default function WalletPage() {
           const active = d.user?.investments?.filter((i: any) => i.status === 'ACTIVE') || []
           setInvestedTotal(active.reduce((sum: number, i: any) => sum + i.amount, 0))
           setRefCode(d.user?.referralCode || 'ALTARIS01')
-          setProfile({ name: d.user?.name, avatarUrl: d.user?.avatarUrl || d.user?.avatar })
+          setProfile({ name: d.user?.name, avatarUrl: d.user?.profilePicture || d.user?.avatarUrl || d.user?.avatar })
         if (d.user?.walletAddress) setUserWallet(d.user.walletAddress)
         const cw = d.user?.chainWallets
         if (cw) setChainAddrs({ btc: cw.btc?.address, sol: cw.sol?.address, xrp: cw.xrp?.address })
@@ -366,15 +424,18 @@ export default function WalletPage() {
       .catch(() => setQrDataUrl(null))
   }, [coin, userWallet, chainAddrs, tab, depositMode])
 
-  const usdBalance = balances.USD || 0
-  // Sum ALL crypto balances the user holds, not just a hardcoded 6-coin list
+  // Sum ALL crypto balances (treat USD legacy entries same as USDT)
   const cryptoValue = Object.entries(balances).reduce((sum, [sym, amt]) => {
-    if (sym === 'USD') return sum
-    const price = marketPrices[sym]?.price || (sym === 'USDT' || sym === 'USDC' ? 1 : 0)
+    const price = (sym === 'USD' || sym === 'USDT' || sym === 'USDC') ? 1 : (marketPrices[sym]?.price || 0)
     return sum + (Number(amt) || 0) * price
   }, 0)
-  const walletBalance = usdBalance + cryptoValue
+  const walletBalance = cryptoValue
   const portfolioBalance = walletBalance + investedTotal
+  // Convert to selected fiat for display
+  const fiatRate = FIAT_RATES[selectedFiat] || 1
+  const fiatSymbol = FIAT_CURRENCIES.find(f => f.code === selectedFiat)?.symbol || '$'
+  const walletBalanceFiat = walletBalance * fiatRate
+  const usdBalance = walletBalance // keep for backward compat
   // Unrealized P/L across all crypto holdings with known price change
   const cryptoPL = Object.entries(balances).reduce((sum, [sym, amt]) => {
     if (sym === 'USD') return sum
@@ -615,24 +676,45 @@ export default function WalletPage() {
     return map
   }, [marketPrices, receiveCoinList])
 
-  const activityAssets = useMemo(() => managedCoins
-    .map((sym) => {
-      const meta = coinMetaMap[sym] || { name: sym, image: '', color: '#888' }
-      const price = marketPrices[sym]?.price || (sym === 'USDT' || sym === 'USDC' ? 1 : 0)
-      const amount = balances[sym] || 0
-      return {
-        sym,
-        name: meta.name,
-        color: meta.color,
-        image: meta.image,
-        price,
-        change: marketPrices[sym]?.change || 0,
-        amount,
-        usd: amount * price,
-      }
+  const activityAssets = useMemo(() => {
+    // Include all coins the user has balance in, plus managed coins — filter out legacy USD entries
+    const allSyms = Array.from(new Set([...managedCoins, ...Object.keys(balances)])).filter(s => s !== 'USD')
+    return allSyms
+      .map((sym) => {
+        const meta = coinMetaMap[sym] || { name: sym, image: '', color: '#888' }
+        const price = marketPrices[sym]?.price || (sym === 'USDT' || sym === 'USDC' ? 1 : 0)
+        const amount = balances[sym] || 0
+        return {
+          sym,
+          name: meta.name,
+          color: meta.color,
+          image: meta.image,
+          price,
+          change: marketPrices[sym]?.change || 0,
+          amount,
+          usd: amount * price,
+        }
+      })
+      .sort((a, b) => b.usd - a.usd || b.price - a.price)
+  }, [managedCoins, coinMetaMap, marketPrices, balances])
+
+  // All sendable currencies: everything in receiveCoinList + user balances (exclude legacy USD)
+  const allSendCoins = useMemo(() => {
+    const seen = new Set<string>()
+    const coins: { sym: string; name: string; image: string }[] = []
+    // Start with coins the user has balance in
+    Object.keys(balances).filter(s => s !== 'USD').forEach(sym => {
+      if (!seen.has(sym)) { seen.add(sym); const m = coinMetaMap[sym]; coins.push({ sym, name: m?.name || sym, image: m?.image || '' }) }
     })
-    .sort((a, b) => b.usd - a.usd || b.price - a.price),
-  [managedCoins, coinMetaMap, marketPrices, balances])
+    // Then all from receiveCoinList
+    receiveCoinList.forEach((c: any) => {
+      const sym = String(c.symbol || '').toUpperCase(); if (!sym || seen.has(sym)) return
+      seen.add(sym); coins.push({ sym, name: c.name || sym, image: c.image || '' })
+    })
+    // Then ALL_CRYPTOS as fallback
+    ALL_CRYPTOS.forEach(c => { if (!seen.has(c.sym)) { seen.add(c.sym); coins.push({ sym: c.sym, name: c.name, image: '' }) } })
+    return coins
+  }, [balances, receiveCoinList, coinMetaMap])
 
   const openWithdraw = () => { setTab('withdraw'); setDepositMode('select'); setMsg(null) }
   const openDeposit  = () => { setTab('deposit');  setDepositMode('network'); setMsg(null) }
@@ -699,11 +781,11 @@ export default function WalletPage() {
     <div style={{ padding: '10px 16px 22px', background: '#000', minHeight: '100vh' }}>
       {!ready && (
         <div style={{ display: 'grid', gap: 14 }}>
-          <ShadowCard h={118} />
-          <ShadowCard h={92} />
-          <ShadowCard h={92} />
-          <ShadowCard h={92} />
-          <ShadowCard h={210} />
+          <ShadowCard h={240} variant="hero" />
+          <ShadowCard h={88} variant="coin" />
+          <ShadowCard h={88} variant="coin" />
+          <ShadowCard h={88} variant="coin" />
+          <ShadowCard h={200} variant="chart" />
         </div>
       )}
       {ready && copied && (
@@ -732,18 +814,31 @@ export default function WalletPage() {
           </Link>
         </div>
 
-        {/* currency pill */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18 }}>
-          <button type="button" onClick={() => setBalanceHidden((h) => !h)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(236,231,219,0.06)', color: '#ECE7DB', border: '1px solid rgba(201,162,39,0.22)', borderRadius: 999, padding: '8px 15px', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-            <span style={{ width: 17, height: 17, borderRadius: '50%', background: '#C9A227', color: '#0A0A08', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900 }}>$</span>
-            USD <span style={{ opacity: 0.6, fontSize: 11 }}>▾</span>
+        {/* currency pill — real fiat selector */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 18, position: 'relative' }}>
+          <button type="button" onClick={() => setShowFiatPicker(p => !p)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(236,231,219,0.06)', color: '#ECE7DB', border: '1px solid rgba(201,162,39,0.22)', borderRadius: 999, padding: '8px 15px', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            <span style={{ width: 17, height: 17, borderRadius: '50%', background: '#C9A227', color: '#0A0A08', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900 }}>{fiatSymbol}</span>
+            {selectedFiat} <span style={{ opacity: 0.6, fontSize: 11 }}>{showFiatPicker ? '▴' : '▾'}</span>
           </button>
+          {showFiatPicker && (
+            <div style={{ position: 'absolute', top: '110%', left: '50%', transform: 'translateX(-50%)', width: 280, maxHeight: 260, overflowY: 'auto', background: '#0D0E12', border: '1px solid rgba(201,162,39,0.25)', borderRadius: 14, zIndex: 90, boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}>
+              {FIAT_CURRENCIES.map(f => (
+                <button key={f.code} type="button" onClick={() => { setSelectedFiat(f.code); setShowFiatPicker(false) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 14px', background: f.code === selectedFiat ? 'rgba(201,162,39,0.1)' : 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', fontFamily: 'inherit', color: f.code === selectedFiat ? '#C9A227' : '#ECE7DB', textAlign: 'left' }}>
+                  <span style={{ minWidth: 32, fontWeight: 800, fontSize: 12 }}>{f.symbol}</span>
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>{f.code}</span>
+                  <span style={{ color: 'rgba(236,231,219,0.45)', fontSize: 12, marginLeft: 4 }}>{f.name}</span>
+                  {f.code === selectedFiat && <span style={{ marginLeft: 'auto', color: '#C9A227', fontSize: 14 }}>✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* balance */}
+        {/* balance in selected fiat */}
         <button type="button" onClick={() => setBalanceHidden((h) => !h)} style={{ display: 'block', width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', marginTop: 12, fontFamily: 'inherit' }}>
           <div className="notranslate font-display" translate="no" style={{ fontSize: 'clamp(40px, 12vw, 52px)', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, color: '#ECE7DB', fontVariantNumeric: 'tabular-nums' }}>
-            {balanceHidden ? '••••••' : `$${walletBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            {balanceHidden ? '••••••' : `${fiatSymbol}${walletBalanceFiat.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </div>
           <div className="notranslate" translate="no" style={{ marginTop: 9, fontSize: 14, fontWeight: 700, color: cryptoPL >= 0 ? 'var(--success)' : 'var(--danger)', fontVariantNumeric: 'tabular-nums' }}>
             {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '−'}$${Math.abs(cryptoPL).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} today`}
@@ -1004,14 +1099,12 @@ export default function WalletPage() {
                 {sendRecipient && (
                   <>
                     <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Currency</label>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-                      {Object.entries(balances).filter(([, v]) => Number(v) > 0).map(([sym]) => (
-                        <button key={sym} type="button" onClick={() => setSendCurrency(sym)}
-                          style={{ padding: '5px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, border: `1px solid ${sendCurrency === sym ? '#C9A227' : 'var(--border)'}`, background: sendCurrency === sym ? 'rgba(201,162,39,0.12)' : 'transparent', color: sendCurrency === sym ? '#C9A227' : 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                          {sym}
-                        </button>
+                    <select value={sendCurrency} onChange={e => setSendCurrency(e.target.value)}
+                      style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none', marginBottom: 12 }}>
+                      {allSendCoins.map(c => (
+                        <option key={c.sym} value={c.sym}>{c.sym}{c.name !== c.sym ? ` — ${c.name}` : ''} (Bal: {(balances[c.sym] || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })})</option>
                       ))}
-                    </div>
+                    </select>
                     <div style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 10 }}>
                       Available: {(balances[sendCurrency] || 0).toLocaleString(undefined, { maximumFractionDigits: 6 })} {sendCurrency}
                     </div>
@@ -1087,7 +1180,7 @@ export default function WalletPage() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <select value={swapFrom} onChange={e => { setSwapFrom(e.target.value); setSwapEstimate(null) }} style={{ flex: 1, background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}>
-                  {Object.entries(balances).filter(([, v]) => Number(v) > 0).map(([sym]) => <option key={sym} value={sym}>{sym}</option>)}
+                  {allSendCoins.map(c => <option key={c.sym} value={c.sym}>{c.sym}</option>)}
                 </select>
                 <div style={{ position: 'relative', flex: 2 }}>
                   <input className="input" type="number" value={swapFromAmount} onChange={e => { setSwapFromAmount(e.target.value); setSwapEstimate(null) }} placeholder="0.00" style={{ paddingRight: 52 }} />
@@ -1105,7 +1198,7 @@ export default function WalletPage() {
             <div>
               <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>To</label>
               <select value={swapTo} onChange={e => { setSwapTo(e.target.value); setSwapEstimate(null) }} style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }}>
-                {['BTC','ETH','USDT','USDC','BNB','SOL','XRP','MATIC','AVAX','DOGE','ADA','TRX','LTC','LINK','DOT'].filter(s => s !== swapFrom).map(sym => <option key={sym} value={sym}>{sym}</option>)}
+                {allSendCoins.filter(c => c.sym !== swapFrom).map(c => <option key={c.sym} value={c.sym}>{c.sym}{c.name !== c.sym ? ` — ${c.name}` : ''}</option>)}
               </select>
             </div>
 
@@ -1330,5 +1423,13 @@ export default function WalletPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function WalletPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 20 }} />}>
+      <WalletContent />
+    </Suspense>
   )
 }

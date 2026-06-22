@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { href: '/admin/kyc', label: 'KYC Review', icon: ShieldCheck },
   { href: '/admin/airdrop', label: 'Airdrop', icon: Gift },
   { href: '/admin/chat', label: 'Support', icon: MessageCircle },
+  { href: '/admin/plans', label: 'Inv. Plans', icon: BarChart3 },
   { href: '/admin/notifications', label: 'Broadcast', icon: Bell },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]

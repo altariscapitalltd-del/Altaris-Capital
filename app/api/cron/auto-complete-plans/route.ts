@@ -31,16 +31,16 @@ export async function POST(req: NextRequest) {
 
       await prisma.$transaction([
         prisma.balance.upsert({
-          where: { userId_currency: { userId: inv.userId, currency: 'USD' } },
+          where: { userId_currency: { userId: inv.userId, currency: 'USDT' } },
           update: { amount: { increment: totalValue } },
-          create: { userId: inv.userId, currency: 'USD', amount: totalValue },
+          create: { userId: inv.userId, currency: 'USDT', amount: totalValue },
         }),
         prisma.transaction.create({
           data: {
             userId: inv.userId,
             type: 'PROFIT' as any,
             amount: totalValue,
-            currency: 'USD',
+            currency: 'USDT',
             status: 'SUCCESS' as any,
             note: `plan_claim:${inv.id}`,
           },

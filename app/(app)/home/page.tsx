@@ -62,42 +62,104 @@ const Sparkline = memo(
   (p, n) => p.data === n.data && p.color === n.color
 )
 
-// ─── Portfolio chart (canvas) ─────────────────────────────────────────────
+// ─── Portfolio chart (canvas + touch scrub, Coinbase-style) ──────────────
 const PortfolioChart = memo(
-  function PortfolioChart({ data, color = '#0ECB81', height = 150 }: { data: number[]; color?: string; height?: number }) {
-    const ref = useRef<HTMLCanvasElement>(null)
+  function PortfolioChart({ data, times, color = '#C9A227', height = 180 }: { data: number[]; times: number[]; color?: string; height?: number }) {
+    const canvasRef = useRef<HTMLCanvasElement>(null)
     const wrapRef = useRef<HTMLDivElement>(null)
+    const rafRef = useRef(0)
+    const [scrub, setScrub] = useState<{ pct: number; value: number; label: string } | null>(null)
+    const liveRef = useRef({ data, times })
+    liveRef.current = { data, times }
+
     useEffect(() => {
-      const c = ref.current; if (!c) return
-      const ctx = c.getContext('2d'); if (!ctx) return
-      const width = wrapRef.current?.clientWidth || 336
+      const c = canvasRef.current; if (!c) return
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const ctx = c.getContext('2d')!; if (!ctx) return
+      const width = wrapRef.current?.clientWidth || 340
       const dpr = window.devicePixelRatio || 1
       c.width = width * dpr; c.height = height * dpr; ctx.scale(dpr, dpr)
-      const values = data.length > 1 ? data : [0, 0]
-      const min = Math.min(...values), max = Math.max(...values)
-      const pad = Math.max((max - min) * 0.18, max * 0.004, 1)
-      const lo = min - pad, hi = max + pad, range = hi - lo || 1
-      const left = 8, right = width - 8, top = 10, bottom = height - 18
-      const xs = values.map((_, i) => left + (i / Math.max(values.length - 1, 1)) * (right - left))
-      const ys = values.map(v => bottom - ((v - lo) / range) * (bottom - top))
-      ctx.clearRect(0, 0, width, height)
-      ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1
-      ;[0.25, 0.5, 0.75].forEach(t => { const y = top + (bottom - top) * t; ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke() })
-      const grad = ctx.createLinearGradient(0, top, 0, bottom)
-      grad.addColorStop(0, color + '42'); grad.addColorStop(0.72, color + '10'); grad.addColorStop(1, color + '00')
-      ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
-      for (let i = 1; i < xs.length; i++) { const mx = (xs[i - 1] + xs[i]) / 2; ctx.bezierCurveTo(mx, ys[i - 1], mx, ys[i], xs[i], ys[i]) }
-      ctx.lineTo(xs[xs.length - 1], bottom); ctx.lineTo(xs[0], bottom); ctx.closePath(); ctx.fillStyle = grad; ctx.fill()
-      ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
-      for (let i = 1; i < xs.length; i++) { const mx = (xs[i - 1] + xs[i]) / 2; ctx.bezierCurveTo(mx, ys[i - 1], mx, ys[i], xs[i], ys[i]) }
-      ctx.strokeStyle = color; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke()
-      const lx = xs[xs.length - 1], ly = ys[ys.length - 1]
-      ctx.fillStyle = '#050505'; ctx.beginPath(); ctx.arc(lx, ly, 5, 0, Math.PI * 2); ctx.fill()
-      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.stroke()
+
+      const values = data.length > 1 ? data : [0, 1]
+      const minV = Math.min(...values), maxV = Math.max(...values)
+      const pad = Math.max((maxV - minV) * 0.18, maxV * 0.004, 0.01)
+      const lo = minV - pad, range = (maxV + pad) - lo || 1
+      const L = 2, R = width - 2, T = 12, B = height - 10
+      const xs = values.map((_, i) => L + (i / Math.max(values.length - 1, 1)) * (R - L))
+      const ys = values.map(v => B - ((v - lo) / range) * (B - T))
+
+      cancelAnimationFrame(rafRef.current)
+      let frame = 0
+      const TOTAL = 48
+
+      function draw(prog: number) {
+        ctx.clearRect(0, 0, width, height)
+        // subtle grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1
+        ;[0.33, 0.67].forEach(r => { const y = T + (B - T) * r; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(R, y); ctx.stroke() })
+
+        const n = values.length
+        const ei = Math.min(n - 1, Math.floor(prog * (n - 1)))
+        const ef = prog * (n - 1) - ei
+        const curX = ei < n - 1 ? xs[ei] + (xs[ei+1] - xs[ei]) * ef : xs[n-1]
+        const curY = ei < n - 1 ? ys[ei] + (ys[ei+1] - ys[ei]) * ef : ys[n-1]
+
+        // fill path
+        const grd = ctx.createLinearGradient(0, T, 0, B)
+        grd.addColorStop(0, color + '60'); grd.addColorStop(0.55, color + '18'); grd.addColorStop(1, color + '00')
+        ctx.save(); ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
+        for (let i = 1; i <= ei; i++) { const m = (xs[i-1]+xs[i])/2; ctx.bezierCurveTo(m,ys[i-1],m,ys[i],xs[i],ys[i]) }
+        if (ei < n-1) ctx.lineTo(curX, curY)
+        ctx.lineTo(curX, B); ctx.lineTo(xs[0], B); ctx.closePath()
+        ctx.fillStyle = grd; ctx.fill(); ctx.restore()
+
+        // line stroke
+        ctx.beginPath(); ctx.moveTo(xs[0], ys[0])
+        for (let i = 1; i <= ei; i++) { const m = (xs[i-1]+xs[i])/2; ctx.bezierCurveTo(m,ys[i-1],m,ys[i],xs[i],ys[i]) }
+        if (ei < n-1) ctx.lineTo(curX, curY)
+        ctx.strokeStyle = color; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke()
+
+        // terminal dot
+        if (prog >= 0.98) {
+          ctx.fillStyle = '#06070A'; ctx.beginPath(); ctx.arc(curX, curY, 5.5, 0, Math.PI*2); ctx.fill()
+          ctx.strokeStyle = color; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(curX, curY, 4, 0, Math.PI*2); ctx.stroke()
+        }
+      }
+
+      function tick() { frame++; const p = Math.min(1, frame / TOTAL); draw(p); if (p < 1) rafRef.current = requestAnimationFrame(tick) }
+      rafRef.current = requestAnimationFrame(tick)
+      return () => cancelAnimationFrame(rafRef.current)
     }, [data, color, height])
-    return <div ref={wrapRef} style={{ width: '100%' }}><canvas ref={ref} style={{ width: '100%', height, display: 'block' }} /></div>
+
+    function onPtr(e: React.PointerEvent) {
+      const rect = wrapRef.current?.getBoundingClientRect(); if (!rect) return
+      const { data: d, times: ts } = liveRef.current; if (d.length < 2) return
+      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+      const idx = Math.round(pct * (d.length - 1))
+      const t = ts[idx]; const v = d[idx]
+      const label = t ? new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
+      setScrub({ pct, value: v, label })
+    }
+
+    return (
+      <div ref={wrapRef} style={{ width: '100%', position: 'relative', touchAction: 'pan-y' }}
+        onPointerMove={onPtr} onPointerDown={onPtr} onPointerLeave={() => setScrub(null)}>
+        <canvas ref={canvasRef} style={{ width: '100%', height, display: 'block' }} />
+        {scrub && (
+          <>
+            <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${scrub.pct * 100}%`, width: 1, background: color + '45', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: 6, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+              <div style={{ background: 'rgba(6,7,10,0.92)', border: `1px solid ${color}35`, borderRadius: 9, padding: '5px 12px', backdropFilter: 'blur(10px)' }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: '#fff', whiteSpace: 'nowrap' }}>${scrub.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                {scrub.label && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 1, whiteSpace: 'nowrap', textAlign: 'center' }}>{scrub.label}</div>}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    )
   },
-  (p, n) => p.data === n.data && p.color === n.color
+  (p, n) => p.data === n.data && p.times === n.times && p.color === n.color
 )
 
 // ─── Build balance history ────────────────────────────────────────────────
@@ -164,7 +226,7 @@ const BalanceChart = memo(function BalanceChart({ usdBalance, transactions }: { 
         ))}
       </div>
       <div onClick={toggleVisible} style={{ cursor: 'pointer', overflow: 'hidden' }}>
-        <PortfolioChart data={history.values} color={pnl >= 0 ? '#0ECB81' : '#F6465D'} />
+        <PortfolioChart data={history.values} times={history.times} color={pnl >= 0 ? '#0ECB81' : '#F6465D'} />
       </div>
     </section>
   )
@@ -234,12 +296,11 @@ export default function HomePage() {
         spark: c.spark.slice(-24), // FIX: only last 24 points
       }))
       .sort((a: LiveCoin, b: LiveCoin) => Math.abs(b.change) - Math.abs(a.change))
-      .slice(0, 8)
   }, [])
 
   const fetchCoins = useCallback(() => {
-    // FIX: per_page=8 instead of 40 — 5x less data, 5x faster
-    return fetch('/api/markets/list?per_page=8')
+    // Fetch 100 coins so the price map covers all holdings for accurate balance calc
+    return fetch('/api/markets/list?per_page=100')
       .then(r => r.json())
       .then(d => {
         const next = parseCoins(d)
@@ -371,8 +432,8 @@ export default function HomePage() {
         {/* Statement actions */}
         <div className="statement-actions">
           {[
-            { l: 'Deposit', Icon: Download, href: '/wallet' },
-            { l: 'Withdraw', Icon: Upload, href: '/wallet' },
+            { l: 'Deposit', Icon: Download, href: '/wallet?action=deposit' },
+            { l: 'Withdraw', Icon: Upload, href: '/wallet?action=withdraw' },
             { l: 'Invest', Icon: TrendingUp, href: '/invest' },
             { l: 'History', Icon: History, href: '/transactions' },
           ].map(({ l, Icon, href }) => (

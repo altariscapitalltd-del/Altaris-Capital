@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { trigger, adminChannel } from '@/lib/pusher'
 import { notifyAdminTelegram } from '@/lib/push'
+import { getAIResponse } from '@/lib/ai-support'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -48,9 +49,13 @@ export async function POST(req: NextRequest) {
   await trigger(adminChannel, 'chat:message', { ...userMsg, userId: user.id, userName: user.name })
   await notifyAdminTelegram(`💬 <b>New Support Message</b>\nUser: ${user.name}\nMessage: ${content.trim().slice(0, 300)}`)
 
-  // Human-only support: keep the conversation open for the admin team.
+  // If a human admin has taken over (status === 'active'), do NOT invoke AI — stay silent.
+  // AI only responds while the conversation is in 'ai_assisting' mode.
   if (conv.status !== 'active') {
-    await prisma.conversation.update({ where: { id: conv.id }, data: { status: 'active' } })
+    // Fire-and-forget AI response; errors are handled inside getAIResponse
+    getAIResponse(user.id, conv.id, content.trim()).catch((err) =>
+      console.error('AI response error:', err)
+    )
   }
 
   return NextResponse.json({ message: userMsg })

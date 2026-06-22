@@ -111,6 +111,25 @@ model Investment {
   @@map("investments")
 }
 
+model InvestmentPlan {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String   @default("Crypto")
+  symbol      String
+  image       String?
+  dailyRoi    Float
+  duration    Int
+  minDeposit  Float
+  riskLevel   Int      @default(3)
+  badge       String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("investment_plans")
+}
+
 model OTP {
   id        String     @id @default(cuid())
   userId    String
