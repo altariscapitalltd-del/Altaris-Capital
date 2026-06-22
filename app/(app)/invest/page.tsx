@@ -163,6 +163,8 @@ function InvestContent() {
   const [liveHot, setLiveHot] = useState<PlanType[]>([])
   const [fetchingLive, setFetchingLive] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [claimingId, setClaimingId] = useState<string | null>(null)
+  const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set())
   const heavyReady = useIdleReady(120)
 
   function PlanLogo({ plan, size = 28 }: { plan: PlanType; size?: number }) {
@@ -261,6 +263,28 @@ function InvestContent() {
       }
     } catch { setMsg({ type: 'error', text: 'Network error' }) }
     finally { setLoading(false) }
+  }
+
+  async function claimInvestment(invId: string) {
+    setClaimingId(invId)
+    try {
+      const res = await fetch(`/api/investments/${invId}/withdraw`, { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        setClaimedIds(prev => new Set(prev).add(invId))
+        setMsg({ type: 'success', text: `$${data.transferred?.toFixed(2) ?? '—'} transferred to your wallet` })
+        fetch('/api/investments').then(r => r.json()).then(d => {
+          setUserInvestments(d.investments || [])
+          setSummary(d.summary)
+        })
+      } else {
+        setMsg({ type: 'error', text: data.error || 'Transfer failed' })
+      }
+    } catch {
+      setMsg({ type: 'error', text: 'Network error' })
+    } finally {
+      setClaimingId(null)
+    }
   }
 
   return (
@@ -379,6 +403,7 @@ function InvestContent() {
       ) : (
         /* ── My Plans Tab ── */
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {msg && <div style={{ padding: '10px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)' }}>{msg.text}</div>}
           {!heavyReady && (
             <div style={{ display:'grid', gap:12 }}>
               <div style={{ height: 110, borderRadius: 16, background: 'rgba(255,255,255,0.05)' }} />
@@ -430,6 +455,33 @@ function InvestContent() {
                   </div>
                   <div style={{ background: 'var(--bg-elevated)', borderRadius: 99, height: 6, overflow: 'hidden', marginBottom: 6 }}><div style={{ height: '100%', background: `linear-gradient(90deg,#C9A227,${inv.hasStartedEarning ? '#0ECB81' : '#C9A227'})`, width: `${inv.progressPct || 0}%`, borderRadius: 99, transition: 'width .5s' }} /></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: 10, fontWeight: 600 }}><span>{Math.round(inv.progressPct || 0)}% complete</span><span>{inv.status === 'COMPLETED' ? 'Completed' : `${Math.ceil(inv.daysRemaining || 0)}d remaining`}</span></div>
+                  {(inv.status === 'COMPLETED' || (inv.endDate && new Date() >= new Date(inv.endDate))) && !claimedIds.has(inv.id) && (
+                    <button
+                      onClick={() => claimInvestment(inv.id)}
+                      disabled={claimingId === inv.id}
+                      style={{
+                        marginTop: 12,
+                        width: '100%',
+                        padding: '11px',
+                        background: 'linear-gradient(135deg, #C9A227, #E4C25C)',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: 10,
+                        fontWeight: 800,
+                        fontSize: 13,
+                        cursor: claimingId === inv.id ? 'not-allowed' : 'pointer',
+                        opacity: claimingId === inv.id ? 0.7 : 1,
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {claimingId === inv.id ? 'Transferring...' : `Transfer $${inv.totalValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to Wallet`}
+                    </button>
+                  )}
+                  {claimedIds.has(inv.id) && (
+                    <div style={{ marginTop: 10, textAlign: 'center', fontSize: 12, color: '#0ECB81', fontWeight: 700 }}>
+                      Transferred to wallet
+                    </div>
+                  )}
                 </div>
               ))}
             </>

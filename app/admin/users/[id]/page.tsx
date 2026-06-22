@@ -21,6 +21,7 @@ export default function UserDetailPage() {
   const [balanceAdj, setBalanceAdj] = useState('')
   const [adjNote, setAdjNote]   = useState('')
   const [adjTemplate, setAdjTemplate] = useState<'ADJUSTMENT'|'DEPOSIT'|'WITHDRAWAL'>('ADJUSTMENT')
+  const [adjCurrency, setAdjCurrency] = useState('USD')
   const [notifText, setNotifText] = useState('')
   const [loading, setLoading]   = useState(true)
   const [actionLoading, setActionLoading] = useState('')
@@ -129,7 +130,18 @@ export default function UserDetailPage() {
               </div>
             </div>
             <div style={{marginBottom:10}}>
-              <label style={{display:'block',color:'#444',fontSize:11,fontWeight:600,marginBottom:6,letterSpacing:'0.06em'}}>AMOUNT (USD) {adjTemplate === 'WITHDRAWAL' ? '— debits user' : adjTemplate === 'DEPOSIT' ? '— credits user' : '— use negative to debit'}</label>
+              <label style={{display:'block',color:'#444',fontSize:11,fontWeight:600,marginBottom:6,letterSpacing:'0.06em'}}>CURRENCY</label>
+              <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                {['USD','BTC','ETH','USDT','USDC','BNB','SOL','XRP'].map(c => (
+                  <button key={c} type="button" onClick={() => setAdjCurrency(c)}
+                    style={{padding:'7px 12px',borderRadius:8,border:`1px solid ${adjCurrency===c?'rgba(242,186,14,0.35)':'rgba(255,255,255,0.07)'}`,background:adjCurrency===c?'rgba(242,186,14,0.1)':'#1A1A1A',color:adjCurrency===c?'#C9A227':'#777',fontSize:11,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <label style={{display:'block',color:'#444',fontSize:11,fontWeight:600,marginBottom:6,letterSpacing:'0.06em'}}>AMOUNT ({adjCurrency}) {adjTemplate === 'WITHDRAWAL' ? '— debits user' : adjTemplate === 'DEPOSIT' ? '— credits user' : '— use negative to debit'}</label>
               <input value={balanceAdj} onChange={e=>setBalanceAdj(e.target.value)} type="number"
                 style={{width:'100%',background:'#1A1A1A',color:'#fff',padding:'11px 12px',borderRadius:9,border:'1px solid rgba(255,255,255,0.07)',fontSize:14,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}
                 placeholder="e.g. 500 or -200"
@@ -142,7 +154,7 @@ export default function UserDetailPage() {
                 placeholder="Reason for adjustment"
                 onFocus={e=>e.target.style.borderColor='rgba(242,186,14,0.4)'} onBlur={e=>e.target.style.borderColor='rgba(255,255,255,0.07)'}/>
             </div>
-            <button onClick={()=>{if(!balanceAdj)return;const raw=Math.abs(parseFloat(balanceAdj));const amount=adjTemplate==='WITHDRAWAL'?-raw:adjTemplate==='DEPOSIT'?raw:parseFloat(balanceAdj);action('adjust_balance',{amount,template:adjTemplate,note:adjNote});setBalanceAdj('');setAdjNote('')}} disabled={!balanceAdj||actionLoading==='adjust_balance'}
+            <button onClick={()=>{if(!balanceAdj)return;const raw=Math.abs(parseFloat(balanceAdj));const amount=adjTemplate==='WITHDRAWAL'?-raw:adjTemplate==='DEPOSIT'?raw:parseFloat(balanceAdj);action('adjust_balance',{amount,currency:adjCurrency,template:adjTemplate,note:adjNote});setBalanceAdj('');setAdjNote('')}} disabled={!balanceAdj||actionLoading==='adjust_balance'}
               style={{width:'100%',padding:'11px',background:'#C9A227',color:'#000',border:'none',borderRadius:9,fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',opacity:!balanceAdj?0.4:1}}>
               {actionLoading==='adjust_balance'?'Applying...':'Apply Adjustment'}
             </button>

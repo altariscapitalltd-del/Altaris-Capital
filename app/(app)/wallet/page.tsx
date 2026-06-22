@@ -5,15 +5,40 @@ import Link from 'next/link'
 import QRCode from 'qrcode'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
 
-const DEPOSIT_COINS = [
-  { sym: 'USDT', name: 'Tether USD', color: '#26A17B', minDeposit: 10, network: 'ERC-20', glyph: '₮' },
-  { sym: 'USDC', name: 'USD Coin', color: '#2775CA', minDeposit: 10, network: 'ERC-20', glyph: '$' },
-  { sym: 'ETH', name: 'Ethereum', color: '#627EEA', minDeposit: 0.01, network: 'Native', glyph: '◆' },
-  { sym: 'BNB', name: 'BNB', color: '#F3BA2F', minDeposit: 0.02, network: 'BEP-20', glyph: 'B' },
-  { sym: 'BTC', name: 'Bitcoin', color: '#F7931A', minDeposit: 0.001, network: 'Native', glyph: '₿' },
-  { sym: 'SOL', name: 'Solana', color: '#14F195', minDeposit: 0.1, network: 'SPL', glyph: 'S' },
-  { sym: 'XRP', name: 'XRP', color: '#23292F', minDeposit: 1, network: 'Native', glyph: 'X' },
-] as const
+type ChainType = 'EVM' | 'BTC' | 'SOL' | 'XRP'
+const ALL_CRYPTOS: { sym: string; name: string; color: string; minDeposit: number; network: string; glyph: string; chain: ChainType; popular?: boolean }[] = [
+  // Popular
+  { sym: 'BTC',   name: 'Bitcoin',      color: '#F7931A', minDeposit: 0.0001, network: 'Bitcoin',      glyph: '₿', chain: 'BTC', popular: true },
+  { sym: 'ETH',   name: 'Ethereum',     color: '#627EEA', minDeposit: 0.001,  network: 'Ethereum',     glyph: '◆', chain: 'EVM', popular: true },
+  { sym: 'USDT',  name: 'Tether USD',   color: '#26A17B', minDeposit: 5,      network: 'ERC-20',       glyph: '₮', chain: 'EVM', popular: true },
+  { sym: 'USDC',  name: 'USD Coin',     color: '#2775CA', minDeposit: 5,      network: 'ERC-20',       glyph: '$', chain: 'EVM', popular: true },
+  { sym: 'BNB',   name: 'BNB',          color: '#F3BA2F', minDeposit: 0.01,   network: 'BEP-20',       glyph: 'B', chain: 'EVM', popular: true },
+  { sym: 'SOL',   name: 'Solana',       color: '#14F195', minDeposit: 0.05,   network: 'Solana',       glyph: 'S', chain: 'SOL', popular: true },
+  { sym: 'XRP',   name: 'XRP',          color: '#00AAE4', minDeposit: 1,      network: 'XRP Ledger',   glyph: 'X', chain: 'XRP', popular: true },
+  // EVM — Ethereum
+  { sym: 'WBTC',  name: 'Wrapped BTC',  color: '#F7931A', minDeposit: 0.0001, network: 'ERC-20',       glyph: 'W', chain: 'EVM' },
+  { sym: 'DAI',   name: 'Dai',          color: '#F5AC37', minDeposit: 5,      network: 'ERC-20',       glyph: 'D', chain: 'EVM' },
+  { sym: 'LINK',  name: 'Chainlink',    color: '#2A5ADA', minDeposit: 0.5,    network: 'ERC-20',       glyph: 'L', chain: 'EVM' },
+  { sym: 'UNI',   name: 'Uniswap',      color: '#FF007A', minDeposit: 0.5,    network: 'ERC-20',       glyph: 'U', chain: 'EVM' },
+  { sym: 'AAVE',  name: 'Aave',         color: '#B6509E', minDeposit: 0.05,   network: 'ERC-20',       glyph: 'A', chain: 'EVM' },
+  { sym: 'SHIB',  name: 'Shiba Inu',    color: '#FF2D2D', minDeposit: 1e6,    network: 'ERC-20',       glyph: 'S', chain: 'EVM' },
+  { sym: 'PEPE',  name: 'Pepe',         color: '#4DA943', minDeposit: 1e6,    network: 'ERC-20',       glyph: 'P', chain: 'EVM' },
+  // EVM — L2 / sidechains (same 0x address)
+  { sym: 'ARB',   name: 'Arbitrum',     color: '#28A0F0', minDeposit: 1,      network: 'Arbitrum One', glyph: 'A', chain: 'EVM' },
+  { sym: 'OP',    name: 'Optimism',     color: '#FF0420', minDeposit: 0.5,    network: 'Optimism',     glyph: 'O', chain: 'EVM' },
+  { sym: 'MATIC', name: 'Polygon',      color: '#8247E5', minDeposit: 1,      network: 'Polygon',      glyph: 'M', chain: 'EVM' },
+  { sym: 'AVAX',  name: 'Avalanche',    color: '#E84142', minDeposit: 0.1,    network: 'Avalanche C',  glyph: 'A', chain: 'EVM' },
+  { sym: 'FTM',   name: 'Fantom',       color: '#1969FF', minDeposit: 5,      network: 'Fantom',       glyph: 'F', chain: 'EVM' },
+  { sym: 'BASE',  name: 'Base ETH',     color: '#0052FF', minDeposit: 0.001,  network: 'Base',         glyph: 'B', chain: 'EVM' },
+  // EVM — BSC tokens
+  { sym: 'CAKE',  name: 'PancakeSwap',  color: '#1FC7D4', minDeposit: 0.5,    network: 'BEP-20',       glyph: 'C', chain: 'EVM' },
+  // Solana SPL
+  { sym: 'RAY',   name: 'Raydium',      color: '#5AC4BE', minDeposit: 1,      network: 'Solana SPL',   glyph: 'R', chain: 'SOL' },
+  { sym: 'JUP',   name: 'Jupiter',      color: '#00C2FF', minDeposit: 1,      network: 'Solana SPL',   glyph: 'J', chain: 'SOL' },
+  { sym: 'BONK',  name: 'Bonk',         color: '#F2A900', minDeposit: 50000,  network: 'Solana SPL',   glyph: 'B', chain: 'SOL' },
+  { sym: 'JTO',   name: 'Jito',         color: '#65D497', minDeposit: 1,      network: 'Solana SPL',   glyph: 'J', chain: 'SOL' },
+]
+const DEFAULT_MANAGED = ['BTC','ETH','USDT','USDC','BNB','SOL','XRP']
 
 type WalletTab = 'none' | 'deposit' | 'withdraw' | 'reward'
 
@@ -116,7 +141,11 @@ function PortfolioChart({ data, color = '#0ECB81', width = 336, height = 96 }: {
 export default function WalletPage() {
   const [tab, setTab] = useState<WalletTab>('none')
   const [depositMode, setDepositMode] = useState<'select' | 'network' | 'crypto' | 'fiat'>('select')
-  const [coin, setCoin] = useState<(typeof DEPOSIT_COINS)[number]['sym']>('USDT')
+  const [coin, setCoin] = useState<string>('USDT')
+  const [receiveSearch, setReceiveSearch] = useState('')
+  const [receiveFilter, setReceiveFilter] = useState<'All' | 'Bitcoin' | 'Ethereum' | 'Solana' | 'XRP'>('All')
+  const [showManage, setShowManage] = useState(false)
+  const [managedCoins, setManagedCoins] = useState<string[]>(DEFAULT_MANAGED)
   const [amount, setAmount] = useState('')
   const [txHash, setTxHash] = useState('')
   const [withdrawAddress, setWithdrawAddress] = useState('')
@@ -137,6 +166,21 @@ export default function WalletPage() {
   const [chainAddrs, setChainAddrs] = useState<{ btc?: string; sol?: string; xrp?: string }>({})
   const [balanceHidden, setBalanceHidden] = useState(false)
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('altaris:managedCoins')
+      if (saved) setManagedCoins(JSON.parse(saved))
+    } catch {}
+  }, [])
+
+  function toggleManagedCoin(sym: string) {
+    setManagedCoins(prev => {
+      const next = prev.includes(sym) ? prev.filter(s => s !== sym) : [...prev, sym]
+      try { localStorage.setItem('altaris:managedCoins', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
 
   function loadProfile() {
     fetch('/api/user/profile')
@@ -314,13 +358,28 @@ export default function WalletPage() {
     }
   }, [transactions])
 
-  // Per-coin receive address: native chains use their own wallet, EVM tokens share the 0x address
-  const addrFor = (sym: string) =>
-    sym === 'BTC' ? (chainAddrs.btc || '') :
-    sym === 'SOL' ? (chainAddrs.sol || '') :
-    sym === 'XRP' ? (chainAddrs.xrp || '') : userWallet
-  const selectedCoin = DEPOSIT_COINS.find((c) => c.sym === coin)!
+  // Per-coin receive address: look up chain type from ALL_CRYPTOS
+  const addrFor = (sym: string) => {
+    const chain = ALL_CRYPTOS.find(c => c.sym === sym)?.chain ?? 'EVM'
+    if (chain === 'BTC') return chainAddrs.btc || ''
+    if (chain === 'SOL') return chainAddrs.sol || ''
+    if (chain === 'XRP') return chainAddrs.xrp || ''
+    return userWallet
+  }
+  const selectedCoin = ALL_CRYPTOS.find((c) => c.sym === coin) ?? ALL_CRYPTOS[0]
   const activeAddress = addrFor(coin)
+
+  const filteredCryptos = ALL_CRYPTOS.filter(c => {
+    const q = receiveSearch.toLowerCase()
+    const matchSearch = !q || c.sym.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || c.network.toLowerCase().includes(q)
+    const matchFilter =
+      receiveFilter === 'All' ? true :
+      receiveFilter === 'Bitcoin' ? c.chain === 'BTC' :
+      receiveFilter === 'Ethereum' ? c.chain === 'EVM' :
+      receiveFilter === 'Solana' ? c.chain === 'SOL' :
+      receiveFilter === 'XRP' ? c.chain === 'XRP' : true
+    return matchSearch && matchFilter
+  })
 
   async function submitDeposit() {
     if (!amount || !txHash.trim()) {
@@ -454,17 +513,11 @@ export default function WalletPage() {
     { sym: 'SOL', name: 'Solana', price: marketPrices.SOL?.price || 0, change: marketPrices.SOL?.change || 0, color: '#14F195' },
   ]
 
-  // Activity list — every supported asset, holdings first then by value
-  const ASSET_META: Record<string, { name: string; color: string }> = {
-    USDT: { name: 'Tether USD', color: '#26A17B' },
-    USDC: { name: 'USD Coin', color: '#2775CA' },
-    BTC: { name: 'Bitcoin', color: '#F7931A' },
-    ETH: { name: 'Ethereum', color: '#627EEA' },
-    BNB: { name: 'BNB', color: '#F3BA2F' },
-    SOL: { name: 'Solana', color: '#14F195' },
-    XRP: { name: 'XRP', color: '#23292F' },
-  }
-  const activityAssets = ['USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'SOL', 'XRP']
+  // Activity list — build from ALL_CRYPTOS so manage works for all coins
+  const ASSET_META: Record<string, { name: string; color: string }> = Object.fromEntries(
+    ALL_CRYPTOS.map(c => [c.sym, { name: c.name, color: c.color }])
+  )
+  const activityAssets = managedCoins
     .map((sym) => {
       const price = marketPrices[sym]?.price || (sym === 'USDT' || sym === 'USDC' ? 1 : 0)
       const amount = balances[sym] || 0
@@ -611,7 +664,10 @@ export default function WalletPage() {
       {/* ── Activity ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '22px 2px 6px' }}>
         <h2 className="font-display" style={{ fontSize: 22, fontWeight: 600, color: 'var(--text-primary)' }}>Activity</h2>
-        <Link href="/markets" style={{ fontSize: 12, fontWeight: 600, color: 'var(--gold-bright)', textDecoration: 'none' }}>All markets</Link>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button type="button" onClick={() => setShowManage(true)} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border)', borderRadius: 99, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>Manage</button>
+          <Link href="/markets" style={{ fontSize: 12, fontWeight: 600, color: 'var(--gold-bright)', textDecoration: 'none' }}>All markets</Link>
+        </div>
       </div>
 
       <div style={{ marginBottom: 14 }}>
@@ -646,13 +702,32 @@ export default function WalletPage() {
             <div className="network-sheet">
               <div className="network-sheet-head">
                 <h2>Receive crypto</h2>
-                <button onClick={() => setDepositMode('select')} type="button" aria-label="Close">×</button>
+                <button onClick={() => { setDepositMode('select'); setReceiveSearch(''); setReceiveFilter('All') }} type="button" aria-label="Close">×</button>
               </div>
-              <div style={{ maxWidth: 430, margin: '0 auto 14px', color: 'var(--text-secondary)', fontSize: 12.5, lineHeight: 1.6 }}>
-                Select an asset to receive. Deposits credit that currency's balance in your wallet.
+              {/* Search */}
+              <div style={{ margin: '0 0 12px', position: 'relative' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input
+                  value={receiveSearch}
+                  onChange={e => setReceiveSearch(e.target.value)}
+                  placeholder="Search coin or network…"
+                  style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px 10px 36px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+              {/* Network filter chips */}
+              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 4 }}>
+                {(['All','Bitcoin','Ethereum','Solana','XRP'] as const).map(f => (
+                  <button key={f} type="button" onClick={() => setReceiveFilter(f)}
+                    style={{ flexShrink: 0, padding: '5px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700, border: `1px solid ${receiveFilter===f?'rgba(201,162,39,0.5)':'var(--border)'}`, background: receiveFilter===f?'rgba(201,162,39,0.12)':'transparent', color: receiveFilter===f?'#C9A227':'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                    {f}
+                  </button>
+                ))}
               </div>
               <div className="network-list">
-                {DEPOSIT_COINS.map((c) => {
+                {filteredCryptos.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--text-muted)', fontSize: 13 }}>No coins match your search</div>
+                )}
+                {filteredCryptos.map((c) => {
                   const addr = addrFor(c.sym)
                   return (
                     <button
@@ -838,7 +913,7 @@ export default function WalletPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto' }} className="no-scrollbar">
-            {DEPOSIT_COINS.map((c) => (
+            {ALL_CRYPTOS.filter(c => c.popular).map((c) => (
               <button
                 key={c.sym}
                 onClick={() => setCoin(c.sym)}
@@ -887,6 +962,36 @@ export default function WalletPage() {
               <div style={{ color: 'var(--text-secondary)', fontSize: 12.5, lineHeight: 1.6, marginTop: 3 }}>
                 Send {coin} to the address above. Once the network confirms it, your {coin} balance updates automatically — no need to enter anything.
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Manage Crypto Sheet ── */}
+      {showManage && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200 }} onClick={() => setShowManage(false)}>
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: 'var(--bg-card)', borderRadius: '20px 20px 0 0', border: '1px solid var(--border)', maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '14px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 17 }}>Manage Crypto</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>Toggle which assets appear in your wallet</div>
+              </div>
+              <button type="button" onClick={() => setShowManage(false)} style={{ background: 'var(--bg-elevated)', border: 'none', color: 'var(--text-muted)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontFamily: 'inherit', fontSize: 18 }}>×</button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '14px 20px 32px', flex: 1 }}>
+              {ALL_CRYPTOS.map(c => (
+                <div key={c.sym} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--hairline)' }}>
+                  <span style={{ width: 38, height: 38, borderRadius: '50%', background: c.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>{c.glyph}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{c.sym} · {c.network}</div>
+                  </div>
+                  <button type="button" onClick={() => toggleManagedCoin(c.sym)}
+                    style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer', background: managedCoins.includes(c.sym) ? '#C9A227' : 'var(--bg-elevated)', transition: 'background 0.2s', position: 'relative', flexShrink: 0 }}>
+                    <span style={{ position: 'absolute', top: 3, left: managedCoins.includes(c.sym) ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
