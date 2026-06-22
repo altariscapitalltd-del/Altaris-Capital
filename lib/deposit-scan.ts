@@ -108,6 +108,16 @@ async function scanUser(u: any): Promise<number> {
   return credited
 }
 
+/** Called by the Alchemy webhook — scans just one user by their EVM address. */
+export async function scanUserByEvmAddress(address: string): Promise<number> {
+  const user = await prisma.user.findFirst({
+    where: { walletAddress: { equals: address, mode: 'insensitive' } },
+    select: { id: true, walletAddress: true, chainWallets: true, onchainSeen: true },
+  })
+  if (!user) return 0
+  return scanUser(user)
+}
+
 export async function scanDeposits(): Promise<{ usersScanned: number; deposits: number }> {
   const users = await prisma.user.findMany({
     where: { OR: [{ walletAddress: { not: null } }] },

@@ -75,6 +75,10 @@ export async function POST(req: NextRequest) {
         where: { id: user.id },
         data: { walletAddress: w.address, walletPrivateKey: w.encryptedKey, walletCreatedAt: new Date(), chainWallets: chains as any },
       })
+      // Register with Alchemy webhook — fire-and-forget, never blocks signup
+      import('@/lib/alchemy-notify').then(({ addAddressesToWebhook }) =>
+        addAddressesToWebhook([w.address]).catch(() => {})
+      )
     } catch (e: any) {
       console.error('[Signup] wallet generation skipped:', e?.message ?? e)
     }
