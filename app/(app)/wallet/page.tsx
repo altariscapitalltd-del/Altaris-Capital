@@ -174,6 +174,7 @@ export default function WalletPage() {
   const [receiveFilter, setReceiveFilter] = useState<'All' | 'Bitcoin' | 'Ethereum' | 'Solana' | 'XRP'>('All')
   const [showManage, setShowManage] = useState(false)
   const [managedCoins, setManagedCoins] = useState<string[]>(DEFAULT_MANAGED)
+  const [manageSearch, setManageSearch] = useState('')
   const [receiveCoinList, setReceiveCoinList] = useState<any[]>([])
   const [receiveLoaded, setReceiveLoaded] = useState(false)
   const [selectedCoinData, setSelectedCoinData] = useState<any>(null)
@@ -314,13 +315,13 @@ export default function WalletPage() {
   }, [tab, depositMode])
 
   useEffect(() => {
-    if (tab !== 'deposit' || depositMode !== 'network') return
+    if (!(showManage || (tab === 'deposit' && depositMode === 'network'))) return
     if (receiveLoaded) return
     fetch('/api/markets/list?per_page=250')
       .then(r => r.json())
       .then(d => { setReceiveCoinList(d.list || []); setReceiveLoaded(true) })
       .catch(() => setReceiveLoaded(true))
-  }, [tab, depositMode, receiveLoaded])
+  }, [tab, depositMode, showManage, receiveLoaded])
 
   useEffect(() => {
     const address = coin === 'BTC' ? chainAddrs.btc : coin === 'SOL' ? chainAddrs.sol : coin === 'XRP' ? chainAddrs.xrp : userWallet
@@ -1022,28 +1023,44 @@ export default function WalletPage() {
       {/* ── Manage Crypto Sheet ── */}
       {showManage && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200 }} onClick={() => setShowManage(false)}>
-          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: 'var(--bg-card)', borderRadius: '20px 20px 0 0', border: '1px solid var(--border)', maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '14px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: 'var(--bg-card)', borderRadius: '20px 20px 0 0', border: '1px solid var(--border)', maxHeight: '82vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '14px 20px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 17 }}>Manage Crypto</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 2 }}>Toggle which assets appear in your wallet</div>
               </div>
               <button type="button" onClick={() => setShowManage(false)} style={{ background: 'var(--bg-elevated)', border: 'none', color: 'var(--text-muted)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontFamily: 'inherit', fontSize: 18 }}>×</button>
             </div>
-            <div style={{ overflowY: 'auto', padding: '14px 20px 32px', flex: 1 }}>
-              {ALL_CRYPTOS.map(c => (
-                <div key={c.sym} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--hairline)' }}>
-                  <span style={{ width: 38, height: 38, borderRadius: '50%', background: c.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 14, flexShrink: 0 }}>{c.glyph}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{c.sym} · {c.network}</div>
+            {/* Search */}
+            <div style={{ padding: '0 20px 10px', flexShrink: 0, position: 'relative' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" style={{ position: 'absolute', left: 32, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input value={manageSearch} onChange={e => setManageSearch(e.target.value)} placeholder="Search coins…" style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 10, padding: '9px 12px 9px 34px', fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ overflowY: 'auto', padding: '4px 20px 32px', flex: 1 }}>
+              {(() => {
+                const manageList = receiveLoaded && receiveCoinList.length > 0
+                  ? receiveCoinList.map((c: any) => ({ sym: String(c.symbol || '').toUpperCase(), name: c.name || '', image: c.image || '', network: coinNetworkLabel(String(c.symbol || '').toUpperCase(), c.id || '') }))
+                  : ALL_CRYPTOS.map(c => ({ sym: c.sym, name: c.name, image: '', network: c.network }))
+                const q = manageSearch.toLowerCase()
+                const filtered = q ? manageList.filter((c: any) => c.sym.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)) : manageList
+                return filtered.map((c: any) => (
+                  <div key={c.sym} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: '1px solid var(--hairline)' }}>
+                    <span style={{ width: 38, height: 38, borderRadius: '50%', background: c.image ? '#14171D' : '#2A2A2A', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                      {c.image
+                        ? <img src={c.image} alt={c.sym} style={{ width: 38, height: 38, objectFit: 'contain' }} />
+                        : <CoinIcon symbol={c.sym} size={22} />}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{c.name}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{c.sym} · {c.network}</div>
+                    </div>
+                    <button type="button" onClick={() => toggleManagedCoin(c.sym)}
+                      style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer', background: managedCoins.includes(c.sym) ? '#C9A227' : 'var(--bg-elevated)', transition: 'background 0.2s', position: 'relative', flexShrink: 0 }}>
+                      <span style={{ position: 'absolute', top: 3, left: managedCoins.includes(c.sym) ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+                    </button>
                   </div>
-                  <button type="button" onClick={() => toggleManagedCoin(c.sym)}
-                    style={{ width: 44, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer', background: managedCoins.includes(c.sym) ? '#C9A227' : 'var(--bg-elevated)', transition: 'background 0.2s', position: 'relative', flexShrink: 0 }}>
-                    <span style={{ position: 'absolute', top: 3, left: managedCoins.includes(c.sym) ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
-                  </button>
-                </div>
-              ))}
+                ))
+              })()}
             </div>
           </div>
         </div>
