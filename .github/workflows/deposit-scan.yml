@@ -1,0 +1,15 @@
+name: Deposit Scanner
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deposit scan
+        run: |
+          curl -sf -X GET "${{ secrets.APP_URL }}/api/cron/scan-deposits" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
