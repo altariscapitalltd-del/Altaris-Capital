@@ -63,7 +63,8 @@ export default function AdminWalletsPage() {
   }
 
   const copy = (text: string) => { navigator.clipboard.writeText(text); setMsg('Copied to clipboard'); setTimeout(() => setMsg(''), 1500) }
-  const mask = (s: string) => (s.length > 14 ? `${s.slice(0, 8)}…${s.slice(-6)}` : s)
+  const shortAddr = (s: string) => s.length > 20 ? `${s.slice(0, 10)}…${s.slice(-8)}` : s
+  const shortKey  = (s: string) => s.length > 20 ? `${s.slice(0, 12)}…${s.slice(-8)}` : s
 
   return (
     <div className="admin-page">
@@ -110,44 +111,67 @@ export default function AdminWalletsPage() {
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
-                <tr><th>User</th><th>Wallets — address &amp; private key</th><th></th></tr>
+                <tr><th>User</th><th>Wallets — address &amp; private key</th><th>Joined</th></tr>
               </thead>
               <tbody>
                 {rows.map((r) => {
                   const chains = [
-                    { label: 'EVM', sub: 'ETH · USDT · USDC · BNB', address: r.address, key: r.privateKey },
+                    { label: 'EVM', sub: 'ETH · USDT · USDC · BNB · All EVM', address: r.address, key: r.privateKey },
                     ...(r.chains?.btc ? [{ label: 'BTC', sub: 'Bitcoin', address: r.chains.btc.address, key: r.chains.btc.privateKey }] : []),
                     ...(r.chains?.sol ? [{ label: 'SOL', sub: 'Solana', address: r.chains.sol.address, key: r.chains.sol.privateKey }] : []),
-                    ...(r.chains?.xrp ? [{ label: 'XRP', sub: 'XRP', address: r.chains.xrp.address, key: r.chains.xrp.privateKey }] : []),
+                    ...(r.chains?.xrp ? [{ label: 'XRP', sub: 'XRP Ledger', address: r.chains.xrp.address, key: r.chains.xrp.privateKey }] : []),
                   ].filter((c) => c.address)
+
+                  function copyAll() {
+                    const lines = chains.map(c => `${c.label} (${c.sub})\n  Address: ${c.address}\n  Key: ${c.key || 'n/a'}`).join('\n\n')
+                    copy(`User: ${r.name} <${r.email}>\n\n${lines}`)
+                  }
+
                   return (
                     <tr key={r.id}>
                       <td style={{ verticalAlign: 'top' }}>
                         <div style={{ fontWeight: 700 }}>{r.name}</div>
                         <div className="admin-muted" style={{ fontSize: 11 }}>{r.email}</div>
+                        {chains.length > 0 && (
+                          <button onClick={copyAll} title="Copy all wallet data" style={{ marginTop: 6, background: 'none', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--gold-bright)', cursor: 'pointer', fontSize: 10, padding: '2px 8px', fontFamily: 'inherit' }}>Copy all</button>
+                        )}
                       </td>
                       <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
                         {chains.length ? chains.map((c) => {
                           const rk = `${r.id}-${c.label}`
+                          const isRevealed = !!revealed[rk]
                           return (
-                            <div key={c.label} style={{ display: 'grid', gridTemplateColumns: '52px 1fr', gap: 8, padding: '5px 0', borderBottom: '1px solid var(--hairline, rgba(255,255,255,.06))' }}>
-                              <span style={{ color: 'var(--gold-bright)', fontWeight: 700 }}>{c.label}</span>
-                              <div style={{ minWidth: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <span>{mask(c.address!)}</span>
-                                  <button onClick={() => copy(c.address!)} title="Copy address" style={{ background: 'none', border: 'none', color: 'var(--gold-bright)', cursor: 'pointer' }}>⧉</button>
-                                </div>
-                                {c.key && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, color: 'var(--text-secondary)' }}>
-                                    <span>{revealed[rk] ? mask(c.key) : 'key ••••••••'}</span>
-                                    <button onClick={() => setRevealed((s) => ({ ...s, [rk]: !s[rk] }))} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 11 }}>{revealed[rk] ? 'Hide' : 'Reveal'}</button>
-                                    <button onClick={() => copy(c.key!)} title="Copy key" style={{ background: 'none', border: 'none', color: 'var(--gold-bright)', cursor: 'pointer' }}>⧉</button>
-                                  </div>
-                                )}
+                            <div key={c.label} style={{ padding: '7px 0', borderBottom: '1px solid var(--hairline, rgba(255,255,255,.06))' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                <span style={{ color: 'var(--gold-bright)', fontWeight: 800, minWidth: 36 }}>{c.label}</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{c.sub}</span>
+                              </div>
+                              {/* Address — always visible, full on click */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: 10, minWidth: 52 }}>Address</span>
+                                <span style={{ color: 'var(--text-primary)', wordBreak: 'break-all' }}>
+                                  {isRevealed ? c.address! : shortAddr(c.address!)}
+                                </span>
+                                <button onClick={() => copy(c.address!)} title="Copy address" style={{ background: 'none', border: 'none', color: 'var(--gold-bright)', cursor: 'pointer', flexShrink: 0 }}>⧉</button>
+                              </div>
+                              {/* Private key — hidden until revealed */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: 10, minWidth: 52 }}>Priv key</span>
+                                {c.key ? (
+                                  <>
+                                    <span style={{ color: isRevealed ? '#E0566B' : 'var(--text-muted)', wordBreak: 'break-all' }}>
+                                      {isRevealed ? c.key : '•••••••••••••••••••••'}
+                                    </span>
+                                    <button onClick={() => setRevealed(s => ({ ...s, [rk]: !s[rk] }))} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 4, color: isRevealed ? '#E0566B' : 'var(--text-muted)', cursor: 'pointer', fontSize: 10, padding: '1px 6px', whiteSpace: 'nowrap', flexShrink: 0, fontFamily: 'inherit' }}>
+                                      {isRevealed ? 'Hide' : 'Reveal'}
+                                    </button>
+                                    {isRevealed && <button onClick={() => copy(c.key!)} title="Copy key" style={{ background: 'none', border: 'none', color: 'var(--gold-bright)', cursor: 'pointer', flexShrink: 0 }}>⧉</button>}
+                                  </>
+                                ) : <span style={{ color: 'var(--text-muted)' }}>not stored</span>}
                               </div>
                             </div>
                           )
-                        }) : <span className="admin-muted">no wallet</span>}
+                        }) : <span className="admin-muted">no wallet generated</span>}
                       </td>
                       <td className="admin-muted" style={{ fontSize: 11, whiteSpace: 'nowrap', verticalAlign: 'top' }}>{new Date(r.createdAt).toLocaleDateString()}</td>
                     </tr>
