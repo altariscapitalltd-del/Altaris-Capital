@@ -277,6 +277,18 @@ function WalletContent() {
   const [swapEstimate, setSwapEstimate] = useState<{ received: number; rate: number; feeUsd: number } | null>(null)
   const [swapEstimating, setSwapEstimating] = useState(false)
 
+  // Auto-preview: recalculate estimate whenever amount/coins change
+  useEffect(() => {
+    const amt = parseFloat(swapFromAmount)
+    if (!amt || amt <= 0 || swapFrom === swapTo) { setSwapEstimate(null); return }
+    const fromP = (swapFrom === 'USD' || swapFrom === 'USDT' || swapFrom === 'USDC') ? 1 : (marketPrices[swapFrom]?.price || 0)
+    const toP = (swapTo === 'USD' || swapTo === 'USDT' || swapTo === 'USDC') ? 1 : (marketPrices[swapTo]?.price || 0)
+    if (!fromP || !toP) { setSwapEstimate(null); return }
+    const received = amt * (fromP / toP) * 0.995
+    const feeUsd = amt * fromP * 0.005
+    setSwapEstimate({ received: Math.round(received * 1e8) / 1e8, rate: fromP / toP, feeUsd: Math.round(feeUsd * 100) / 100 })
+  }, [swapFromAmount, swapFrom, swapTo, marketPrices])
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('altaris:managedCoins')
@@ -1215,14 +1227,14 @@ function WalletContent() {
                   <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <div style={{ position: 'relative', flex: 2 }}>
-                  <input className="input" type="number" value={swapFromAmount} onChange={e => { setSwapFromAmount(e.target.value); setSwapEstimate(null) }} placeholder="0.00" style={{ paddingRight: 52 }} />
-                  <button onClick={() => { setSwapFromAmount(String(balances[swapFrom] || 0)); setSwapEstimate(null) }} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 5, background: 'rgba(242,186,14,0.16)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: 10, padding: '3px 7px', cursor: 'pointer' }}>MAX</button>
+                  <input className="input" type="number" value={swapFromAmount} onChange={e => setSwapFromAmount(e.target.value)} placeholder="0.00" style={{ paddingRight: 52 }} />
+                  <button onClick={() => setSwapFromAmount(String(balances[swapFrom] || 0))} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', border: 'none', borderRadius: 5, background: 'rgba(242,186,14,0.16)', color: 'var(--brand-primary)', fontWeight: 700, fontSize: 10, padding: '3px 7px', cursor: 'pointer' }}>MAX</button>
                 </div>
               </div>
             </div>
 
             {/* Swap arrow */}
-            <button type="button" onClick={() => { const tmp = swapFrom; setSwapFrom(swapTo); setSwapTo(tmp); setSwapFromAmount(''); setSwapEstimate(null) }} style={{ alignSelf: 'center', width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--gold-bright)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', margin: '0 auto' }}>
+            <button type="button" onClick={() => { const tmp = swapFrom; setSwapFrom(swapTo); setSwapTo(tmp); setSwapFromAmount('') }} style={{ alignSelf: 'center', width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--gold-bright)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', margin: '0 auto' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M7 10l-3 3 3 3"/><path d="M4 13h12"/><path d="M17 8l3-3-3-3"/><path d="M20 5H8"/></svg>
             </button>
 
@@ -1257,40 +1269,27 @@ function WalletContent() {
               </div>
             )}
 
-            {!swapEstimate ? (
-              <button onClick={() => {
+            <button onClick={async () => {
                 const amt = parseFloat(swapFromAmount)
                 if (!amt || amt <= 0) { setMsg({ type: 'error', text: 'Enter an amount' }); return }
                 if (swapFrom === swapTo) { setMsg({ type: 'error', text: 'Choose different currencies' }); return }
                 if (amt > (balances[swapFrom] || 0)) { setMsg({ type: 'error', text: 'Insufficient balance' }); return }
-                setMsg(null)
-                const fromP = (swapFrom === 'USD' || swapFrom === 'USDT' || swapFrom === 'USDC') ? 1 : (marketPrices[swapFrom]?.price || 0)
-                const toP = (swapTo === 'USD' || swapTo === 'USDT' || swapTo === 'USDC') ? 1 : (marketPrices[swapTo]?.price || 0)
-                if (!fromP || !toP) { setMsg({ type: 'error', text: 'Price not available for this pair' }); return }
-                const received = amt * (fromP / toP) * 0.995
-                const feeUsd = amt * fromP * 0.005
-                setSwapEstimate({ received: Math.round(received * 1e8) / 1e8, rate: fromP / toP, feeUsd: Math.round(feeUsd * 100) / 100 })
-              }} disabled={!swapFromAmount} className="btn-primary" style={{ width: '100%' }}>
-                Preview Swap
-              </button>
-            ) : (
-              <button onClick={async () => {
                 setLoading(true); setMsg(null)
                 try {
-                  const r = await fetch('/api/wallet/swap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: swapFrom, to: swapTo, fromAmount: parseFloat(swapFromAmount) }) })
+                  const r = await fetch('/api/wallet/swap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: swapFrom, to: swapTo, fromAmount: amt }) })
                   const d = await r.json()
                   if (!r.ok) { setMsg({ type: 'error', text: d.error || 'Swap failed' }) }
                   else {
                     loadProfile(); loadTransactions()
+                    const fromAmt = amt
                     setSwapFromAmount(''); setSwapEstimate(null); setMsg(null)
-                    setSwapSuccess({ fromAmt: parseFloat(swapFromAmount), fromSym: swapFrom, toAmt: d.received, toSym: swapTo })
+                    setSwapSuccess({ fromAmt, fromSym: swapFrom, toAmt: d.received, toSym: swapTo })
                   }
                 } catch { setMsg({ type: 'error', text: 'Network error' }) }
                 finally { setLoading(false) }
-              }} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
-                {loading ? 'Swapping...' : 'Confirm Swap'}
-              </button>
-            )}
+              }} disabled={loading || !swapFromAmount || !swapEstimate} className="btn-primary" style={{ width: '100%', opacity: (!swapFromAmount || !swapEstimate) ? 0.5 : 1 }}>
+              {loading ? 'Swapping...' : swapEstimate ? `Swap ${swapFrom} → ${swapTo}` : 'Enter an amount'}
+            </button>
           </div>
         </div>
       )}

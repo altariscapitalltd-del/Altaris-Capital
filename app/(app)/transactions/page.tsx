@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { ArrowDownLeft, ArrowUpRight, Gift, LineChart, RefreshCw, Users, WalletCards } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Gift, LineChart, RefreshCw, Send, Users, WalletCards } from 'lucide-react'
 
 type Tx = {
   id: string
@@ -22,6 +22,10 @@ const TYPE_CONFIG: Record<string, { Icon: any; color: string; label: string; isC
   REFERRAL_BONUS: { Icon: Users, color: '#A78BFA', label: 'Referral Bonus', isCredit: true },
   REFERRAL: { Icon: Users, color: '#A78BFA', label: 'Referral Bonus', isCredit: true },
   ADJUSTMENT: { Icon: RefreshCw, color: '#94A3B8', label: 'Balance Update', isCredit: true },
+  SWAP: { Icon: ArrowLeftRight, color: '#60A5FA', label: 'Swap', isCredit: false },
+  TRANSFER: { Icon: Send, color: '#A78BFA', label: 'Transfer', isCredit: false },
+  TRANSFER_IN: { Icon: ArrowDownLeft, color: '#0ECB81', label: 'Transfer Received', isCredit: true },
+  TRANSFER_OUT: { Icon: Send, color: '#A78BFA', label: 'Transfer Sent', isCredit: false },
 }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -66,6 +70,7 @@ export default function TransactionsPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
+  const [selectedTx, setSelectedTx] = useState<Tx | null>(null)
   const loadSeq = useRef(0)
 
   const fetchPage = useCallback(async (cursor?: string | null, mode: 'initial' | 'more' = 'initial') => {
@@ -125,7 +130,7 @@ export default function TransactionsPage() {
     }
   }, [fetchPage, loadingMore, nextCursor])
 
-  const FILTERS = ['ALL', 'DEPOSIT', 'WITHDRAWAL', 'INVESTMENT', 'PROFIT', 'BONUS', 'REFERRAL_BONUS']
+  const FILTERS = ['ALL', 'DEPOSIT', 'WITHDRAWAL', 'SWAP', 'INVESTMENT', 'PROFIT', 'BONUS', 'REFERRAL_BONUS']
   const filtered = useMemo(() => txs.filter((t) => filter === 'ALL' || t.type === filter), [filter, txs])
 
   const totalIn = useMemo(() => txs.filter((t) => TYPE_CONFIG[t.type]?.isCredit).reduce((s, t) => s + t.amount, 0), [txs])
@@ -167,14 +172,16 @@ export default function TransactionsPage() {
             const prevDate = i > 0 ? new Date(filtered[i - 1].createdAt) : null
             const isNewDay = !prevDate || prevDate.toDateString() !== date.toDateString()
             const statusColor = STATUS_COLOR[tx.status] || 'var(--text-muted)'
+            const isSwap = tx.type === 'SWAP'
+            const isCredit = isSwap ? tx.note?.startsWith('Received') : cfg.isCredit
 
             return (
               <div key={tx.id}>
                 {isNewDay && <div style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 600, padding: '12px 0 6px', letterSpacing: '0.04em' }}>{date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}</div>}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 13, background: `${cfg.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, border: `1px solid ${cfg.color}25` }}><Icon size={19} strokeWidth={2.2} color={cfg.color} /></div>
+                <button onClick={() => setSelectedTx(tx)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', background: 'none', border: 'none', borderBottom: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 13, background: `${cfg.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${cfg.color}25` }}><Icon size={19} strokeWidth={2.2} color={cfg.color} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>{cfg.label}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{cfg.label}</div>
                     {tx.note && <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.note}</div>}
                     <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span>{date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -182,21 +189,86 @@ export default function TransactionsPage() {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: cfg.isCredit ? '#0ECB81' : '#F6465D' }}>{cfg.isCredit ? '+' : '-'}{tx.currency} {Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: 10, marginTop: 2 }}>{tx.currency === 'USD' ? '' : `≈ $${Math.abs(tx.amount).toFixed(2)}`}</div>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: isCredit ? '#0ECB81' : isSwap ? '#60A5FA' : '#F6465D' }}>{isCredit ? '+' : isSwap ? '' : '-'}{tx.currency} {Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 8 })}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: 10, marginTop: 2 }}>
+                      <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ opacity: 0.4, verticalAlign: 'middle', marginRight: 2 }}><path d="M9 5l7 7-7 7"/></svg>
+                    </div>
                   </div>
-                </div>
+                </button>
               </div>
             )
           })}
 
           {hasMore && (
             <button onClick={loadMore} disabled={loadingMore} style={{ width: '100%', marginTop: 16, padding: 13, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, color: 'var(--text-secondary)', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', opacity: loadingMore ? 0.7 : 1 }}>
-              {loadingMore ? 'Loading…' : nextCursor ? 'Load more' : 'Load more'}
+              {loadingMore ? 'Loading…' : 'Load more'}
             </button>
           )}
         </div>
       )}
+
+      {/* ── Transaction detail bottom sheet ── */}
+      {selectedTx && (() => {
+        const cfg = TYPE_CONFIG[selectedTx.type] || { Icon: WalletCards, color: 'var(--text-muted)', label: selectedTx.type, isCredit: false }
+        const Icon = cfg.Icon
+        const date = new Date(selectedTx.createdAt)
+        const isSwap = selectedTx.type === 'SWAP'
+        const isCredit = isSwap ? selectedTx.note?.startsWith('Received') : cfg.isCredit
+        const statusColor = STATUS_COLOR[selectedTx.status] || 'var(--text-muted)'
+        return (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 90, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)' }} onClick={() => setSelectedTx(null)} />
+            <div style={{ position: 'relative', background: '#0D0E12', borderRadius: '22px 22px 0 0', border: '1px solid rgba(255,255,255,0.07)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}>
+              {/* Handle */}
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+                <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.12)' }} />
+              </div>
+              <div style={{ padding: '12px 20px 20px' }}>
+                {/* Icon + type */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22 }}>
+                  <div style={{ width: 54, height: 54, borderRadius: 16, background: `${cfg.color}15`, border: `1px solid ${cfg.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon size={24} strokeWidth={2} color={cfg.color} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 18 }}>{cfg.label}</div>
+                    <div style={{ color: statusColor, fontSize: 12, fontWeight: 700, marginTop: 3 }}>{selectedTx.status}</div>
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '16px 18px', marginBottom: 16 }}>
+                  <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', marginBottom: 6 }}>AMOUNT</div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: isCredit ? '#0ECB81' : isSwap ? '#60A5FA' : '#F6465D', letterSpacing: '-0.02em' }}>
+                    {isCredit ? '+' : isSwap ? '' : '−'}{Math.abs(selectedTx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 8 })} {selectedTx.currency}
+                  </div>
+                </div>
+
+                {/* Details rows */}
+                <div style={{ display: 'grid', gap: 1, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)', marginBottom: 16 }}>
+                  {[
+                    { label: 'Type', value: cfg.label },
+                    { label: 'Date', value: date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) },
+                    { label: 'Time', value: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) },
+                    { label: 'Status', value: selectedTx.status, color: statusColor },
+                    { label: 'Currency', value: selectedTx.currency },
+                    ...(selectedTx.note ? [{ label: 'Description', value: selectedTx.note }] : []),
+                    { label: 'Transaction ID', value: selectedTx.id, mono: true },
+                  ].map(row => (
+                    <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, padding: '12px 16px', background: '#111' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, flexShrink: 0 }}>{row.label}</span>
+                      <span style={{ color: (row as any).color || 'var(--text-primary)', fontSize: 12, fontWeight: 600, textAlign: 'right', wordBreak: 'break-all', fontFamily: (row as any).mono ? 'ui-monospace, monospace' : 'inherit', opacity: (row as any).mono ? 0.6 : 1 }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button onClick={() => setSelectedTx(null)} style={{ width: '100%', padding: '14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, color: 'var(--text-primary)', fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

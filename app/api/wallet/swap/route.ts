@@ -13,24 +13,26 @@ const schema = z.object({
 
 const FEE = 0.005  // 0.5% platform swap fee
 
+const COIN_IDS: Record<string, string> = {
+  BTC: 'bitcoin', ETH: 'ethereum', BNB: 'binancecoin', SOL: 'solana',
+  XRP: 'ripple', ADA: 'cardano', DOGE: 'dogecoin', MATIC: 'matic-network',
+  AVAX: 'avalanche-2', LINK: 'chainlink', UNI: 'uniswap', AAVE: 'aave',
+  SHIB: 'shiba-inu', PEPE: 'pepe', ARB: 'arbitrum', OP: 'optimism',
+  TRX: 'tron', LTC: 'litecoin', DOT: 'polkadot', ATOM: 'cosmos',
+  NEAR: 'near', FTM: 'fantom', CAKE: 'pancakeswap-token', WBTC: 'wrapped-bitcoin',
+  DAI: 'dai', RAY: 'raydium', JUP: 'jupiter-exchange-solana', BONK: 'bonk',
+}
+
 async function getLivePrice(sym: string): Promise<number | null> {
   if (sym === 'USD' || sym === 'USDT' || sym === 'USDC') return 1
   try {
+    // Use the correct CoinGecko ID for both the URL AND the response key lookup
+    const id = COIN_IDS[sym] || sym.toLowerCase()
     const res = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(sym.toLowerCase())}&vs_currencies=usd`,
+      `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(id)}&vs_currencies=usd`,
       { next: { revalidate: 60 } }
     )
     const d = await res.json()
-    // Try by symbol name directly, fall back to common map
-    const COIN_IDS: Record<string, string> = {
-      BTC: 'bitcoin', ETH: 'ethereum', BNB: 'binancecoin', SOL: 'solana',
-      XRP: 'ripple', ADA: 'cardano', DOGE: 'dogecoin', MATIC: 'matic-network',
-      AVAX: 'avalanche-2', LINK: 'chainlink', UNI: 'uniswap', AAVE: 'aave',
-      SHIB: 'shiba-inu', PEPE: 'pepe', ARB: 'arbitrum', OP: 'optimism',
-      TRX: 'tron', LTC: 'litecoin', DOT: 'polkadot', ATOM: 'cosmos',
-      NEAR: 'near', FTM: 'fantom', CAKE: 'pancakeswap-token',
-    }
-    const id = COIN_IDS[sym] || sym.toLowerCase()
     return d[id]?.usd ?? null
   } catch {
     return null
