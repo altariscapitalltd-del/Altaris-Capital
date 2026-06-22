@@ -10,13 +10,13 @@ import { prisma } from './db'
  * SUCCESS deposit transaction). Withdrawals (negative deltas) only lower the
  * baseline — the app debits those separately. Run it from a cron.
  *
- * NOTE: public endpoints are best-effort/rate-limited. For production scale,
- * point RPC_* at dedicated providers via env.
+ * EVM chains use Alchemy (ALCHEMY_API_KEY) when set; falls back to public nodes.
  */
 
+const _alchemy = process.env.ALCHEMY_API_KEY
 const RPC = {
-  eth: process.env.ETH_RPC_URL || 'https://ethereum-rpc.publicnode.com',
-  bsc: process.env.BSC_RPC_URL || 'https://bsc-rpc.publicnode.com',
+  eth: process.env.ETH_RPC_URL || (_alchemy ? `https://eth-mainnet.g.alchemy.com/v2/${_alchemy}` : 'https://ethereum-rpc.publicnode.com'),
+  bsc: process.env.BSC_RPC_URL || (_alchemy ? `https://bnb-mainnet.g.alchemy.com/v2/${_alchemy}` : 'https://bsc-rpc.publicnode.com'),
   sol: process.env.SOL_RPC_URL || 'https://api.mainnet-beta.solana.com',
   xrp: process.env.XRP_RPC_URL || 'https://xrplcluster.com',
 }
