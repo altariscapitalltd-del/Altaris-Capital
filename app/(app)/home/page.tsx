@@ -213,11 +213,13 @@ export default function HomePage() {
   // FIX: mobile waits longer, prevents paint jank on first load
   const sectionsReady = useIdleReady(isMobile ? 600 : 100)
 
-  // FIX: read user from layout's localStorage cache first — avoids duplicate API call
+  // Seed from localStorage so first paint has both balances AND prices — no flash
   useEffect(() => {
     try {
       const cached = localStorage.getItem('altaris_user_cache')
       if (cached) { setUser(JSON.parse(cached)); setLoading(false) }
+      const cachedCoins = localStorage.getItem('altaris_coins_cache')
+      if (cachedCoins) setCoins(JSON.parse(cachedCoins))
     } catch {}
   }, [])
 
@@ -245,8 +247,10 @@ export default function HomePage() {
         // FIX: skip state update if data is unchanged — no re-render, no sparkline redraw
         if (hash !== coinsHashRef.current) {
           coinsHashRef.current = hash
-          // FIX: startTransition marks this as non-urgent — UI stays responsive
-          startTransition(() => setCoins(next))
+          startTransition(() => {
+            setCoins(next)
+            try { localStorage.setItem('altaris_coins_cache', JSON.stringify(next)) } catch {}
+          })
         }
       })
       .catch(() => {})

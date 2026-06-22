@@ -289,6 +289,8 @@ export default function WalletPage() {
             if (sym) mapped[sym] = { price: Number(c.price || 0), change: Number(c.change24h || 0), image: c.image || '', spark: Array.isArray(c.spark) ? c.spark : [] }
           })
           setMarketPrices(mapped)
+          // Pre-seed receive sheet with top-40 logos so it never shows text glyphs
+          if (d.list?.length) setReceiveCoinList(d.list)
         }
       } finally {
         if (!cancelled) setReady(true)
@@ -316,12 +318,13 @@ export default function WalletPage() {
 
   useEffect(() => {
     if (!(showManage || (tab === 'deposit' && depositMode === 'network'))) return
-    if (receiveLoaded) return
+    if (receiveLoaded) return  // already have full 250
+    if (receiveCoinList.length >= 200) { setReceiveLoaded(true); return }  // pre-seeded already large
     fetch('/api/markets/list?per_page=250')
       .then(r => r.json())
       .then(d => { setReceiveCoinList(d.list || []); setReceiveLoaded(true) })
       .catch(() => setReceiveLoaded(true))
-  }, [tab, depositMode, showManage, receiveLoaded])
+  }, [tab, depositMode, showManage, receiveLoaded, receiveCoinList.length])
 
   useEffect(() => {
     const address = coin === 'BTC' ? chainAddrs.btc : coin === 'SOL' ? chainAddrs.sol : coin === 'XRP' ? chainAddrs.xrp : userWallet
@@ -772,7 +775,7 @@ export default function WalletPage() {
                 ))}
               </div>
               <div className="network-list">
-                {!receiveLoaded && receiveCoinList.length === 0 && (
+                {receiveCoinList.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--text-muted)', fontSize: 13 }}>Loading coins…</div>
                 )}
                 {receiveLoaded && filteredReceiveCoins.length === 0 && (
