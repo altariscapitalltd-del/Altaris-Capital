@@ -246,7 +246,10 @@ function WalletContent() {
   const [userWallet, setUserWallet] = useState('')
   const [chainAddrs, setChainAddrs] = useState<{ btc?: string; sol?: string; xrp?: string }>({})
   const [balanceHidden, setBalanceHidden] = useState(false)
-  const [selectedFiat, setSelectedFiat] = useState('USD')
+  const [selectedFiat, setSelectedFiat] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'USD'
+    return localStorage.getItem('altaris:fiat') || 'USD'
+  })
   const [showFiatPicker, setShowFiatPicker] = useState(false)
   const [coinPickerTarget, setCoinPickerTarget] = useState<'sendCurrency' | 'swapFrom' | 'swapTo' | null>(null)
   const [coinPickerSearch, setCoinPickerSearch] = useState('')
@@ -854,7 +857,7 @@ function WalletContent() {
           {showFiatPicker && (
             <div style={{ position: 'absolute', top: '110%', left: '50%', transform: 'translateX(-50%)', width: 280, maxHeight: 260, overflowY: 'auto', background: '#0D0E12', border: '1px solid rgba(201,162,39,0.25)', borderRadius: 14, zIndex: 90, boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}>
               {FIAT_CURRENCIES.map(f => (
-                <button key={f.code} type="button" onClick={() => { setSelectedFiat(f.code); setShowFiatPicker(false) }}
+                <button key={f.code} type="button" onClick={() => { setSelectedFiat(f.code); setShowFiatPicker(false); try { localStorage.setItem('altaris:fiat', f.code) } catch {} }}
                   style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 14px', background: f.code === selectedFiat ? 'rgba(201,162,39,0.1)' : 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', fontFamily: 'inherit', color: f.code === selectedFiat ? '#C9A227' : '#ECE7DB', textAlign: 'left' }}>
                   <span style={{ minWidth: 32, fontWeight: 800, fontSize: 12 }}>{f.symbol}</span>
                   <span style={{ fontWeight: 700, fontSize: 13 }}>{f.code}</span>
@@ -868,9 +871,15 @@ function WalletContent() {
 
         {/* balance in selected fiat */}
         <button type="button" onClick={() => setBalanceHidden((h) => !h)} style={{ display: 'block', width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', marginTop: 12, fontFamily: 'inherit' }}>
-          <div className="notranslate font-display" translate="no" style={{ fontSize: 'clamp(40px, 12vw, 52px)', fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, color: '#ECE7DB', fontVariantNumeric: 'tabular-nums' }}>
-            {balanceHidden ? '••••••' : `${fiatSymbol}${walletBalanceFiat.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          </div>
+          {(() => {
+            const balStr = balanceHidden ? '••••••' : `${fiatSymbol}${walletBalanceFiat.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            const fs = balStr.length > 17 ? 'clamp(18px, 5vw, 24px)' : balStr.length > 13 ? 'clamp(24px, 7vw, 34px)' : 'clamp(38px, 11vw, 50px)'
+            return (
+              <div className="notranslate font-display" translate="no" style={{ fontSize: fs, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1, color: '#ECE7DB', fontVariantNumeric: 'tabular-nums' }}>
+                {balStr}
+              </div>
+            )
+          })()}
           <div className="notranslate" translate="no" style={{ marginTop: 9, fontSize: 14, fontWeight: 700, color: cryptoPL >= 0 ? 'var(--success)' : 'var(--danger)', fontVariantNumeric: 'tabular-nums' }}>
             {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '−'}$${Math.abs(cryptoPL).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} today`}
           </div>

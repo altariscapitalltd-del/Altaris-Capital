@@ -262,6 +262,19 @@ function hashCoins(coins: any[]) {
 type LiveCoin = { sym: string; name: string; price: number; change: number; spark: number[] }
 const FEATURED_PLAN = { name: 'DeFi Accelerator', roi: '3.5%', spots: 3, endsAt: new Date(Date.now() + 2 * 86_400_000 + 14 * 3_600_000) }
 
+const FIAT_RATES: Record<string, number> = {
+  USD:1, EUR:0.92, GBP:0.79, JPY:157, CNY:7.25, CAD:1.37, AUD:1.52, CHF:0.9,
+  SGD:1.35, HKD:7.82, NZD:1.63, SEK:10.5, NOK:10.6, DKK:6.88, INR:83.5,
+  AED:3.67, SAR:3.75, NGN:1550, BRL:5.1, MXN:17.2, ZAR:18.5, KRW:1350,
+  TRY:32.5, IDR:16200, PHP:58, THB:36, VND:25000,
+}
+const FIAT_SYMBOLS: Record<string, string> = {
+  USD:'$', EUR:'€', GBP:'£', JPY:'¥', CNY:'¥', CAD:'$', AUD:'$', CHF:'Fr',
+  SGD:'$', HKD:'$', NZD:'$', SEK:'kr', NOK:'kr', DKK:'kr', INR:'₹',
+  AED:'د.إ', SAR:'﷼', NGN:'₦', BRL:'R$', MXN:'$', ZAR:'R', KRW:'₩',
+  TRY:'₺', IDR:'Rp', PHP:'₱', THB:'฿', VND:'₫',
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [user, setUser] = useState<any>(null)
@@ -270,6 +283,10 @@ export default function HomePage() {
   const [bonusDone, setBonusDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [transactions, setTransactions] = useState<any[]>([])
+  const [selectedFiat, setSelectedFiat] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'USD'
+    return localStorage.getItem('altaris:fiat') || 'USD'
+  })
   const coinsHashRef = useRef('')
   const isMobile = useIsMobile()
   // FIX: mobile waits longer, prevents paint jank on first load
@@ -421,14 +438,21 @@ export default function HomePage() {
             }
           </button>
         </div>
-        <div className="statement-value notranslate" translate="no">
-          {balanceHidden
-            ? '••••••'
-            : (() => {
-                const [whole, cents] = usdBal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).split('.')
-                return <>${whole}<span className="cents">.{cents}</span></>
+        {(() => {
+          const fiatRate = FIAT_RATES[selectedFiat] || 1
+          const fiatSymbol = FIAT_SYMBOLS[selectedFiat] || '$'
+          const converted = usdBal * fiatRate
+          const displayStr = balanceHidden ? '••••••' : `${fiatSymbol}${converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          const overrideFontSize = displayStr.length > 17 ? 22 : displayStr.length > 13 ? 32 : undefined
+          return (
+            <div className="statement-value notranslate" translate="no" style={overrideFontSize ? { fontSize: overrideFontSize } : undefined}>
+              {balanceHidden ? '••••••' : (() => {
+                const [whole, cents] = converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).split('.')
+                return <>{fiatSymbol}{whole}<span className="cents">.{cents}</span></>
               })()}
-        </div>
+            </div>
+          )
+        })()}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
           <span className="num notranslate" translate="no" style={{ color: cryptoPL >= 0 ? 'var(--success)' : 'var(--danger)', fontSize: 13, fontWeight: 600 }}>
             {balanceHidden ? '••••' : `${cryptoPL >= 0 ? '+' : '−'}$${Math.abs(cryptoPL).toFixed(2)} today`}

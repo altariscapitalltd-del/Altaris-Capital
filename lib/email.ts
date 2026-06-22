@@ -142,29 +142,37 @@ function renderEmail(opts: {
     .join('')
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
   <title>${opts.eyebrow} — Altaris Capital</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { background-color: #0A0B0E !important; }
+    @media (prefers-color-scheme: dark) {
+      body { background-color: #0A0B0E !important; }
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;background-color:#0A0B0E;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<body bgcolor="#0A0B0E" style="margin:0;padding:0;background-color:#0A0B0E !important;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
 
   <!-- Preview text (hidden) -->
   <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${opts.title} — Altaris Capital</div>
 
   <!-- Outer wrapper -->
-  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#0A0B0E;min-height:100vh;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#0A0B0E" style="background-color:#0A0B0E;min-height:100vh;">
     <tr>
-      <td align="center" valign="top" style="padding:40px 16px;">
+      <td align="center" valign="top" bgcolor="#0A0B0E" style="padding:40px 16px;background-color:#0A0B0E;">
 
         <!-- Email card — max 600px -->
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;">
 
           <!-- ── HEADER ── -->
           <tr>
-            <td style="background-color:#111214;border:1px solid #1E2028;border-bottom:none;border-radius:16px 16px 0 0;padding:24px 32px;">
+            <td bgcolor="#111214" style="background-color:#111214;border:1px solid #1E2028;border-bottom:none;border-radius:16px 16px 0 0;padding:24px 32px;">
               <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <!-- Gold triangle logomark -->
@@ -183,12 +191,12 @@ function renderEmail(opts: {
 
           <!-- Gold accent bar -->
           <tr>
-            <td style="background:linear-gradient(90deg,#C9A227 0%,rgba(201,162,39,0.15) 100%);height:2px;border-left:1px solid #1E2028;border-right:1px solid #1E2028;"></td>
+            <td bgcolor="#C9A227" style="background:linear-gradient(90deg,#C9A227 0%,rgba(201,162,39,0.4) 100%);background-color:#C9A227;height:2px;border-left:1px solid #1E2028;border-right:1px solid #1E2028;line-height:2px;font-size:2px;">&nbsp;</td>
           </tr>
 
           <!-- ── BODY CARD ── -->
           <tr>
-            <td style="background-color:#111214;border:1px solid #1E2028;border-top:none;border-bottom:none;padding:36px 32px 28px;">
+            <td bgcolor="#111214" style="background-color:#111214;border:1px solid #1E2028;border-top:none;border-bottom:none;padding:36px 32px 28px;">
 
               <!-- Eyebrow label -->
               <p style="margin:0 0 10px 0;font-family:Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.20em;text-transform:uppercase;color:#C9A227;">${opts.eyebrow}</p>
@@ -197,7 +205,7 @@ function renderEmail(opts: {
               <h1 style="margin:0 0 6px 0;font-family:Arial,sans-serif;font-size:24px;font-weight:700;color:#FFFFFF;line-height:1.25;">Hello, ${opts.name}</h1>
 
               <!-- Title / subheading -->
-              <p style="margin:0 0 20px 0;font-family:Arial,sans-serif;font-size:15px;color:#8B8FA8;line-height:1.55;">${opts.title}</p>
+              <p style="margin:0 0 20px 0;font-family:Arial,sans-serif;font-size:15px;color:#A0A4B8;line-height:1.55;">${opts.title}</p>
 
               <!-- Divider -->
               <div style="height:1px;background-color:#1E2028;margin-bottom:24px;"></div>
@@ -229,16 +237,16 @@ function renderEmail(opts: {
           <!-- ── FOOTER NOTE ── -->
           ${opts.footer ? `
           <tr>
-            <td style="background-color:#0F1013;border:1px solid #1E2028;border-top:none;border-bottom:none;padding:18px 32px;">
+            <td bgcolor="#0F1013" style="background-color:#0F1013;border:1px solid #1E2028;border-top:none;border-bottom:none;padding:18px 32px;">
               <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#8B8FA8;line-height:1.6;">${opts.footer}</p>
             </td>
           </tr>` : ''}
 
           <!-- ── LEGAL FOOTER ── -->
           <tr>
-            <td style="background-color:#0A0B0E;border:1px solid #1E2028;border-top:1px solid #1E2028;border-radius:0 0 16px 16px;padding:20px 32px;text-align:center;">
+            <td bgcolor="#0A0B0E" style="background-color:#0A0B0E;border:1px solid #1E2028;border-top:1px solid #1E2028;border-radius:0 0 16px 16px;padding:20px 32px;text-align:center;">
               <p style="margin:0 0 6px 0;font-family:Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.16em;color:#8B8FA8;text-transform:uppercase;">Altaris Capital</p>
-              <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#3D4052;line-height:1.6;">
+              <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#555A70;line-height:1.6;">
                 &copy; ${new Date().getFullYear()} Altaris Capital. All rights reserved.<br>
                 This email was sent to you as a registered user of the Altaris Capital platform.<br>
                 Please do not reply to this email — it is sent from an unmonitored address.
