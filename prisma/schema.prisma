@@ -102,6 +102,7 @@ model Investment {
   planId      String
   planName    String
   amount      Float
+  currency    String           @default("USD")
   dailyRoi    Float
   startDate   DateTime         @default(now())
   endDate     DateTime

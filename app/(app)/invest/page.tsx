@@ -84,22 +84,37 @@ function InvestContent() {
   const [claimingId, setClaimingId] = useState<string | null>(null)
   const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set())
   const [coinImageMap, setCoinImageMap] = useState<Record<string, string>>({})
+  const [payCurrency, setPayCurrency] = useState('USDT')
+  const [showPayPicker, setShowPayPicker] = useState(false)
+  const [userBalances, setUserBalances] = useState<{ currency: string; amount: number }[]>([])
+  const [priceMap, setPriceMap] = useState<Record<string, number>>({ USD: 1, USDT: 1, USDC: 1 })
 
   useBodyScrollLock(sheetOpen)
 
   useEffect(() => {
-    // Load plans + fetch coin images from market API in parallel
+    // Load plans + coin images + user balances + prices
     Promise.all([
       fetch('/api/investments/plans').then(r => r.json()).catch(() => ({ plans: [] })),
       fetch('/api/markets/list?per_page=100').then(r => r.json()).catch(() => ({ list: [] })),
-    ]).then(([plansData, mktData]) => {
+      fetch('/api/user/profile').then(r => r.json()).catch(() => ({})),
+    ]).then(([plansData, mktData, profileData]) => {
       setPlans(plansData.plans || [])
       setLoading(false)
       const imgMap: Record<string, string> = {}
+      const pMap: Record<string, number> = { USD: 1, USDT: 1, USDC: 1 }
       ;(mktData.list || []).forEach((c: any) => {
         if (c.symbol && c.image) imgMap[String(c.symbol).toUpperCase()] = c.image
+        if (c.symbol && c.current_price) pMap[String(c.symbol).toUpperCase()] = c.current_price
       })
       setCoinImageMap(imgMap)
+      setPriceMap(pMap)
+      const bals: { currency: string; amount: number }[] = (profileData.balances || [])
+        .map((b: any) => ({ currency: String(b.currency).toUpperCase(), amount: Number(b.amount) }))
+        .filter((b: any) => b.amount > 0)
+      setUserBalances(bals)
+      // Default to USDT if available, else first non-zero crypto
+      if (bals.find(b => b.currency === 'USDT')) setPayCurrency('USDT')
+      else if (bals.length > 0) setPayCurrency(bals[0].currency)
     }).catch(() => setLoading(false))
   }, [])
 
@@ -126,20 +141,29 @@ function InvestContent() {
     setSelected(plan); setAmount(String(plan.minDeposit)); setMsg(null); setSheetOpen(true)
   }
   function closeSheet() {
-    setSheetOpen(false)
+    setSheetOpen(false); setShowPayPicker(false)
     setTimeout(() => { setSelected(null); setAmount(''); setMsg(null) }, 280)
   }
 
   async function invest() {
     if (!selected || !amount || investing) return
-    const amt = parseFloat(amount)
-    if (!amt || amt < selected.minDeposit) { setMsg({ type: 'error', text: `Minimum is $${selected.minDeposit}` }); return }
+    const usdAmt = parseFloat(amount)
+    if (!usdAmt || usdAmt < selected.minDeposit) { setMsg({ type: 'error', text: `Minimum is $${selected.minDeposit}` }); return }
+    // Convert USD amount to the chosen payment currency
+    const price = priceMap[payCurrency] || 1
+    const cryptoAmt = payCurrency === 'USD' ? usdAmt : Math.round((usdAmt / price) * 1e8) / 1e8
+    const payBal = userBalances.find(b => b.currency === payCurrency)?.amount || 0
+    if (cryptoAmt > payBal) { setMsg({ type: 'error', text: `Insufficient ${payCurrency} balance` }); return }
     setInvesting(true); setMsg(null)
     try {
       const res = await fetch('/api/investments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: selected.id, planName: selected.name, amount: amt, dailyRoi: selected.dailyRoi }),
+        body: JSON.stringify({
+          planId: selected.id, planName: selected.name,
+          amount: cryptoAmt, dailyRoi: selected.dailyRoi,
+          currency: payCurrency, usdEquivalent: usdAmt,
+        }),
       })
       const data = await res.json()
       if (!res.ok) setMsg({ type: 'error', text: data.error || 'Investment failed' })
@@ -155,7 +179,10 @@ function InvestContent() {
       const data = await res.json()
       if (res.ok) {
         setClaimedIds(prev => new Set(prev).add(invId))
-        setMsg({ type: 'success', text: `$${data.transferred?.toFixed(2) ?? '—'} transferred to wallet` })
+        const cur = data.currency || 'USD'
+        const amt = data.transferred
+        const display = (cur === 'USD' || cur === 'USDT' || cur === 'USDC') ? `$${Number(amt).toFixed(2)}` : `${Number(amt).toFixed(6)} ${cur}`
+        setMsg({ type: 'success', text: `${display} transferred to wallet` })
         fetch('/api/investments').then(r => r.json()).then(d => { setUserInvestments(d.investments || []); setSummary(d.summary) })
       } else setMsg({ type: 'error', text: data.error || 'Transfer failed' })
     } catch { setMsg({ type: 'error', text: 'Network error' }) }
@@ -284,16 +311,23 @@ function InvestContent() {
                         <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 800, background: 'rgba(201,162,39,0.12)', color: '#C9A227', border: '1px solid rgba(201,162,39,0.25)' }}>ACTIVE</span>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: '10px 12px' }}>
-                          <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2 }}>Invested</div>
-                          <div style={{ fontWeight: 800, fontSize: 18 }}>${inv.amount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                        </div>
-                        <div style={{ background: inv.hasStartedEarning ? 'rgba(14,203,129,0.07)' : 'rgba(201,162,39,0.07)', border: `1px solid ${inv.hasStartedEarning ? 'rgba(14,203,129,0.15)' : 'rgba(201,162,39,0.15)'}`, borderRadius: 10, padding: '10px 12px' }}>
-                          <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2 }}>Profit Earned</div>
-                          {inv.hasStartedEarning
-                            ? <div style={{ fontWeight: 800, fontSize: 18, color: '#0ECB81' }}>+${inv.profitEarned?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                            : <div style={{ fontWeight: 700, fontSize: 13, color: '#C9A227' }}>Starts in {inv.hoursUntilProfit}h</div>}
-                        </div>
+                        {(() => {
+                          const cur = inv.currency || 'USD'
+                          const isStable = cur === 'USD' || cur === 'USDT' || cur === 'USDC'
+                          const fmtAmt = (n: number) => isStable ? `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `${n.toFixed(6)} ${cur}`
+                          return (<>
+                          <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: '10px 12px' }}>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2 }}>Invested</div>
+                            <div style={{ fontWeight: 800, fontSize: isStable ? 18 : 14 }}>{fmtAmt(inv.amount || 0)}</div>
+                          </div>
+                          <div style={{ background: inv.hasStartedEarning ? 'rgba(14,203,129,0.07)' : 'rgba(201,162,39,0.07)', border: `1px solid ${inv.hasStartedEarning ? 'rgba(14,203,129,0.15)' : 'rgba(201,162,39,0.15)'}`, borderRadius: 10, padding: '10px 12px' }}>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 2 }}>Profit Earned</div>
+                            {inv.hasStartedEarning
+                              ? <div style={{ fontWeight: 800, fontSize: isStable ? 18 : 14, color: '#0ECB81' }}>+{fmtAmt(inv.profitEarned || 0)}</div>
+                              : <div style={{ fontWeight: 700, fontSize: 13, color: '#C9A227' }}>Starts in {inv.hoursUntilProfit}h</div>}
+                          </div>
+                          </>)
+                        })()}
                       </div>
                       <div style={{ background: 'var(--bg-elevated)', borderRadius: 99, height: 5, overflow: 'hidden', marginBottom: 5 }}>
                         <div style={{ height: '100%', background: 'linear-gradient(90deg,#C9A227,#0ECB81)', width: `${inv.progressPct || 0}%`, borderRadius: 99 }} />
@@ -305,7 +339,12 @@ function InvestContent() {
                       {(inv.status === 'COMPLETED' || (inv.endDate && new Date() >= new Date(inv.endDate))) && !claimedIds.has(inv.id) && (
                         <button onClick={() => claimInvestment(inv.id)} disabled={claimingId === inv.id}
                           style={{ marginTop: 12, width: '100%', padding: '12px', background: 'linear-gradient(135deg,#C9A227,#E4C25C)', color: '#000', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: claimingId === inv.id ? 'not-allowed' : 'pointer', opacity: claimingId === inv.id ? 0.7 : 1, fontFamily: 'inherit' }}>
-                          {claimingId === inv.id ? 'Transferring...' : `Claim $${inv.totalValue?.toFixed(2)} to Wallet`}
+                          {(() => {
+                            const cur = inv.currency || 'USD'
+                            const isStable = cur === 'USD' || cur === 'USDT' || cur === 'USDC'
+                            const tv = isStable ? `$${inv.totalValue?.toFixed(2)}` : `${Number(inv.totalValue).toFixed(6)} ${cur}`
+                            return claimingId === inv.id ? 'Transferring...' : `Claim ${tv} to Wallet`
+                          })()}
                         </button>
                       )}
                       {claimedIds.has(inv.id) && <div style={{ marginTop: 10, textAlign: 'center', fontSize: 12, color: '#0ECB81', fontWeight: 700 }}>Transferred to wallet</div>}
@@ -347,7 +386,7 @@ function InvestContent() {
       {/* ── Invest sheet ── */}
       {selected && typeof document !== 'undefined' && createPortal(
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 120, opacity: sheetOpen ? 1 : 0, transition: 'opacity 0.22s ease' }}
-          onClick={e => { if (e.target === e.currentTarget) closeSheet() }}>
+          onClick={e => { if (e.target === e.currentTarget) { closeSheet(); setShowPayPicker(false) } }}>
           <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(78px + env(safe-area-inset-bottom))', margin: '0 auto', maxWidth: 480, width: 'calc(100% - 16px)', background: '#0D0E12', border: '1px solid rgba(255,255,255,0.09)', borderRadius: '22px 22px 16px 16px', maxHeight: 'calc(100svh - 120px)', display: 'flex', flexDirection: 'column', overflow: 'hidden', transform: `translateY(${sheetOpen ? '0%' : '115%'})`, transition: `transform ${sheetOpen ? '0.38s cubic-bezier(0.32,0.72,0,1)' : '0.28s cubic-bezier(0.4,0,1,1)'}` }}>
             {/* Handle */}
             <div style={{ padding: '14px 24px 0', textAlign: 'center' }}>
@@ -378,13 +417,55 @@ function InvestContent() {
                   </div>
                 ))}
               </div>
-              {/* Amount input */}
+              {/* Amount input + Pay with picker */}
               <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, marginBottom: 8 }}>Investment Amount (USD)</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)', fontSize: 18 }}>$</span>
-                  <input style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', padding: '14px 14px 14px 34px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', fontSize: 22, fontWeight: 800, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} type="number" value={amount} onChange={e => { setAmount(e.target.value); setMsg(null) }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <label style={{ color: 'var(--text-muted)', fontSize: 12 }}>Investment Amount (USD)</label>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Min ${selected.minDeposit.toLocaleString()}</span>
                 </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)', fontSize: 18 }}>$</span>
+                    <input style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', padding: '14px 14px 14px 34px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', fontSize: 22, fontWeight: 800, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} type="number" value={amount} onChange={e => { setAmount(e.target.value); setMsg(null) }} placeholder="0" />
+                  </div>
+                  {/* Pay with button */}
+                  <div style={{ position: 'relative' }}>
+                    <button onClick={() => setShowPayPicker(p => !p)} style={{ height: '100%', minWidth: 80, display: 'flex', alignItems: 'center', gap: 6, padding: '0 12px', background: 'rgba(201,162,39,0.08)', border: '1px solid rgba(201,162,39,0.25)', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', color: '#ECE7DB', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                      {coinImageMap[payCurrency]
+                        ? <img src={coinImageMap[payCurrency]} alt={payCurrency} style={{ width: 18, height: 18, borderRadius: '50%' }} />
+                        : <span style={{ width: 18, height: 18, background: '#C9A227', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#000', fontWeight: 900 }}>{payCurrency[0]}</span>
+                      }
+                      {payCurrency} <span style={{ opacity: 0.5, fontSize: 10 }}>▾</span>
+                    </button>
+                    {showPayPicker && (
+                      <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#0D0E12', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, zIndex: 10, minWidth: 180, maxHeight: 240, overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+                        <div style={{ padding: '8px 12px 4px', fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.08em' }}>PAY WITH</div>
+                        {userBalances.length === 0
+                          ? <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-muted)' }}>No funded wallets</div>
+                          : userBalances.map(b => (
+                          <button key={b.currency} onClick={() => { setPayCurrency(b.currency); setShowPayPicker(false) }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 12px', background: b.currency === payCurrency ? 'rgba(201,162,39,0.08)' : 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', color: b.currency === payCurrency ? '#C9A227' : '#ECE7DB', textAlign: 'left' }}>
+                            {coinImageMap[b.currency]
+                              ? <img src={coinImageMap[b.currency]} alt={b.currency} style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0 }} />
+                              : <span style={{ width: 22, height: 22, background: '#1a1a1a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#C9A227', fontWeight: 900, flexShrink: 0 }}>{b.currency[0]}</span>
+                            }
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: 13 }}>{b.currency}</div>
+                              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{b.amount > 1000 ? b.amount.toLocaleString('en-US', { maximumFractionDigits: 2 }) : b.amount.toFixed(6)}</div>
+                            </div>
+                            {b.currency === payCurrency && <span style={{ color: '#C9A227', fontSize: 13 }}>✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Crypto equivalent helper */}
+                {amount && parseFloat(amount) > 0 && payCurrency !== 'USD' && payCurrency !== 'USDT' && payCurrency !== 'USDC' && (
+                  <div style={{ marginTop: 6, fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
+                    ≈ {(parseFloat(amount) / (priceMap[payCurrency] || 1)).toFixed(6)} {payCurrency} will be deducted
+                  </div>
+                )}
               </div>
               {/* Quick amounts */}
               <div style={{ display: 'flex', gap: 7, marginBottom: 16 }}>
@@ -392,10 +473,10 @@ function InvestContent() {
                   <button key={v} onClick={() => setAmount(String(v))} style={{ flex: 1, padding: '7px 4px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.09)', background: Number(amount) === v ? 'rgba(201,162,39,0.12)' : 'rgba(255,255,255,0.04)', color: Number(amount) === v ? '#C9A227' : 'var(--text-muted)', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>${v.toLocaleString()}</button>
                 ))}
               </div>
-              {/* Estimate */}
+              {/* Estimate — shows in USD (plan currency) */}
               {amount && parseFloat(amount) >= selected.minDeposit && (
                 <div style={{ background: 'rgba(14,203,129,0.05)', border: '1px solid rgba(14,203,129,0.15)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', marginBottom: 10 }}>PROFIT ESTIMATE</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.08em', marginBottom: 10 }}>PROFIT ESTIMATE (USD)</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <div>
                       <div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Daily</div>
@@ -414,8 +495,8 @@ function InvestContent() {
               {msg && <div style={{ padding: '10px 14px', borderRadius: 9, marginBottom: 12, fontSize: 13, fontWeight: 600, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)' }}>{msg.text}</div>}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
                 <button onClick={closeSheet} style={{ padding: '14px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-                <button onClick={invest} disabled={investing || !amount || parseFloat(amount || '0') < selected.minDeposit} style={{ padding: '14px', background: investing ? 'rgba(201,162,39,0.5)' : '#C9A227', color: '#000', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: investing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                  {investing ? 'Investing...' : `Invest $${parseFloat(amount || '0').toLocaleString()}`}
+                <button onClick={() => { setShowPayPicker(false); invest() }} disabled={investing || !amount || parseFloat(amount || '0') < selected.minDeposit} style={{ padding: '14px', background: investing ? 'rgba(201,162,39,0.5)' : '#C9A227', color: '#000', border: 'none', borderRadius: 12, fontWeight: 800, fontSize: 15, cursor: investing ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                  {investing ? 'Investing...' : `Invest $${parseFloat(amount || '0').toLocaleString()} via ${payCurrency}`}
                 </button>
               </div>
             </div>

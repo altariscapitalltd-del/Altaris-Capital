@@ -36,13 +36,14 @@ export async function POST(
 
   const state = calcInvestmentState(inv)
   const totalValue = Math.round((inv.amount + state.profitEarned) * 1e8) / 1e8
+  const currency = (inv as any).currency || 'USD'
 
   await prisma.$transaction([
-    // Credit USD balance
+    // Credit balance in the currency used to invest
     prisma.balance.upsert({
-      where: { userId_currency: { userId: payload.userId, currency: 'USD' } },
+      where: { userId_currency: { userId: payload.userId, currency } },
       update: { amount: { increment: totalValue } },
-      create: { userId: payload.userId, currency: 'USD', amount: totalValue },
+      create: { userId: payload.userId, currency, amount: totalValue },
     }),
     // Record the transfer as a transaction
     prisma.transaction.create({
@@ -50,7 +51,7 @@ export async function POST(
         userId: payload.userId,
         type: 'PROFIT',
         amount: totalValue,
-        currency: 'USD',
+        currency,
         status: 'SUCCESS',
         note: `plan_claim:${inv.id}`,
       },
@@ -62,5 +63,5 @@ export async function POST(
     }),
   ])
 
-  return NextResponse.json({ ok: true, transferred: totalValue })
+  return NextResponse.json({ ok: true, transferred: totalValue, currency })
 }

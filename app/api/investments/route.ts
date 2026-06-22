@@ -42,11 +42,12 @@ export async function POST(req: Request) {
   const payload = (await verifyToken(token)) as any
   if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { planId, planName, amount, dailyRoi } = await req.json()
+  const { planId, planName, amount, dailyRoi, currency = 'USD', usdEquivalent } = await req.json()
   if (!amount || amount <= 0) return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
 
-  const balance = await prisma.balance.findFirst({ where: { userId: payload.userId, currency: 'USD' } })
-  if (!balance || balance.amount < amount) return NextResponse.json({ error: 'Insufficient USD balance' }, { status: 400 })
+  const cur = String(currency).toUpperCase()
+  const balance = await prisma.balance.findFirst({ where: { userId: payload.userId, currency: cur } })
+  if (!balance || balance.amount < amount) return NextResponse.json({ error: `Insufficient ${cur} balance` }, { status: 400 })
 
   const DURATIONS: Record<string, number> = {
     'btc-yield': 14, 'eth-stake': 90, 'defi-accel': 7, 'altcoin': 30, 'btc-micro': 60, 'web3-venture': 20,
@@ -71,6 +72,7 @@ export async function POST(req: Request) {
         planId: planId || 'custom',
         planName: planName || 'Investment Plan',
         amount,
+        currency: cur,
         dailyRoi: dailyRoi || 0.01,
         startDate,
         endDate,
@@ -85,10 +87,10 @@ export async function POST(req: Request) {
       data: {
         userId: payload.userId,
         type: 'INVESTMENT',
-        currency: 'USD',
+        currency: cur,
         amount,
         status: 'SUCCESS',
-        note: `Invested in ${planName}`,
+        note: `Invested in ${planName}${usdEquivalent ? ` (~$${Number(usdEquivalent).toFixed(2)} USD)` : ''}`,
       },
     }),
     prisma.balanceSnapshot.create({
@@ -100,11 +102,11 @@ export async function POST(req: Request) {
     prisma,
     payload.userId,
     'Investment Started',
-    `Your $${amount.toLocaleString()} investment in ${planName || 'Investment Plan'} is now active. Profits begin after 24 hours.`,
+    `Your ${amount} ${cur} investment in ${planName || 'Investment Plan'} is now active. Profits begin after 24 hours.`,
     '/invest',
     'investment'
   )
-  await notifyAdminTelegram(`📈 <b>New Investment</b>\nUser: ${payload.userId}\nPlan: ${planName || 'Investment Plan'}\nAmount: $${Number(amount).toLocaleString()}`)
+  await notifyAdminTelegram(`📈 <b>New Investment</b>\nUser: ${payload.userId}\nPlan: ${planName || 'Investment Plan'}\nAmount: ${amount} ${cur}${usdEquivalent ? ` (~$${Number(usdEquivalent).toFixed(2)})` : ''}`)
 
   return NextResponse.json({ investment: { ...investment, ...calcInvestmentState(investment) } })
 }
