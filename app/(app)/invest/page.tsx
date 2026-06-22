@@ -402,27 +402,53 @@ function InvestContent() {
         </div>
       ) : (
         /* ── My Plans Tab ── */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {msg && <div style={{ padding: '10px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)' }}>{msg.text}</div>}
-          {!heavyReady && (
-            <div style={{ display:'grid', gap:12 }}>
-              <div style={{ height: 110, borderRadius: 16, background: 'rgba(255,255,255,0.05)' }} />
-              <div style={{ height: 160, borderRadius: 16, background: 'rgba(255,255,255,0.05)' }} />
-            </div>
-          )}
-          {userInvestments.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-card)', borderRadius: 20, border: '1px dashed var(--border)' }}>
-              <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        (() => {
+          const activePlans = userInvestments.filter((i: any) => i.status === 'ACTIVE')
+          const historyPlans = userInvestments.filter((i: any) => i.status === 'COMPLETED' || i.status === 'CANCELLED')
+
+          const PlanCard = ({ inv }: { inv: any }) => (
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div><div style={{ fontWeight: 800, fontSize: 15 }}>{inv.planName}</div><div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>{(inv.dailyRoi * 100).toFixed(2)}% daily · {inv.totalDurationDays}d plan</div></div>
+                <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 800, background: inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.1)' : inv.status === 'ACTIVE' ? 'rgba(242,186,14,0.1)' : 'rgba(246,70,93,0.1)', color: inv.status === 'COMPLETED' ? '#0ECB81' : inv.status === 'ACTIVE' ? '#C9A227' : '#F6465D', border: `1px solid ${inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.2)' : inv.status === 'ACTIVE' ? 'rgba(242,186,14,0.2)' : 'rgba(246,70,93,0.2)'}` }}>{inv.status}</span>
               </div>
-              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>No Active Investments</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>Start investing to grow your portfolio</div>
-              <button onClick={() => setTab('marketplace')} style={{ padding: '12px 28px', background: 'var(--brand-primary)', color: '#000', borderRadius: 10, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Browse Plans</button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: '10px 12px' }}><div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Invested</div><div style={{ fontWeight: 800, fontSize: 17 }}>${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
+                <div style={{ background: inv.hasStartedEarning ? 'rgba(14,203,129,0.07)' : 'rgba(242,186,14,0.07)', border: `1px solid ${inv.hasStartedEarning ? 'rgba(14,203,129,0.15)' : 'rgba(242,186,14,0.15)'}`, borderRadius: 10, padding: '10px 12px' }}><div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Profit Earned</div>{inv.hasStartedEarning ? <div style={{ fontWeight: 800, fontSize: 17, color: '#0ECB81' }}>+${inv.profitEarned.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div> : <div style={{ fontWeight: 700, fontSize: 13, color: '#C9A227' }}>Starts in {inv.hoursUntilProfit}h</div>}</div>
+              </div>
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: 99, height: 6, overflow: 'hidden', marginBottom: 6 }}><div style={{ height: '100%', background: `linear-gradient(90deg,#C9A227,${inv.hasStartedEarning ? '#0ECB81' : '#C9A227'})`, width: `${inv.progressPct || 0}%`, borderRadius: 99, transition: 'width .5s' }} /></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: 10, fontWeight: 600 }}><span>{Math.round(inv.progressPct || 0)}% complete</span><span>{inv.status === 'COMPLETED' ? 'Completed' : `${Math.ceil(inv.daysRemaining || 0)}d remaining`}</span></div>
+              {(inv.status === 'COMPLETED' || (inv.endDate && new Date() >= new Date(inv.endDate))) && !claimedIds.has(inv.id) && (
+                <button onClick={() => claimInvestment(inv.id)} disabled={claimingId === inv.id}
+                  style={{ marginTop: 12, width: '100%', padding: '11px', background: 'linear-gradient(135deg,#C9A227,#E4C25C)', color: '#000', border: 'none', borderRadius: 10, fontWeight: 800, fontSize: 13, cursor: claimingId === inv.id ? 'not-allowed' : 'pointer', opacity: claimingId === inv.id ? 0.7 : 1, fontFamily: 'inherit' }}>
+                  {claimingId === inv.id ? 'Transferring...' : `Transfer $${inv.totalValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to Wallet`}
+                </button>
+              )}
+              {claimedIds.has(inv.id) && (
+                <div style={{ marginTop: 10, textAlign: 'center', fontSize: 12, color: '#0ECB81', fontWeight: 700 }}>Transferred to wallet</div>
+              )}
             </div>
-          ) : (
-            <>
-              {summary && (
-                <div style={{ background: 'linear-gradient(180deg, rgba(242,186,14,0.14), rgba(12,16,24,0.96))', border: '1px solid rgba(242,186,14,0.18)', borderRadius: 22, padding: 16, marginBottom: 14, boxShadow: '0 18px 40px rgba(0,0,0,0.22)' }}>
+          )
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {msg && <div style={{ padding: '10px 14px', borderRadius: 9, fontSize: 13, fontWeight: 600, background: msg.type === 'success' ? 'var(--success-bg)' : 'var(--danger-bg)', color: msg.type === 'success' ? 'var(--success)' : 'var(--danger)' }}>{msg.text}</div>}
+
+              {/* Empty state: only when user has NO plans at all */}
+              {userInvestments.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--bg-card)', borderRadius: 20, border: '1px dashed var(--border)' }}>
+                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>No Investments Yet</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>Start investing to grow your portfolio</div>
+                  <button onClick={() => setTab('marketplace')} style={{ padding: '12px 28px', background: 'var(--brand-primary)', color: '#000', borderRadius: 10, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Browse Plans</button>
+                </div>
+              )}
+
+              {/* Active Plans dashboard */}
+              {activePlans.length > 0 && summary && (
+                <div style={{ background: 'linear-gradient(180deg,rgba(242,186,14,0.14),rgba(12,16,24,0.96))', border: '1px solid rgba(242,186,14,0.18)', borderRadius: 22, padding: 16, boxShadow: '0 18px 40px rgba(0,0,0,0.22)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                     <div>
                       <div style={{ fontSize: 10, fontWeight: 900, color: 'rgba(255,255,255,0.58)', letterSpacing: '0.14em', marginBottom: 8 }}>MY PLAN DASHBOARD</div>
@@ -431,62 +457,70 @@ function InvestContent() {
                     </div>
                     <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(242,186,14,0.14)', border: '1px solid rgba(242,186,14,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C9A227', fontWeight: 900, fontSize: 20 }}>%</div>
                   </div>
-
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                     <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Total Invested</div><div style={{ fontWeight: 900, fontSize: 18 }}>${summary.totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
                     <div style={{ padding: 12, borderRadius: 16, background: 'rgba(14,203,129,0.08)', border: '1px solid rgba(14,203,129,0.16)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Profit Earned</div><div style={{ fontWeight: 900, fontSize: 18, color: '#0ECB81' }}>+${summary.totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
                   </div>
-
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Daily Earning</div><div style={{ fontWeight: 900, fontSize: 16, color: '#C9A227' }}>+${summary.dailyEarning.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day</div></div>
                     <div style={{ padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}><div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 10, marginBottom: 4 }}>Active Plans</div><div style={{ fontWeight: 900, fontSize: 18 }}>{summary.activeCount}</div></div>
                   </div>
                 </div>
               )}
-              {userInvestments.map((inv: any) => (
-                <div key={inv.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, marginBottom: 10, position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <div><div style={{ fontWeight: 800, fontSize: 15 }}>{inv.planName}</div><div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>{(inv.dailyRoi * 100).toFixed(2)}% daily ROI · {inv.totalDurationDays}d plan</div></div>
-                    <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 800, background: inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.1)' : inv.status === 'ACTIVE' ? 'rgba(242,186,14,0.1)' : 'rgba(246,70,93,0.1)', color: inv.status === 'COMPLETED' ? '#0ECB81' : inv.status === 'ACTIVE' ? '#C9A227' : '#F6465D', border: `1px solid ${inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.2)' : inv.status === 'ACTIVE' ? 'rgba(242,186,14,0.2)' : 'rgba(246,70,93,0.2)'}` }}>{inv.status}</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 10, padding: '10px 12px' }}><div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Invested</div><div style={{ fontWeight: 800, fontSize: 17 }}>${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div></div>
-                    <div style={{ background: inv.hasStartedEarning ? 'rgba(14,203,129,0.07)' : 'rgba(242,186,14,0.07)', border: `1px solid ${inv.hasStartedEarning ? 'rgba(14,203,129,0.15)' : 'rgba(242,186,14,0.15)'}`, borderRadius: 10, padding: '10px 12px' }}><div style={{ color: 'var(--text-muted)', fontSize: 10, marginBottom: 3 }}>Profit Earned</div>{inv.hasStartedEarning ? <div style={{ fontWeight: 800, fontSize: 17, color: '#0ECB81' }}>+${inv.profitEarned.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div> : <div style={{ fontWeight: 700, fontSize: 13, color: '#C9A227' }}>Starts in {inv.hoursUntilProfit}h</div>}</div>
-                  </div>
-                  <div style={{ background: 'var(--bg-elevated)', borderRadius: 99, height: 6, overflow: 'hidden', marginBottom: 6 }}><div style={{ height: '100%', background: `linear-gradient(90deg,#C9A227,${inv.hasStartedEarning ? '#0ECB81' : '#C9A227'})`, width: `${inv.progressPct || 0}%`, borderRadius: 99, transition: 'width .5s' }} /></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: 10, fontWeight: 600 }}><span>{Math.round(inv.progressPct || 0)}% complete</span><span>{inv.status === 'COMPLETED' ? 'Completed' : `${Math.ceil(inv.daysRemaining || 0)}d remaining`}</span></div>
-                  {(inv.status === 'COMPLETED' || (inv.endDate && new Date() >= new Date(inv.endDate))) && !claimedIds.has(inv.id) && (
-                    <button
-                      onClick={() => claimInvestment(inv.id)}
-                      disabled={claimingId === inv.id}
-                      style={{
-                        marginTop: 12,
-                        width: '100%',
-                        padding: '11px',
-                        background: 'linear-gradient(135deg, #C9A227, #E4C25C)',
-                        color: '#000',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontWeight: 800,
-                        fontSize: 13,
-                        cursor: claimingId === inv.id ? 'not-allowed' : 'pointer',
-                        opacity: claimingId === inv.id ? 0.7 : 1,
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      {claimingId === inv.id ? 'Transferring...' : `Transfer $${inv.totalValue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to Wallet`}
-                    </button>
-                  )}
-                  {claimedIds.has(inv.id) && (
-                    <div style={{ marginTop: 10, textAlign: 'center', fontSize: 12, color: '#0ECB81', fontWeight: 700 }}>
-                      Transferred to wallet
+
+              {activePlans.length > 0 && (
+                <>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', marginTop: 4 }}>ACTIVE PLANS</div>
+                  {activePlans.map((inv: any) => <PlanCard key={inv.id} inv={inv} />)}
+                </>
+              )}
+
+              {/* History */}
+              {historyPlans.length > 0 && (
+                <>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', marginTop: 8 }}>HISTORY</div>
+                  {historyPlans.map((inv: any) => (
+                    <div key={inv.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 14 }}>{inv.planName}</div>
+                          <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>
+                            {new Date(inv.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} → {new Date(inv.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </div>
+                        </div>
+                        <span style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 800, background: inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.1)' : 'rgba(246,70,93,0.1)', color: inv.status === 'COMPLETED' ? '#0ECB81' : '#F6465D', border: `1px solid ${inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.2)' : 'rgba(246,70,93,0.2)'}` }}>{inv.status}</span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '8px 10px' }}>
+                          <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 2 }}>Invested</div>
+                          <div style={{ fontWeight: 700, fontSize: 13 }}>${inv.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </div>
+                        <div style={{ background: inv.status === 'COMPLETED' ? 'rgba(14,203,129,0.07)' : 'var(--bg-elevated)', borderRadius: 8, padding: '8px 10px' }}>
+                          <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 2 }}>Profit</div>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: inv.status === 'COMPLETED' ? '#0ECB81' : 'var(--text-muted)' }}>
+                            {inv.status === 'COMPLETED' ? `+$${(inv.totalEarned || inv.profitEarned || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                          </div>
+                        </div>
+                        <div style={{ background: inv.status === 'COMPLETED' ? 'rgba(201,162,39,0.08)' : 'var(--bg-elevated)', borderRadius: 8, padding: '8px 10px' }}>
+                          <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 2 }}>Total Out</div>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: inv.status === 'COMPLETED' ? '#C9A227' : 'var(--text-muted)' }}>
+                            {inv.status === 'COMPLETED' ? `$${(inv.amount + (inv.totalEarned || inv.profitEarned || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                          </div>
+                        </div>
+                      </div>
+                      {inv.status === 'COMPLETED' && (
+                        <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6, color: '#0ECB81', fontSize: 11, fontWeight: 700 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                          Transferred to wallet
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
-            </>
-          )}
-        </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )
+        })()
       )}
 
       {/* ── Invest Modal ── */}

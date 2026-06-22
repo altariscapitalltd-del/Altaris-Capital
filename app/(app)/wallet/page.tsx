@@ -203,6 +203,9 @@ export default function WalletPage() {
     try {
       const saved = localStorage.getItem('altaris:managedCoins')
       if (saved) setManagedCoins(JSON.parse(saved))
+      // Restore coin metadata so logos are instant on next visit
+      const savedMeta = localStorage.getItem('altaris:coinMeta')
+      if (savedMeta) setReceiveCoinList(JSON.parse(savedMeta))
     } catch {}
   }, [])
 
@@ -322,7 +325,16 @@ export default function WalletPage() {
     if (receiveCoinList.length >= 200) { setReceiveLoaded(true); return }  // pre-seeded already large
     fetch('/api/markets/list?per_page=250')
       .then(r => r.json())
-      .then(d => { setReceiveCoinList(d.list || []); setReceiveLoaded(true) })
+      .then(d => {
+        const list = d.list || []
+        setReceiveCoinList(list)
+        setReceiveLoaded(true)
+        try {
+          // Store slim version for logo persistence across navigation
+          const slim = list.map((c: any) => ({ symbol: c.symbol, name: c.name, image: c.image, id: c.id }))
+          localStorage.setItem('altaris:coinMeta', JSON.stringify(slim))
+        } catch {}
+      })
       .catch(() => setReceiveLoaded(true))
   }, [tab, depositMode, showManage, receiveLoaded, receiveCoinList.length])
 
@@ -339,15 +351,21 @@ export default function WalletPage() {
   }, [coin, userWallet, chainAddrs, tab, depositMode])
 
   const usdBalance = balances.USD || 0
-  const cryptoValue = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'USDT'].reduce((sum, sym) => sum + (balances[sym] || 0) * (marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)), 0)
+  // Sum ALL crypto balances the user holds, not just a hardcoded 6-coin list
+  const cryptoValue = Object.entries(balances).reduce((sum, [sym, amt]) => {
+    if (sym === 'USD') return sum
+    const price = marketPrices[sym]?.price || (sym === 'USDT' || sym === 'USDC' ? 1 : 0)
+    return sum + (Number(amt) || 0) * price
+  }, 0)
   const walletBalance = usdBalance + cryptoValue
   const portfolioBalance = walletBalance + investedTotal
-  const cryptoPL = ['BTC', 'ETH', 'USDT'].reduce((sum, sym) => {
-    const amountHeld = balances[sym] || 0
-    const price = marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)
+  // Unrealized P/L across all crypto holdings with known price change
+  const cryptoPL = Object.entries(balances).reduce((sum, [sym, amt]) => {
+    if (sym === 'USD') return sum
+    const price = marketPrices[sym]?.price || (sym === 'USDT' || sym === 'USDC' ? 1 : 0)
     const change = marketPrices[sym]?.change || 0
     const previous = price && change !== -100 ? price / (1 + change / 100) : price
-    return sum + amountHeld * (price - previous)
+    return sum + (Number(amt) || 0) * (price - previous)
   }, 0)
 
   const paybisUrl = process.env.NEXT_PUBLIC_PAYBIS_URL || 'https://paybis.com'
@@ -564,26 +582,41 @@ export default function WalletPage() {
     { sym: 'SOL', name: 'Solana', price: marketPrices.SOL?.price || 0, change: marketPrices.SOL?.change || 0, color: '#14F195' },
   ]
 
-  // Activity list — build from ALL_CRYPTOS so manage works for all coins
-  const ASSET_META: Record<string, { name: string; color: string }> = Object.fromEntries(
-    ALL_CRYPTOS.map(c => [c.sym, { name: c.name, color: c.color }])
-  )
-  const activityAssets = managedCoins
+  // Merged metadata: static list → market prices → full receive list (highest priority last)
+  const coinMetaMap = useMemo(() => {
+    const map: Record<string, { name: string; image: string; color: string }> = {}
+    ALL_CRYPTOS.forEach(c => { map[c.sym] = { name: c.name, image: '', color: c.color } })
+    Object.entries(marketPrices).forEach(([sym, d]) => {
+      if (!map[sym]) map[sym] = { name: sym, image: d.image || '', color: '#888' }
+      else if (d.image) map[sym].image = d.image
+    })
+    receiveCoinList.forEach((c: any) => {
+      const sym = String(c.symbol || '').toUpperCase()
+      if (!sym) return
+      if (!map[sym]) map[sym] = { name: c.name || sym, image: c.image || '', color: '#888' }
+      else { if (c.image) map[sym].image = c.image; if (c.name && map[sym].name === sym) map[sym].name = c.name }
+    })
+    return map
+  }, [marketPrices, receiveCoinList])
+
+  const activityAssets = useMemo(() => managedCoins
     .map((sym) => {
+      const meta = coinMetaMap[sym] || { name: sym, image: '', color: '#888' }
       const price = marketPrices[sym]?.price || (sym === 'USDT' || sym === 'USDC' ? 1 : 0)
       const amount = balances[sym] || 0
       return {
         sym,
-        name: ASSET_META[sym]?.name || sym,
-        color: ASSET_META[sym]?.color || '#888',
-        image: marketPrices[sym]?.image,
+        name: meta.name,
+        color: meta.color,
+        image: meta.image,
         price,
         change: marketPrices[sym]?.change || 0,
         amount,
         usd: amount * price,
       }
     })
-    .sort((a, b) => b.usd - a.usd || b.price - a.price)
+    .sort((a, b) => b.usd - a.usd || b.price - a.price),
+  [managedCoins, coinMetaMap, marketPrices, balances])
 
   // Mockup actions — Send=withdraw, Receive=deposit, Swap=markets, Buy=fiat
   const openWithdraw = () => { setTab('withdraw'); setDepositMode('select'); setMsg(null) }
