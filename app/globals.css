@@ -685,3 +685,90 @@ a.card:active,.card.pressable:active{transform:scale(.985)}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
 .network-copy-action{cursor:pointer;border-radius:14px;padding:6px;margin:-6px;color:var(--brand-primary)}.network-copy-action:focus-visible{outline:2px solid rgba(242,186,14,.55);outline-offset:2px}.network-copy-action:hover{background:rgba(242,186,14,.1)}
+
+/* ═══════════════════════════════════════════════════════════════
+   iOS-CLASS SMOOTHNESS PASS
+   Tap highlight, touch delay, page transitions, sheet springs,
+   row feedback, input stability, and selection hygiene.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* 1. Kill the tap highlight flash — single most impactful mobile-native fix */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+}
+
+/* 2. Remove 300ms tap delay on interactive elements */
+a, button, [role="button"], label, select, summary, input[type="submit"], input[type="button"] {
+  touch-action: manipulation;
+}
+
+/* 3. Prevent iOS viewport jump on input focus (keyboard resize) */
+input:not([type="range"]), textarea, select {
+  font-size: max(16px, 1em) !important;
+}
+
+/* 4. Page entrance — subtle fade + 8 px rise, mirrors iOS tab-switch feel */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: pageEnter 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+
+/* 5. Full-screen sheet entrance — iOS spring slide-up */
+@keyframes sheetEnter {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sheet-enter { animation: sheetEnter 0.34s cubic-bezier(0.32, 0.72, 0, 1) both; }
+
+/* 6. Bottom drawer entrance (manage / action sheet) */
+@keyframes drawerSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes backdropFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.drawer-backdrop { animation: backdropFadeIn 0.22s ease both; }
+.drawer-panel    { animation: drawerSlideUp 0.38s cubic-bezier(0.32, 0.72, 0, 1) both; }
+
+/* 7. Notification / toast slide-down */
+@keyframes toastSlideDown {
+  from { opacity: 0; transform: translateY(-10px) scaleY(0.92); }
+  to   { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+.toast-enter { animation: toastSlideDown 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+
+/* 8. Instant row press — zero-lag press feel */
+.row-item { transition: background 0.12s ease, transform 0.08s ease; }
+.row-item:active { transform: scale(0.983) !important; background: var(--bg-hover) !important; transition: none !important; }
+
+/* 9. Tighten pressable to native-grade snappiness */
+.pressable { transition: transform 0.09s cubic-bezier(0.2, 0.7, 0.3, 1), opacity 0.09s !important; }
+.pressable:active { transform: scale(0.952) !important; opacity: 0.85 !important; transition: none !important; }
+
+/* 10. Primary button active — push-down coin effect */
+.btn-primary:active { transform: translateY(1px) scale(0.985) !important; transition: none !important; }
+
+/* 11. Nav tab press — instant opacity dip */
+.app-bottom-nav a { transition: opacity 0.06s ease; }
+.app-bottom-nav a:active { opacity: 0.55; }
+
+/* 12. Card pressable tap */
+a.card:active, button.card:active, [role="button"].card:active { transform: scale(0.975); transition: transform 0.08s ease !important; }
+
+/* 13. Message banner — always animate in */
+.msg-inline { animation: toastSlideDown 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+
+/* 14. Prevent text-selection popover on long-press of chrome elements */
+nav, .app-bottom-nav, .app-top-header, .chip, .badge, .statement-action {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 15. Smooth input focus ring — no jarring outline flash */
+.input:focus, .input:focus-visible {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* 16. Horizontal scroll containers — no bounce bleed */
+.no-scrollbar { overscroll-behavior-x: contain; }
+
+/* 17. Sheet receive + network overlays — inherit sheet animation */
+.receive-shell, .network-sheet { animation: sheetEnter 0.34s cubic-bezier(0.32, 0.72, 0, 1) both; }

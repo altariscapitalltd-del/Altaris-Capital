@@ -141,9 +141,9 @@ export default function RewardsPage() {
   return (
     <div style={{ padding:'0 0 120px', maxWidth:600, margin:'0 auto' }}>
       {celebration && (
-        <div style={{ position:'fixed', inset:0, zIndex:100, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}
+        <div className="drawer-backdrop" style={{ position:'fixed', inset:0, zIndex:100, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(8px)' }}
           onClick={() => setCelebration(null)}>
-          <div style={{ textAlign:'center', padding:40 }}>
+          <div className="sheet-enter" style={{ textAlign:'center', padding:40 }}>
             <div style={{ fontSize:72, marginBottom:16 }}>🎉</div>
             <h2 style={{ fontSize:28, fontWeight:900, color:'#C9A227', marginBottom:12 }}>Milestone Reached!</h2>
             <p style={{ color:'#aaa', fontSize:16, maxWidth:280 }}>{celebration}</p>

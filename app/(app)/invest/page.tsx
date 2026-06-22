@@ -525,8 +525,8 @@ function InvestContent() {
 
       {/* ── Invest Modal ── */}
       {selected && typeof document !== 'undefined' && createPortal(
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 120, transition: 'opacity .25s ease', opacity: sheetOpen ? 1 : 0 }} onClick={e => { if (e.target === e.currentTarget) closeInvestSheet() }}>
-          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(78px + env(safe-area-inset-bottom))', margin: '0 auto', transform: `translateY(${sheetOpen ? '0%' : '110%'})`, transition: 'transform .25s ease', background: 'var(--bg-card)', borderRadius: '20px 20px 16px 16px', width: 'calc(100% - 16px)', maxWidth: 480, border: '1px solid var(--border)', maxHeight: 'calc(100svh - 110px - env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 120, transition: 'opacity .22s ease', opacity: sheetOpen ? 1 : 0 }} onClick={e => { if (e.target === e.currentTarget) closeInvestSheet() }}>
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(78px + env(safe-area-inset-bottom))', margin: '0 auto', transform: `translateY(${sheetOpen ? '0%' : '110%'})`, transition: `transform ${sheetOpen ? '0.38s cubic-bezier(0.32,0.72,0,1)' : '0.28s cubic-bezier(0.4,0,1,1)'}`, background: 'var(--bg-card)', borderRadius: '20px 20px 16px 16px', width: 'calc(100% - 16px)', maxWidth: 480, border: '1px solid var(--border)', maxHeight: 'calc(100svh - 110px - env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ padding: '14px 24px 0' }}><div style={{ width: 40, height: 4, background: 'var(--bg-elevated)', borderRadius: 2, margin: '0 auto 14px' }} /></div>
             <div style={{ padding: '0 24px', overflowY: 'auto' }}>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
