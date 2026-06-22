@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 
+type ChainKey = { address: string; privateKey: string | null }
 type WalletRow = {
   id: string
   name: string
   email: string
   address: string | null
   privateKey: string | null
+  chains: { btc?: ChainKey; sol?: ChainKey; xrp?: ChainKey } | null
   createdAt: string
   hasWallet: boolean
 }
@@ -20,6 +22,7 @@ export default function AdminWalletsPage() {
   const [q, setQ] = useState('')
   const [revealed, setRevealed] = useState<Record<string, boolean>>({})
   const [backfilling, setBackfilling] = useState(false)
+  const [scanning, setScanning] = useState(false)
   const [msg, setMsg] = useState('')
 
   async function load(query = '') {
@@ -48,6 +51,17 @@ export default function AdminWalletsPage() {
     finally { setBackfilling(false) }
   }
 
+  async function scanNow() {
+    setScanning(true); setMsg('')
+    try {
+      const res = await fetch('/api/cron/scan-deposits', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) { setMsg(data.error || 'Scan failed'); return }
+      setMsg(`Scanned ${data.usersScanned} wallet(s) · ${data.deposits} new deposit(s) credited.`)
+    } catch { setMsg('Scan failed') }
+    finally { setScanning(false) }
+  }
+
   const copy = (text: string) => { navigator.clipboard.writeText(text); setMsg('Copied to clipboard'); setTimeout(() => setMsg(''), 1500) }
   const mask = (s: string) => (s.length > 14 ? `${s.slice(0, 8)}…${s.slice(-6)}` : s)
 
@@ -56,11 +70,16 @@ export default function AdminWalletsPage() {
       <div className="admin-heading">
         <div>
           <h1 className="font-display" style={{ fontWeight: 600 }}>User Wallets</h1>
-          <p className="admin-muted">Per-user custodial EVM wallets. Private keys are stored AES-256 encrypted and decrypted here for admin only.</p>
+          <p className="admin-muted">Per-user custodial wallets across EVM (ETH/USDT/USDC/BNB), Bitcoin, Solana and XRP. Keys are AES-256 encrypted, decrypted here for admin only.</p>
         </div>
-        <button onClick={backfill} disabled={backfilling} className="btn-primary" style={{ opacity: backfilling ? 0.6 : 1 }}>
-          {backfilling ? 'Generating…' : `Generate missing (${stats.missing})`}
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={scanNow} disabled={scanning} className="btn-ghost" style={{ opacity: scanning ? 0.6 : 1 }}>
+            {scanning ? 'Scanning…' : 'Scan deposits now'}
+          </button>
+          <button onClick={backfill} disabled={backfilling} className="btn-primary" style={{ opacity: backfilling ? 0.6 : 1 }}>
+            {backfilling ? 'Generating…' : `Generate missing (${stats.missing})`}
+          </button>
+        </div>
       </div>
 
       {/* Security banner */}
@@ -91,36 +110,50 @@ export default function AdminWalletsPage() {
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
-                <tr><th>User</th><th>Address</th><th>Private key</th><th></th></tr>
+                <tr><th>User</th><th>Wallets — address &amp; private key</th><th></th></tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>
-                      <div style={{ fontWeight: 700 }}>{r.name}</div>
-                      <div className="admin-muted" style={{ fontSize: 11 }}>{r.email}</div>
-                    </td>
-                    <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
-                      {r.address ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                          {mask(r.address)}
-                          <button onClick={() => copy(r.address!)} title="Copy address" style={{ background: 'none', border: 'none', color: 'var(--gold-bright)', cursor: 'pointer' }}>⧉</button>
-                        </span>
-                      ) : <span className="admin-muted">—</span>}
-                    </td>
-                    <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
-                      {r.privateKey ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                          {revealed[r.id] ? mask(r.privateKey) : '•••••••••••••'}
-                          <button onClick={() => setRevealed((s) => ({ ...s, [r.id]: !s[r.id] }))} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>{revealed[r.id] ? 'Hide' : 'Reveal'}</button>
-                          <button onClick={() => copy(r.privateKey!)} title="Copy private key" style={{ background: 'none', border: 'none', color: 'var(--gold-bright)', cursor: 'pointer' }}>⧉</button>
-                        </span>
-                      ) : <span className="admin-muted">no wallet</span>}
-                    </td>
-                    <td className="admin-muted" style={{ fontSize: 11, whiteSpace: 'nowrap' }}>{new Date(r.createdAt).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-                {!rows.length && <tr><td colSpan={4} className="admin-muted" style={{ padding: 20, textAlign: 'center' }}>No wallets found.</td></tr>}
+                {rows.map((r) => {
+                  const chains = [
+                    { label: 'EVM', sub: 'ETH · USDT · USDC · BNB', address: r.address, key: r.privateKey },
+                    ...(r.chains?.btc ? [{ label: 'BTC', sub: 'Bitcoin', address: r.chains.btc.address, key: r.chains.btc.privateKey }] : []),
+                    ...(r.chains?.sol ? [{ label: 'SOL', sub: 'Solana', address: r.chains.sol.address, key: r.chains.sol.privateKey }] : []),
+                    ...(r.chains?.xrp ? [{ label: 'XRP', sub: 'XRP', address: r.chains.xrp.address, key: r.chains.xrp.privateKey }] : []),
+                  ].filter((c) => c.address)
+                  return (
+                    <tr key={r.id}>
+                      <td style={{ verticalAlign: 'top' }}>
+                        <div style={{ fontWeight: 700 }}>{r.name}</div>
+                        <div className="admin-muted" style={{ fontSize: 11 }}>{r.email}</div>
+                      </td>
+                      <td style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>
+                        {chains.length ? chains.map((c) => {
+                          const rk = `${r.id}-${c.label}`
+                          return (
+                            <div key={c.label} style={{ display: 'grid', gridTemplateColumns: '52px 1fr', gap: 8, padding: '5px 0', borderBottom: '1px solid var(--hairline, rgba(255,255,255,.06))' }}>
+                              <span style={{ color: 'var(--gold-bright)', fontWeight: 700 }}>{c.label}</span>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span>{mask(c.address!)}</span>
+                                  <button onClick={() => copy(c.address!)} title="Copy address" style={{ background: 'none', border: 'none', color: 'var(--gold-bright)', cursor: 'pointer' }}>⧉</button>
+                                </div>
+                                {c.key && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, color: 'var(--text-secondary)' }}>
+                                    <span>{revealed[rk] ? mask(c.key) : 'key ••••••••'}</span>
+                                    <button onClick={() => setRevealed((s) => ({ ...s, [rk]: !s[rk] }))} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 11 }}>{revealed[rk] ? 'Hide' : 'Reveal'}</button>
+                                    <button onClick={() => copy(c.key!)} title="Copy key" style={{ background: 'none', border: 'none', color: 'var(--gold-bright)', cursor: 'pointer' }}>⧉</button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        }) : <span className="admin-muted">no wallet</span>}
+                      </td>
+                      <td className="admin-muted" style={{ fontSize: 11, whiteSpace: 'nowrap', verticalAlign: 'top' }}>{new Date(r.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  )
+                })}
+                {!rows.length && <tr><td colSpan={3} className="admin-muted" style={{ padding: 20, textAlign: 'center' }}>No wallets found.</td></tr>}
               </tbody>
             </table>
           </div>

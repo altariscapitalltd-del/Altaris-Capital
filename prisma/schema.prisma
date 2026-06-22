@@ -38,6 +38,10 @@ model User {
   walletAddress     String?
   walletPrivateKey  String?
   walletCreatedAt   DateTime?
+  // Native non-EVM wallets: { btc:{address,encryptedKey}, sol:{...}, xrp:{...} }
+  chainWallets      Json?
+  // On-chain balances last seen by the deposit scanner, per asset (for delta credit)
+  onchainSeen       Json?
 
   balances         Balance[]
   transactions     Transaction[]

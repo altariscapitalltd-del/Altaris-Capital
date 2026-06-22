@@ -3,6 +3,9 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm ci --legacy-peer-deps",
+  "crons": [
+    { "path": "/api/cron/scan-deposits", "schedule": "*/10 * * * *" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

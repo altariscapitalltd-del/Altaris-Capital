@@ -134,6 +134,7 @@ export default function WalletPage() {
   const [refCode, setRefCode] = useState('')
   const [profile, setProfile] = useState<{ name?: string; avatarUrl?: string }>({})
   const [userWallet, setUserWallet] = useState('')
+  const [chainAddrs, setChainAddrs] = useState<{ btc?: string; sol?: string; xrp?: string }>({})
   const [balanceHidden, setBalanceHidden] = useState(false)
   const marketCoins = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP']
 
@@ -152,6 +153,8 @@ export default function WalletPage() {
         setRefCode(d.user?.referralCode || 'ALTARIS01')
         setProfile({ name: d.user?.name, avatarUrl: d.user?.avatarUrl || d.user?.avatar })
         if (d.user?.walletAddress) setUserWallet(d.user.walletAddress)
+        const cw = d.user?.chainWallets
+        if (cw) setChainAddrs({ btc: cw.btc?.address, sol: cw.sol?.address, xrp: cw.xrp?.address })
       })
       .catch(() => {})
   }
@@ -186,6 +189,8 @@ export default function WalletPage() {
           setRefCode(d.user?.referralCode || 'ALTARIS01')
           setProfile({ name: d.user?.name, avatarUrl: d.user?.avatarUrl || d.user?.avatar })
         if (d.user?.walletAddress) setUserWallet(d.user.walletAddress)
+        const cw = d.user?.chainWallets
+        if (cw) setChainAddrs({ btc: cw.btc?.address, sol: cw.sol?.address, xrp: cw.xrp?.address })
         }
 
         if (txRes.status === 'fulfilled') {
@@ -234,7 +239,7 @@ export default function WalletPage() {
   }, [tab, depositMode])
 
   useEffect(() => {
-    const address = userWallet
+    const address = coin === 'BTC' ? chainAddrs.btc : coin === 'SOL' ? chainAddrs.sol : coin === 'XRP' ? chainAddrs.xrp : userWallet
     if (!address || tab !== 'deposit' || depositMode !== 'crypto') {
       setQrDataUrl(null)
       return
@@ -243,7 +248,7 @@ export default function WalletPage() {
     QRCode.toDataURL(address, { width: 300, margin: 1 })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null))
-  }, [coin, userWallet, tab, depositMode])
+  }, [coin, userWallet, chainAddrs, tab, depositMode])
 
   const usdBalance = balances.USD || 0
   const cryptoValue = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'USDT'].reduce((sum, sym) => sum + (balances[sym] || 0) * (marketPrices[sym]?.price || (sym === 'USDT' ? 1 : 0)), 0)
@@ -309,8 +314,13 @@ export default function WalletPage() {
     }
   }, [transactions])
 
+  // Per-coin receive address: native chains use their own wallet, EVM tokens share the 0x address
+  const addrFor = (sym: string) =>
+    sym === 'BTC' ? (chainAddrs.btc || '') :
+    sym === 'SOL' ? (chainAddrs.sol || '') :
+    sym === 'XRP' ? (chainAddrs.xrp || '') : userWallet
   const selectedCoin = DEPOSIT_COINS.find((c) => c.sym === coin)!
-  const activeAddress = userWallet
+  const activeAddress = addrFor(coin)
 
   async function submitDeposit() {
     if (!amount || !txHash.trim()) {
@@ -643,7 +653,7 @@ export default function WalletPage() {
               </div>
               <div className="network-list">
                 {DEPOSIT_COINS.map((c) => {
-                  const addr = userWallet
+                  const addr = addrFor(c.sym)
                   return (
                     <button
                       key={c.sym}
@@ -868,27 +878,15 @@ export default function WalletPage() {
             <button onClick={shareAddress} type="button" className="btn-ghost">Share</button>
           </div>
 
-          <div style={{ maxWidth: 360, margin: '0 auto 14px', display: 'flex', justifyContent: 'center' }}>
-            <button onClick={setSuggestedAmount} type="button" style={{ border: 'none', background: 'transparent', color: 'var(--brand-primary)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>Optional: set expected amount</button>
-          </div>
-
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div>
-                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
-                  Amount ({coin})
-                </label>
-                <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={String(selectedCoin.minDeposit)} />
+          <div className="card" style={{ padding: 16, maxWidth: 430, margin: '0 auto', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <span style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 10, background: 'var(--gold-soft)', color: 'var(--gold-bright)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 11-6.2-8.5" /><path d="M22 4l-10 10-3-3" /></svg>
+            </span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Deposits are automatic</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12.5, lineHeight: 1.6, marginTop: 3 }}>
+                Send {coin} to the address above. Once the network confirms it, your {coin} balance updates automatically — no need to enter anything.
               </div>
-              <div>
-                <label style={{ display: 'block', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
-                  Transaction Hash
-                </label>
-                <input className="input" value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="Paste blockchain tx hash" />
-              </div>
-              <button onClick={submitDeposit} disabled={loading} className="btn-primary" style={{ width: '100%' }}>
-                {loading ? 'Submitting...' : 'I sent crypto'}
-              </button>
             </div>
           </div>
         </div>

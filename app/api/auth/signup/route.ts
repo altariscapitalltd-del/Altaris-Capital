@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db'
 import { createAndSendOTP } from '@/lib/otp'
 import { trigger, adminChannel } from '@/lib/pusher'
 import { notifyAdminTelegram } from '@/lib/push'
-import { createWallet } from '@/lib/wallet'
+import { createWallet, createChainWallets } from '@/lib/wallet'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -70,9 +70,10 @@ export async function POST(req: NextRequest) {
     // if the wallet columns aren't migrated yet — private key stored encrypted)
     try {
       const w = createWallet()
+      const chains = createChainWallets()
       await prisma.user.update({
         where: { id: user.id },
-        data: { walletAddress: w.address, walletPrivateKey: w.encryptedKey, walletCreatedAt: new Date() },
+        data: { walletAddress: w.address, walletPrivateKey: w.encryptedKey, walletCreatedAt: new Date(), chainWallets: chains as any },
       })
     } catch (e: any) {
       console.error('[Signup] wallet generation skipped:', e?.message ?? e)
