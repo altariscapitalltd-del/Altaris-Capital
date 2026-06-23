@@ -85,9 +85,9 @@ function InvestContent() {
   const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set())
   const [coinImageMap, setCoinImageMap] = useState<Record<string, string>>({})
   const [payCurrency, setPayCurrency] = useState('USDT')
-  const [showPayPicker, setShowPayPicker] = useState(false)
   const [userBalances, setUserBalances] = useState<{ currency: string; amount: number }[]>([])
   const [priceMap, setPriceMap] = useState<Record<string, number>>({ USD: 1, USDT: 1, USDC: 1 })
+  const [showPayPicker, setShowPayPicker] = useState(false)
 
   useBodyScrollLock(sheetOpen)
 
@@ -108,7 +108,7 @@ function InvestContent() {
       })
       setCoinImageMap(imgMap)
       setPriceMap(pMap)
-      const bals: { currency: string; amount: number }[] = (profileData.balances || [])
+      const bals: { currency: string; amount: number }[] = (profileData.user?.balances || [])
         .map((b: any) => ({ currency: String(b.currency).toUpperCase(), amount: Number(b.amount) }))
         .filter((b: any) => b.amount > 0)
       setUserBalances(bals)
