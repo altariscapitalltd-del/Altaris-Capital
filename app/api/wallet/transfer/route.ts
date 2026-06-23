@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       prisma.transaction.create({
         data: {
           userId: me.id,
-          type: 'TRANSFER' as any,
+          type: 'TRANSFER_OUT' as any,
           amount,
           currency,
           status: 'SUCCESS' as any,
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       prisma.transaction.create({
         data: {
           userId: recipientId,
-          type: 'TRANSFER' as any,
+          type: 'TRANSFER_IN' as any,
           amount,
           currency,
           status: 'SUCCESS' as any,

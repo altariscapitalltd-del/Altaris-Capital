@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
 import { AltarisLogoMark } from '@/components/AltarisLogo'
-import { Bell, BarChart3, CircleDollarSign, CreditCard, Gift, LayoutDashboard, Menu, MessageCircle, Search, Settings, ShieldCheck, UserRound, Users, Wallet, X } from 'lucide-react'
+import { Bell, BarChart3, CircleDollarSign, CreditCard, Gift, LayoutDashboard, Menu, MessageCircle, Search, Settings, ShieldCheck, UserRound, Users, Wallet, X, ArrowLeftRight } from 'lucide-react'
 
 type PendingCounts = {
   deposits: number
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/users', label: 'Users', icon: Users },
+  { href: '/admin/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { href: '/admin/wallets', label: 'Wallets', icon: Wallet },
   { href: '/admin/deposits', label: 'Deposits', icon: CircleDollarSign },
   { href: '/admin/withdrawals', label: 'Withdrawals', icon: CreditCard },
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
 const MOBILE_NAV_ITEMS = [
   { href: '/admin/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: UserRound },
+  { href: '/admin/transactions', label: 'Txs', icon: ArrowLeftRight },
   { href: '/admin/deposits', label: 'Deposits', icon: CircleDollarSign },
   { href: '/admin/kyc', label: 'KYC', icon: ShieldCheck },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
