@@ -60,8 +60,9 @@ export default function UserDetailPage() {
   )
   if (!user) return null
 
-  const usdBal = user.balances?.find((b:any)=>b.currency==='USD')?.amount||0
-  const activeInv = user.investments?.filter((i:any)=>i.status==='ACTIVE')||[]
+  const balances = user.balances || []
+  const usdBal = balances.find((b:any) => b.currency === 'USD')?.amount || 0
+  const activeInv = user.investments?.filter((i:any)=>i.status==='ACTIVE') || []
 
   return (
     <div style={{padding:28,maxWidth:900}}>
@@ -88,7 +89,7 @@ export default function UserDetailPage() {
           </div>
           <div style={{color:'#555',fontSize:13,marginBottom:8}}>{user.email} · {user.phone||'No phone'}</div>
           <div style={{display:'flex',gap:16,flexWrap:'wrap'}}>
-            {[{l:'USD Balance',v:`$${usdBal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`},{l:'Active Plans',v:activeInv.length},{l:'Member Since',v:new Date(user.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}].map(({l,v})=>(
+            {[{l:'USD Balance',v:`$${usdBal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`},{l:'Active Plans',v:activeInv.length},{l:'Member Since',v:new Date(user.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}, {l:'All Balances',v: balances.map((b:any)=>`${b.currency} ${Number(b.amount).toLocaleString('en-US',{maximumFractionDigits:6})}`).join(' · ') || '—'}].map(({l,v})=>(
               <div key={l}>
                 <div style={{color:'#444',fontSize:10,marginBottom:2}}>{l}</div>
                 <div style={{fontWeight:700,fontSize:15}}>{v}</div>
